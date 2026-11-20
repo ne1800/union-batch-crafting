@@ -38,6 +38,6 @@ Das Spieler-ZIP entsteht mit `mise run package-player-WRITES -- --apply`.
 
 ## Entwicklung
 
-`mise run lint` führt prek auf allen versionierten Dateien aus. Für die lokalen Formatier-Hooks werden clang-format 23.1.5 und gersemi 0.17.0 benötigt. Mit `mise run test:report-WRITES -- --apply` laufen die portablen Tests. Git-Hooks werden im privaten Entwicklungs-Checkout mit `mise x -- prek install` für pre-commit und commit-msg aktiviert. Im Export laufen die Prüfungen über die mise-Aufgaben.
+`mise run lint` führt prek auf allen versionierten Dateien aus. prek installiert beim ersten Lauf alle Formatierer und Linter in fest gepinnten Versionen, darunter clang-format 23.1.5 und gersemi 0.29.2. Mit `mise run test:report-WRITES -- --apply` laufen die portablen Tests. Git-Hooks werden im privaten Entwicklungs-Checkout mit `mise x -- prek install` für pre-commit und commit-msg aktiviert. Im Export laufen die Prüfungen über die mise-Aufgaben.
 
 Commit-Betreffzeilen sind auf Englisch und folgen Conventional Commits, etwa `fix(ui): handle empty recipe lists`. Der Scope ist optional. Ein `!` vor dem Doppelpunkt kennzeichnet eine inkompatible Änderung.

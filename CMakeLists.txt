@@ -28,8 +28,8 @@ target_include_directories(ubc_selection_stock_tests PRIVATE include)
 add_executable(ubc_selection_snapshot_tests tests/selection_snapshot_tests.cpp)
 target_include_directories(ubc_selection_snapshot_tests PRIVATE include)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  add_library(ubc_cool_measurement SHARED tools/world/cool_measurement.cpp)
-  target_include_directories(ubc_cool_measurement PRIVATE include)
+    add_library(ubc_cool_measurement SHARED tools/world/cool_measurement.cpp)
+    target_include_directories(ubc_cool_measurement PRIVATE include)
 endif()
 enable_testing()
 add_test(NAME core COMMAND ubc_core_tests)
@@ -44,330 +44,1037 @@ add_test(NAME selection_session COMMAND ubc_selection_session_tests)
 add_test(NAME selection_stock COMMAND ubc_selection_stock_tests)
 add_test(NAME selection_snapshot COMMAND ubc_selection_snapshot_tests)
 
-foreach(unit player_engine batch_session batch_menu amount_patch batch_result recipe_catalog recipe_material recipe_result
-    recipe_runtime recipe_session recipe_menu recipe_navigation recipe_handoff recipe_snapshot
-    station_recipe_catalog station_recipe_material station_recipe_navigation station_recipe_result
-    station_recipe_runtime station_recipe_snapshot post_remove_choice
-    crafting_catalog recipe_family_table tobacco_recipe crafting_session crafting_menu crafting_ui_diagnostics grind_ui_readiness crafting_handoff crafting_result ammo_presentation ammo_runtime alchemy_flask_debit station_end_contract alchemy_recipe_catalog alchemy_flask_runtime
-    alchemy_extra_snapshot alchemy_extra_result alchemy_extra_navigation alchemy_extra_execution
-    alchemy_extra_dependencies alchemy_extra_dependency_reader alchemy_extra_end_snapshot crafting_alchemy_extra_reader vob_locator_compat vob_inventory_insert_compat zbug_end_compat
-    anvil_recipe_catalog anvil_recipe_runtime anvil_recipe_navigation anvil_recipe_snapshot
-    ore_recipe_catalog ore_recipe_runtime ore_recipe_navigation ore_recipe_snapshot mixed_hotsteel
-    spirit_recipe_catalog spirit_recipe_runtime spirit_recipe_navigation spirit_recipe_snapshot
-    spirit_execution spirit_result spirit_end_snapshot spirit_crafting_reader crafting_spirit_projection crafting_bow_projection crafting_bow_execution
-    bow_recipe_catalog bow_recipe_runtime bow_recipe_navigation bow_recipe_snapshot
-    bow_item_path bow_item_code bow_item_native bow_item_renderer bow_item_runtime grind_recipe_plan grind_recipe_material grind_recipe_snapshot grind_item_binding grind_item_path grind_item_runtime grind_preview_batch grind_zbug_unpack grind_destroy_observation grind_guild_snapshot grind_recipe_runtime grind_recipe_navigation cool_recipe_plan cool_recipe_runtime cool_recipe_snapshot cool_recipe_navigation cool_recipe_facts cool_parser_prefix cool_hotblade_debit cool_predebit_contract cool_predebit_reader cool_nofx_reader cool_message_malloc_reader cool_direct_contract cool_actor_preview destroy_remove_callsite cool_native_path cool_destroy_dispatch cool_destroy_observation)
-  add_executable(ubc_${unit}_tests tests/${unit}_tests.cpp)
-  target_include_directories(ubc_${unit}_tests PRIVATE include)
-  add_test(NAME ${unit} COMMAND ubc_${unit}_tests)
-  if(WIN32)
-    set_property(TARGET ubc_${unit}_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-    target_compile_options(ubc_${unit}_tests PRIVATE /W4 /WX)
-    target_link_options(ubc_${unit}_tests PRIVATE /Brepro /INCREMENTAL:NO)
-  else()
-    target_compile_options(ubc_${unit}_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  endif()
+foreach(
+    unit
+    player_engine
+    batch_session
+    batch_menu
+    amount_patch
+    batch_result
+    recipe_catalog
+    recipe_material
+    recipe_result
+    recipe_runtime
+    recipe_session
+    recipe_menu
+    recipe_navigation
+    recipe_handoff
+    recipe_snapshot
+    station_recipe_catalog
+    station_recipe_material
+    station_recipe_navigation
+    station_recipe_result
+    station_recipe_runtime
+    station_recipe_snapshot
+    post_remove_choice
+    crafting_catalog
+    recipe_family_table
+    tobacco_recipe
+    crafting_session
+    crafting_menu
+    crafting_ui_diagnostics
+    grind_ui_readiness
+    crafting_handoff
+    crafting_result
+    ammo_presentation
+    ammo_runtime
+    alchemy_flask_debit
+    station_end_contract
+    alchemy_recipe_catalog
+    alchemy_flask_runtime
+    alchemy_extra_snapshot
+    alchemy_extra_result
+    alchemy_extra_navigation
+    alchemy_extra_execution
+    alchemy_extra_dependencies
+    alchemy_extra_dependency_reader
+    alchemy_extra_end_snapshot
+    crafting_alchemy_extra_reader
+    vob_locator_compat
+    vob_inventory_insert_compat
+    zbug_end_compat
+    anvil_recipe_catalog
+    anvil_recipe_runtime
+    anvil_recipe_navigation
+    anvil_recipe_snapshot
+    ore_recipe_catalog
+    ore_recipe_runtime
+    ore_recipe_navigation
+    ore_recipe_snapshot
+    mixed_hotsteel
+    spirit_recipe_catalog
+    spirit_recipe_runtime
+    spirit_recipe_navigation
+    spirit_recipe_snapshot
+    spirit_execution
+    spirit_result
+    spirit_end_snapshot
+    spirit_crafting_reader
+    crafting_spirit_projection
+    crafting_bow_projection
+    crafting_bow_execution
+    bow_recipe_catalog
+    bow_recipe_runtime
+    bow_recipe_navigation
+    bow_recipe_snapshot
+    bow_item_path
+    bow_item_code
+    bow_item_native
+    bow_item_renderer
+    bow_item_runtime
+    grind_recipe_plan
+    grind_recipe_material
+    grind_recipe_snapshot
+    grind_item_binding
+    grind_item_path
+    grind_item_runtime
+    grind_preview_batch
+    grind_zbug_unpack
+    grind_destroy_observation
+    grind_guild_snapshot
+    grind_recipe_runtime
+    grind_recipe_navigation
+    cool_recipe_plan
+    cool_recipe_runtime
+    cool_recipe_snapshot
+    cool_recipe_navigation
+    cool_recipe_facts
+    cool_parser_prefix
+    cool_hotblade_debit
+    cool_predebit_contract
+    cool_predebit_reader
+    cool_nofx_reader
+    cool_message_malloc_reader
+    cool_direct_contract
+    cool_actor_preview
+    destroy_remove_callsite
+    cool_native_path
+    cool_destroy_dispatch
+    cool_destroy_observation
+)
+    add_executable(ubc_${unit}_tests tests/${unit}_tests.cpp)
+    target_include_directories(ubc_${unit}_tests PRIVATE include)
+    add_test(NAME ${unit} COMMAND ubc_${unit}_tests)
+    if(WIN32)
+        set_property(
+            TARGET ubc_${unit}_tests
+            PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+        )
+        target_compile_options(ubc_${unit}_tests PRIVATE /W4 /WX)
+        target_link_options(ubc_${unit}_tests PRIVATE /Brepro /INCREMENTAL:NO)
+    else()
+        target_compile_options(
+            ubc_${unit}_tests
+            PRIVATE -Wall -Wextra -Wpedantic -Werror
+        )
+    endif()
 endforeach()
-set_tests_properties(recipe_family_table PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+set_tests_properties(
+    recipe_family_table
+    PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+)
 
-add_executable(ubc_native_crafting_ui_tests tests/native_crafting_ui_tests.cpp src/ui/native_crafting_ui.cpp)
+add_executable(
+    ubc_native_crafting_ui_tests
+    tests/native_crafting_ui_tests.cpp
+    src/ui/native_crafting_ui.cpp
+)
 target_include_directories(ubc_native_crafting_ui_tests PRIVATE include)
 add_test(NAME native_crafting_ui COMMAND ubc_native_crafting_ui_tests)
 if(WIN32)
-  target_sources(ubc_native_crafting_ui_tests PRIVATE src/ui/native_selection_ui.cpp)
-  set_property(TARGET ubc_native_crafting_ui_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  target_compile_definitions(ubc_native_crafting_ui_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_native_crafting_ui_tests PRIVATE user32)
-  target_compile_options(ubc_native_crafting_ui_tests PRIVATE /W4 /WX)
+    target_sources(
+        ubc_native_crafting_ui_tests
+        PRIVATE src/ui/native_selection_ui.cpp
+    )
+    set_property(
+        TARGET ubc_native_crafting_ui_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    target_compile_definitions(
+        ubc_native_crafting_ui_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_native_crafting_ui_tests PRIVATE user32)
+    target_compile_options(ubc_native_crafting_ui_tests PRIVATE /W4 /WX)
 else()
-  target_compile_options(ubc_native_crafting_ui_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(
+        ubc_native_crafting_ui_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
 endif()
 
-add_executable(ubc_crafting_spirit_shared_tests tests/crafting_spirit_shared_tests.cpp src/ui/native_crafting_ui.cpp)
+add_executable(
+    ubc_crafting_spirit_shared_tests
+    tests/crafting_spirit_shared_tests.cpp
+    src/ui/native_crafting_ui.cpp
+)
 target_include_directories(ubc_crafting_spirit_shared_tests PRIVATE include)
 add_test(NAME crafting_spirit_shared COMMAND ubc_crafting_spirit_shared_tests)
 if(WIN32)
-  target_sources(ubc_crafting_spirit_shared_tests PRIVATE src/ui/native_selection_ui.cpp)
-  set_property(TARGET ubc_crafting_spirit_shared_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  target_compile_definitions(ubc_crafting_spirit_shared_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_crafting_spirit_shared_tests PRIVATE user32)
-  target_compile_options(ubc_crafting_spirit_shared_tests PRIVATE /W4 /WX)
+    target_sources(
+        ubc_crafting_spirit_shared_tests
+        PRIVATE src/ui/native_selection_ui.cpp
+    )
+    set_property(
+        TARGET ubc_crafting_spirit_shared_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    target_compile_definitions(
+        ubc_crafting_spirit_shared_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_crafting_spirit_shared_tests PRIVATE user32)
+    target_compile_options(ubc_crafting_spirit_shared_tests PRIVATE /W4 /WX)
 else()
-  target_compile_options(ubc_crafting_spirit_shared_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(
+        ubc_crafting_spirit_shared_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
 endif()
 
-add_executable(ubc_crafting_cool_shared_tests tests/crafting_cool_shared_tests.cpp src/ui/native_crafting_ui.cpp)
+add_executable(
+    ubc_crafting_cool_shared_tests
+    tests/crafting_cool_shared_tests.cpp
+    src/ui/native_crafting_ui.cpp
+)
 target_include_directories(ubc_crafting_cool_shared_tests PRIVATE include)
 add_test(NAME crafting_cool_shared COMMAND ubc_crafting_cool_shared_tests)
 if(WIN32)
-  target_sources(ubc_crafting_cool_shared_tests PRIVATE src/ui/native_selection_ui.cpp)
-  set_property(TARGET ubc_crafting_cool_shared_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  target_compile_definitions(ubc_crafting_cool_shared_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_crafting_cool_shared_tests PRIVATE user32)
-  target_compile_options(ubc_crafting_cool_shared_tests PRIVATE /W4 /WX)
+    target_sources(
+        ubc_crafting_cool_shared_tests
+        PRIVATE src/ui/native_selection_ui.cpp
+    )
+    set_property(
+        TARGET ubc_crafting_cool_shared_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    target_compile_definitions(
+        ubc_crafting_cool_shared_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_crafting_cool_shared_tests PRIVATE user32)
+    target_compile_options(ubc_crafting_cool_shared_tests PRIVATE /W4 /WX)
 else()
-  target_compile_options(ubc_crafting_cool_shared_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(
+        ubc_crafting_cool_shared_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
 endif()
 
-add_executable(ubc_crafting_grind_shared_tests tests/crafting_grind_shared_tests.cpp src/ui/native_crafting_ui.cpp)
+add_executable(
+    ubc_crafting_grind_shared_tests
+    tests/crafting_grind_shared_tests.cpp
+    src/ui/native_crafting_ui.cpp
+)
 target_include_directories(ubc_crafting_grind_shared_tests PRIVATE include)
 add_test(NAME crafting_grind_shared COMMAND ubc_crafting_grind_shared_tests)
 if(WIN32)
-  target_sources(ubc_crafting_grind_shared_tests PRIVATE src/ui/native_selection_ui.cpp)
-  set_property(TARGET ubc_crafting_grind_shared_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  target_compile_definitions(ubc_crafting_grind_shared_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_crafting_grind_shared_tests PRIVATE user32)
-  target_compile_options(ubc_crafting_grind_shared_tests PRIVATE /W4 /WX)
+    target_sources(
+        ubc_crafting_grind_shared_tests
+        PRIVATE src/ui/native_selection_ui.cpp
+    )
+    set_property(
+        TARGET ubc_crafting_grind_shared_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    target_compile_definitions(
+        ubc_crafting_grind_shared_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_crafting_grind_shared_tests PRIVATE user32)
+    target_compile_options(ubc_crafting_grind_shared_tests PRIVATE /W4 /WX)
 else()
-  target_compile_options(ubc_crafting_grind_shared_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(
+        ubc_crafting_grind_shared_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
 endif()
 
-option(UBC_SANITIZE "AddressSanitizer und UndefinedBehaviorSanitizer aktivieren" OFF)
+option(
+    UBC_SANITIZE
+    "AddressSanitizer und UndefinedBehaviorSanitizer aktivieren"
+    OFF
+)
 if(UBC_SANITIZE AND NOT WIN32)
-  target_compile_options(ubc_core_tests PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-  target_link_options(ubc_core_tests PRIVATE -fsanitize=address,undefined)
-  target_compile_options(ubc_sha256_tests PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-  target_link_options(ubc_sha256_tests PRIVATE -fsanitize=address,undefined)
-  target_compile_options(ubc_menu_model_tests PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-  target_link_options(ubc_menu_model_tests PRIVATE -fsanitize=address,undefined)
-  foreach(target ubc_station_snapshot_tests ubc_runtime_script_tests ubc_hand_snapshot_tests ubc_info_snapshot_tests ubc_packed_inventory_tests ubc_selection_session_tests ubc_selection_stock_tests ubc_selection_snapshot_tests ubc_batch_session_tests ubc_batch_menu_tests ubc_amount_patch_tests ubc_batch_result_tests ubc_recipe_catalog_tests ubc_recipe_material_tests ubc_recipe_result_tests
-      ubc_recipe_runtime_tests ubc_recipe_session_tests ubc_recipe_menu_tests ubc_recipe_navigation_tests
-      ubc_recipe_handoff_tests ubc_recipe_snapshot_tests ubc_station_recipe_catalog_tests
-      ubc_station_recipe_material_tests ubc_station_recipe_navigation_tests ubc_station_recipe_result_tests
-      ubc_station_recipe_runtime_tests ubc_station_recipe_snapshot_tests ubc_post_remove_choice_tests
-      ubc_crafting_catalog_tests ubc_recipe_family_table_tests ubc_tobacco_recipe_tests ubc_crafting_session_tests ubc_crafting_menu_tests ubc_crafting_ui_diagnostics_tests ubc_grind_ui_readiness_tests
-      ubc_crafting_handoff_tests ubc_crafting_result_tests ubc_ammo_presentation_tests ubc_ammo_runtime_tests ubc_alchemy_flask_debit_tests ubc_native_crafting_ui_tests ubc_station_end_contract_tests ubc_alchemy_recipe_catalog_tests ubc_alchemy_flask_runtime_tests
-      ubc_alchemy_extra_snapshot_tests ubc_alchemy_extra_result_tests ubc_alchemy_extra_navigation_tests ubc_alchemy_extra_execution_tests
-      ubc_alchemy_extra_dependencies_tests ubc_alchemy_extra_dependency_reader_tests ubc_alchemy_extra_end_snapshot_tests ubc_crafting_alchemy_extra_reader_tests ubc_vob_locator_compat_tests ubc_vob_inventory_insert_compat_tests ubc_zbug_end_compat_tests
-      ubc_anvil_recipe_catalog_tests ubc_anvil_recipe_runtime_tests ubc_anvil_recipe_navigation_tests ubc_anvil_recipe_snapshot_tests
-      ubc_ore_recipe_catalog_tests ubc_ore_recipe_runtime_tests ubc_ore_recipe_navigation_tests ubc_ore_recipe_snapshot_tests ubc_mixed_hotsteel_tests
-      ubc_spirit_recipe_catalog_tests ubc_spirit_recipe_runtime_tests ubc_spirit_recipe_navigation_tests ubc_spirit_recipe_snapshot_tests
-      ubc_spirit_execution_tests ubc_spirit_result_tests ubc_spirit_end_snapshot_tests ubc_spirit_crafting_reader_tests ubc_crafting_spirit_projection_tests ubc_crafting_bow_projection_tests ubc_crafting_bow_execution_tests ubc_crafting_spirit_shared_tests
-      ubc_bow_recipe_catalog_tests ubc_bow_recipe_runtime_tests ubc_bow_recipe_navigation_tests ubc_bow_recipe_snapshot_tests
-      ubc_bow_item_path_tests ubc_bow_item_code_tests ubc_bow_item_native_tests ubc_bow_item_renderer_tests ubc_bow_item_runtime_tests ubc_grind_recipe_plan_tests ubc_grind_recipe_material_tests ubc_grind_recipe_snapshot_tests ubc_grind_item_binding_tests ubc_grind_item_path_tests ubc_grind_item_runtime_tests ubc_grind_preview_batch_tests ubc_grind_zbug_unpack_tests ubc_grind_destroy_observation_tests ubc_grind_guild_snapshot_tests ubc_grind_recipe_runtime_tests ubc_grind_recipe_navigation_tests ubc_cool_recipe_plan_tests ubc_cool_recipe_runtime_tests ubc_cool_recipe_snapshot_tests ubc_cool_recipe_navigation_tests ubc_cool_recipe_facts_tests ubc_cool_parser_prefix_tests ubc_cool_hotblade_debit_tests ubc_cool_predebit_contract_tests ubc_cool_predebit_reader_tests ubc_cool_nofx_reader_tests ubc_cool_message_malloc_reader_tests ubc_cool_direct_contract_tests ubc_cool_actor_preview_tests ubc_destroy_remove_callsite_tests ubc_cool_native_path_tests ubc_cool_destroy_dispatch_tests ubc_cool_destroy_observation_tests ubc_crafting_cool_shared_tests ubc_crafting_grind_shared_tests)
-    target_compile_options(${target} PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-    target_link_options(${target} PRIVATE -fsanitize=address,undefined)
-  endforeach()
+    target_compile_options(
+        ubc_core_tests
+        PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer
+    )
+    target_link_options(ubc_core_tests PRIVATE -fsanitize=address,undefined)
+    target_compile_options(
+        ubc_sha256_tests
+        PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer
+    )
+    target_link_options(ubc_sha256_tests PRIVATE -fsanitize=address,undefined)
+    target_compile_options(
+        ubc_menu_model_tests
+        PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer
+    )
+    target_link_options(
+        ubc_menu_model_tests
+        PRIVATE -fsanitize=address,undefined
+    )
+    foreach(
+        target
+        ubc_station_snapshot_tests
+        ubc_runtime_script_tests
+        ubc_hand_snapshot_tests
+        ubc_info_snapshot_tests
+        ubc_packed_inventory_tests
+        ubc_selection_session_tests
+        ubc_selection_stock_tests
+        ubc_selection_snapshot_tests
+        ubc_batch_session_tests
+        ubc_batch_menu_tests
+        ubc_amount_patch_tests
+        ubc_batch_result_tests
+        ubc_recipe_catalog_tests
+        ubc_recipe_material_tests
+        ubc_recipe_result_tests
+        ubc_recipe_runtime_tests
+        ubc_recipe_session_tests
+        ubc_recipe_menu_tests
+        ubc_recipe_navigation_tests
+        ubc_recipe_handoff_tests
+        ubc_recipe_snapshot_tests
+        ubc_station_recipe_catalog_tests
+        ubc_station_recipe_material_tests
+        ubc_station_recipe_navigation_tests
+        ubc_station_recipe_result_tests
+        ubc_station_recipe_runtime_tests
+        ubc_station_recipe_snapshot_tests
+        ubc_post_remove_choice_tests
+        ubc_crafting_catalog_tests
+        ubc_recipe_family_table_tests
+        ubc_tobacco_recipe_tests
+        ubc_crafting_session_tests
+        ubc_crafting_menu_tests
+        ubc_crafting_ui_diagnostics_tests
+        ubc_grind_ui_readiness_tests
+        ubc_crafting_handoff_tests
+        ubc_crafting_result_tests
+        ubc_ammo_presentation_tests
+        ubc_ammo_runtime_tests
+        ubc_alchemy_flask_debit_tests
+        ubc_native_crafting_ui_tests
+        ubc_station_end_contract_tests
+        ubc_alchemy_recipe_catalog_tests
+        ubc_alchemy_flask_runtime_tests
+        ubc_alchemy_extra_snapshot_tests
+        ubc_alchemy_extra_result_tests
+        ubc_alchemy_extra_navigation_tests
+        ubc_alchemy_extra_execution_tests
+        ubc_alchemy_extra_dependencies_tests
+        ubc_alchemy_extra_dependency_reader_tests
+        ubc_alchemy_extra_end_snapshot_tests
+        ubc_crafting_alchemy_extra_reader_tests
+        ubc_vob_locator_compat_tests
+        ubc_vob_inventory_insert_compat_tests
+        ubc_zbug_end_compat_tests
+        ubc_anvil_recipe_catalog_tests
+        ubc_anvil_recipe_runtime_tests
+        ubc_anvil_recipe_navigation_tests
+        ubc_anvil_recipe_snapshot_tests
+        ubc_ore_recipe_catalog_tests
+        ubc_ore_recipe_runtime_tests
+        ubc_ore_recipe_navigation_tests
+        ubc_ore_recipe_snapshot_tests
+        ubc_mixed_hotsteel_tests
+        ubc_spirit_recipe_catalog_tests
+        ubc_spirit_recipe_runtime_tests
+        ubc_spirit_recipe_navigation_tests
+        ubc_spirit_recipe_snapshot_tests
+        ubc_spirit_execution_tests
+        ubc_spirit_result_tests
+        ubc_spirit_end_snapshot_tests
+        ubc_spirit_crafting_reader_tests
+        ubc_crafting_spirit_projection_tests
+        ubc_crafting_bow_projection_tests
+        ubc_crafting_bow_execution_tests
+        ubc_crafting_spirit_shared_tests
+        ubc_bow_recipe_catalog_tests
+        ubc_bow_recipe_runtime_tests
+        ubc_bow_recipe_navigation_tests
+        ubc_bow_recipe_snapshot_tests
+        ubc_bow_item_path_tests
+        ubc_bow_item_code_tests
+        ubc_bow_item_native_tests
+        ubc_bow_item_renderer_tests
+        ubc_bow_item_runtime_tests
+        ubc_grind_recipe_plan_tests
+        ubc_grind_recipe_material_tests
+        ubc_grind_recipe_snapshot_tests
+        ubc_grind_item_binding_tests
+        ubc_grind_item_path_tests
+        ubc_grind_item_runtime_tests
+        ubc_grind_preview_batch_tests
+        ubc_grind_zbug_unpack_tests
+        ubc_grind_destroy_observation_tests
+        ubc_grind_guild_snapshot_tests
+        ubc_grind_recipe_runtime_tests
+        ubc_grind_recipe_navigation_tests
+        ubc_cool_recipe_plan_tests
+        ubc_cool_recipe_runtime_tests
+        ubc_cool_recipe_snapshot_tests
+        ubc_cool_recipe_navigation_tests
+        ubc_cool_recipe_facts_tests
+        ubc_cool_parser_prefix_tests
+        ubc_cool_hotblade_debit_tests
+        ubc_cool_predebit_contract_tests
+        ubc_cool_predebit_reader_tests
+        ubc_cool_nofx_reader_tests
+        ubc_cool_message_malloc_reader_tests
+        ubc_cool_direct_contract_tests
+        ubc_cool_actor_preview_tests
+        ubc_destroy_remove_callsite_tests
+        ubc_cool_native_path_tests
+        ubc_cool_destroy_dispatch_tests
+        ubc_cool_destroy_observation_tests
+        ubc_crafting_cool_shared_tests
+        ubc_crafting_grind_shared_tests
+    )
+        target_compile_options(
+            ${target}
+            PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer
+        )
+        target_link_options(${target} PRIVATE -fsanitize=address,undefined)
+    endforeach()
 endif()
 
 if(WIN32)
-  if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
-    message(FATAL_ERROR "Die Gothic-DLL benötigt Windows x86 (32 Bit).")
-  endif()
-  set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
-  set_property(TARGET ubc_core_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  set_property(TARGET ubc_sha256_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  set_property(TARGET ubc_menu_model_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  set_property(TARGET ubc_station_snapshot_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  set_property(TARGET ubc_runtime_script_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  set_property(TARGET ubc_hand_snapshot_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  set_property(TARGET ubc_info_snapshot_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  set_property(TARGET ubc_packed_inventory_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  set_property(TARGET ubc_selection_session_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  set_property(TARGET ubc_selection_stock_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  set_property(TARGET ubc_selection_snapshot_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  add_library(UnionBatchCraftingProbe SHARED src/probes/probe.cpp src/probes/probe.def)
-  target_include_directories(UnionBatchCraftingProbe PRIVATE include)
-  target_compile_definitions(UnionBatchCraftingProbe PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(UnionBatchCraftingProbe PRIVATE kernel32)
-  add_executable(ubc_probe_host tests/probe_host.cpp)
-  target_compile_definitions(ubc_probe_host PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_probe_host PRIVATE kernel32)
-  add_library(UnionBatchCraftingMenuProbe SHARED src/probes/native_menu_probe.cpp src/probes/native_menu_probe.def)
-  target_include_directories(UnionBatchCraftingMenuProbe PRIVATE include)
-  target_compile_definitions(UnionBatchCraftingMenuProbe PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(UnionBatchCraftingMenuProbe PRIVATE kernel32 user32)
-  add_executable(ubc_menu_probe_host tests/menu_probe_host.cpp)
-  target_compile_definitions(ubc_menu_probe_host PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_menu_probe_host PRIVATE kernel32)
-  add_library(UnionBatchCraftingStationProbe SHARED src/probes/native_station_probe.cpp src/probes/native_station_probe.def)
-  target_include_directories(UnionBatchCraftingStationProbe PRIVATE include)
-  target_compile_definitions(UnionBatchCraftingStationProbe PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(UnionBatchCraftingStationProbe PRIVATE kernel32)
-  add_library(UnionBatchCraftingSelectionProbe SHARED src/probes/native_selection_probe.cpp
-    src/probes/native_selection_probe.def src/ui/native_selection_ui.cpp src/bridges/frame_bridge.cpp)
-  target_include_directories(UnionBatchCraftingSelectionProbe PRIVATE include)
-  target_compile_definitions(UnionBatchCraftingSelectionProbe PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(UnionBatchCraftingSelectionProbe PRIVATE kernel32 user32)
-  add_library(UnionBatchCrafting SHARED src/probes/native_batch_probe.cpp src/probes/native_batch_probe.def
-    src/ui/native_batch_ui.cpp src/ui/native_selection_ui.cpp src/bridges/frame_bridge.cpp src/bridges/batch_call_bridge.cpp)
-  target_include_directories(UnionBatchCrafting PRIVATE include)
-  target_compile_definitions(UnionBatchCrafting PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(UnionBatchCrafting PRIVATE kernel32 user32)
-  target_compile_options(UnionBatchCrafting PRIVATE /W4 /WX)
-  target_link_options(UnionBatchCrafting PRIVATE /Brepro /INCREMENTAL:NO)
-  add_library(UnionBatchCraftingRecipes SHARED src/probes/native_recipe_probe.cpp src/probes/native_recipe_probe.def
-    src/ui/native_recipe_ui.cpp src/ui/native_selection_ui.cpp src/bridges/frame_bridge.cpp src/bridges/batch_call_bridge.cpp)
-  target_include_directories(UnionBatchCraftingRecipes PRIVATE include)
-  target_compile_definitions(UnionBatchCraftingRecipes PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(UnionBatchCraftingRecipes PRIVATE kernel32 user32)
-  target_compile_options(UnionBatchCraftingRecipes PRIVATE /W4 /WX)
-  target_link_options(UnionBatchCraftingRecipes PRIVATE /Brepro /INCREMENTAL:NO)
-  set(crafting_runtime_sources
-    src/plugin/native_crafting.cpp
-    src/plugin/crafting/state.cpp src/plugin/crafting/context.cpp src/plugin/crafting/player_contracts.cpp src/plugin/crafting/stations.cpp
-    src/plugin/crafting/cooling.cpp src/plugin/crafting/grinding.cpp src/plugin/crafting/diagnostics.cpp
-    src/plugin/crafting/handoff.cpp src/plugin/crafting/menu.cpp src/plugin/crafting/amount.cpp
-    src/plugin/crafting/tobacco.cpp src/plugin/crafting/hooks.cpp)
-  function(add_crafting_plugin target resource)
-    add_library(${target} SHARED ${crafting_runtime_sources} src/plugin/native_crafting.def ${resource}
-    src/ui/native_crafting_ui.cpp src/ui/native_selection_ui.cpp src/bridges/frame_bridge.cpp src/bridges/batch_call_bridge.cpp
-    src/plugin/native_crafting_ammo.cpp src/bridges/ammo_presentation_bridge.cpp
-    src/writers/alchemy_extra_writer.cpp src/bridges/alchemy_flask_debit_bridge.cpp src/bridges/cool_predebit_bridge.cpp
-    src/writers/spirit_writer.cpp src/bridges/spirit_flask_debit_bridge.cpp)
-    target_include_directories(${target} PRIVATE include)
-    target_compile_definitions(${target} PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-    target_link_libraries(${target} PRIVATE kernel32 user32)
-    target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/W4;/WX>")
-    target_link_options(${target} PRIVATE /Brepro /INCREMENTAL:NO)
-  endfunction()
-  option(UBC_COOL_WORLD_TEST "Getrennter Build für das Kühl-Welttestpaket" OFF)
-  add_crafting_plugin(UnionBatchCraftingExtended src/plugin/native_crafting.rc)
-  add_crafting_plugin(UnionBatchCraftingPlayer src/plugin/player.rc)
-  target_compile_definitions(UnionBatchCraftingPlayer PRIVATE UBC_PLAYER_RELEASE)
-  set_target_properties(UnionBatchCraftingPlayer PROPERTIES
-    OUTPUT_NAME UnionBatchCraftingExtended
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/player"
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/player")
-  add_executable(ubc_crafting_effect_guard_tests tests/crafting_effect_guard_tests.cpp
-    src/ui/native_crafting_ui.cpp src/ui/native_selection_ui.cpp src/bridges/frame_bridge.cpp src/bridges/batch_call_bridge.cpp
-    src/writers/alchemy_extra_writer.cpp src/bridges/alchemy_flask_debit_bridge.cpp src/bridges/cool_predebit_bridge.cpp
-    src/writers/spirit_writer.cpp src/bridges/spirit_flask_debit_bridge.cpp)
-  target_include_directories(ubc_crafting_effect_guard_tests PRIVATE include)
-  target_compile_definitions(ubc_crafting_effect_guard_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_crafting_effect_guard_tests PRIVATE kernel32 user32)
-  target_compile_options(ubc_crafting_effect_guard_tests PRIVATE /W4 /WX)
-  target_link_options(ubc_crafting_effect_guard_tests PRIVATE /Brepro /INCREMENTAL:NO)
-  add_executable(ubc_native_crafting_ammo_tests tests/native_crafting_ammo_tests.cpp src/bridges/ammo_presentation_bridge.cpp)
-  target_include_directories(ubc_native_crafting_ammo_tests PRIVATE include src)
-  target_compile_definitions(ubc_native_crafting_ammo_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_native_crafting_ammo_tests PRIVATE kernel32)
-  target_compile_options(ubc_native_crafting_ammo_tests PRIVATE /W4 /WX)
-  target_link_options(ubc_native_crafting_ammo_tests PRIVATE /Brepro /INCREMENTAL:NO)
-  add_executable(ubc_crafting_probe_host tests/crafting_probe_host.cpp)
-  target_compile_definitions(ubc_crafting_probe_host PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_crafting_probe_host PRIVATE kernel32)
-  target_compile_options(ubc_crafting_probe_host PRIVATE /W4 /WX)
-  target_link_options(ubc_crafting_probe_host PRIVATE /Brepro /INCREMENTAL:NO)
-  add_executable(ubc_recipe_probe_host tests/recipe_probe_host.cpp)
-  target_compile_definitions(ubc_recipe_probe_host PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_recipe_probe_host PRIVATE kernel32)
-  target_compile_options(ubc_recipe_probe_host PRIVATE /W4 /WX)
-  target_link_options(ubc_recipe_probe_host PRIVATE /Brepro /INCREMENTAL:NO)
-  add_executable(ubc_recipe_effect_guard_tests tests/recipe_effect_guard_tests.cpp
-    src/ui/native_recipe_ui.cpp src/ui/native_selection_ui.cpp src/bridges/frame_bridge.cpp src/bridges/batch_call_bridge.cpp)
-  target_include_directories(ubc_recipe_effect_guard_tests PRIVATE include)
-  target_compile_definitions(ubc_recipe_effect_guard_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_recipe_effect_guard_tests PRIVATE kernel32 user32)
-  target_compile_options(ubc_recipe_effect_guard_tests PRIVATE /W4 /WX)
-  target_link_options(ubc_recipe_effect_guard_tests PRIVATE /Brepro /INCREMENTAL:NO)
-  add_executable(ubc_batch_call_bridge_tests tests/batch_call_bridge_tests.cpp src/bridges/batch_call_bridge.cpp)
-  target_include_directories(ubc_batch_call_bridge_tests PRIVATE include)
-  target_compile_definitions(ubc_batch_call_bridge_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_batch_call_bridge_tests PRIVATE kernel32)
-  target_compile_options(ubc_batch_call_bridge_tests PRIVATE /W4 /WX)
-  target_link_options(ubc_batch_call_bridge_tests PRIVATE /Brepro /INCREMENTAL:NO)
-  add_executable(ubc_ammo_presentation_bridge_tests tests/ammo_presentation_bridge_tests.cpp src/bridges/ammo_presentation_bridge.cpp)
-  target_include_directories(ubc_ammo_presentation_bridge_tests PRIVATE include src)
-  target_compile_definitions(ubc_ammo_presentation_bridge_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_ammo_presentation_bridge_tests PRIVATE kernel32)
-  target_compile_options(ubc_ammo_presentation_bridge_tests PRIVATE /W4 /WX)
-  target_link_options(ubc_ammo_presentation_bridge_tests PRIVATE /Brepro /INCREMENTAL:NO)
-  add_executable(ubc_alchemy_flask_debit_bridge_tests tests/alchemy_flask_debit_bridge_tests.cpp src/bridges/alchemy_flask_debit_bridge.cpp)
-  target_include_directories(ubc_alchemy_flask_debit_bridge_tests PRIVATE include src)
-  target_compile_definitions(ubc_alchemy_flask_debit_bridge_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_alchemy_flask_debit_bridge_tests PRIVATE kernel32)
-  target_compile_options(ubc_alchemy_flask_debit_bridge_tests PRIVATE /W4 /WX)
-  target_link_options(ubc_alchemy_flask_debit_bridge_tests PRIVATE /Brepro /INCREMENTAL:NO)
-  # Offline integration for Lager2/N2. Deliberately omit the plugin link until EndFence/Reader are available.
-  add_executable(ubc_cool_hotblade_debit_bridge_tests tests/cool_hotblade_debit_bridge_tests.cpp src/bridges/cool_hotblade_debit_bridge.cpp)
-  target_include_directories(ubc_cool_hotblade_debit_bridge_tests PRIVATE include src)
-  target_compile_definitions(ubc_cool_hotblade_debit_bridge_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_cool_hotblade_debit_bridge_tests PRIVATE kernel32)
-  target_compile_options(ubc_cool_hotblade_debit_bridge_tests PRIVATE /W4 /WX)
-  target_link_options(ubc_cool_hotblade_debit_bridge_tests PRIVATE /Brepro /INCREMENTAL:NO)
-  add_library(ubc_cool_predebit_test_host SHARED tests/cool_predebit_bridge_tests.cpp tests/cool_predebit_native_host.cpp
-    src/ui/native_crafting_ui.cpp src/ui/native_selection_ui.cpp src/bridges/frame_bridge.cpp src/bridges/batch_call_bridge.cpp
-    src/plugin/native_crafting_ammo.cpp src/bridges/ammo_presentation_bridge.cpp src/writers/alchemy_extra_writer.cpp
-    src/bridges/alchemy_flask_debit_bridge.cpp src/bridges/cool_predebit_bridge.cpp src/writers/spirit_writer.cpp src/bridges/spirit_flask_debit_bridge.cpp)
-  target_include_directories(ubc_cool_predebit_test_host PRIVATE include src)
-  target_compile_definitions(ubc_cool_predebit_test_host PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX UBC_COOL_PREDEBIT_HOST_TEST)
-  target_link_libraries(ubc_cool_predebit_test_host PRIVATE kernel32 user32)
-  target_compile_options(ubc_cool_predebit_test_host PRIVATE /W4 /WX)
-  target_link_options(ubc_cool_predebit_test_host PRIVATE /Brepro /INCREMENTAL:NO /BASE:0x54000000)
-  # The test executable owns the fixed call pages at load time. As in
-  # the plugin, the actual adapter functions reside outside this image.
-  add_executable(ubc_cool_predebit_bridge_tests tests/cool_predebit_host_main.cpp)
-  target_link_libraries(ubc_cool_predebit_bridge_tests PRIVATE ubc_cool_predebit_test_host)
-  target_compile_options(ubc_cool_predebit_bridge_tests PRIVATE /W4 /WX)
-  target_link_options(ubc_cool_predebit_bridge_tests PRIVATE /Brepro /INCREMENTAL:NO /FIXED /DYNAMICBASE:NO /BASE:0x00500000)
-  add_executable(ubc_alchemy_extra_writer_tests tests/alchemy_extra_writer_tests.cpp src/writers/alchemy_extra_writer.cpp src/bridges/alchemy_flask_debit_bridge.cpp)
-  target_include_directories(ubc_alchemy_extra_writer_tests PRIVATE include src)
-  target_compile_definitions(ubc_alchemy_extra_writer_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX UBC_ALCHEMY_EXTRA_HOST_TEST)
-  target_link_libraries(ubc_alchemy_extra_writer_tests PRIVATE kernel32)
-  target_compile_options(ubc_alchemy_extra_writer_tests PRIVATE /W4 /WX)
-  target_link_options(ubc_alchemy_extra_writer_tests PRIVATE /Brepro /INCREMENTAL:NO)
-  add_executable(ubc_spirit_writer_tests tests/spirit_writer_tests.cpp src/writers/spirit_writer.cpp src/bridges/spirit_flask_debit_bridge.cpp)
-  target_include_directories(ubc_spirit_writer_tests PRIVATE include src)
-  target_compile_definitions(ubc_spirit_writer_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX UBC_SPIRIT_HOST_TEST)
-  target_link_libraries(ubc_spirit_writer_tests PRIVATE kernel32)
-  target_compile_options(ubc_spirit_writer_tests PRIVATE /W4 /WX)
-  target_link_options(ubc_spirit_writer_tests PRIVATE /Brepro /INCREMENTAL:NO)
-  add_executable(ubc_windows_destroy_remove_callsite_tests tests/windows_destroy_remove_callsite_tests.cpp)
-  target_include_directories(ubc_windows_destroy_remove_callsite_tests PRIVATE include)
-  target_compile_definitions(ubc_windows_destroy_remove_callsite_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_windows_destroy_remove_callsite_tests PRIVATE kernel32)
-  target_compile_options(ubc_windows_destroy_remove_callsite_tests PRIVATE /W4 /WX /GS-)
-  target_link_options(ubc_windows_destroy_remove_callsite_tests PRIVATE /Brepro /INCREMENTAL:NO /OPT:NOICF /DYNAMICBASE:NO /FIXED)
-  add_executable(ubc_windows_module_identity_tests tests/windows_module_identity_tests.cpp)
-  target_include_directories(ubc_windows_module_identity_tests PRIVATE include)
-  target_compile_definitions(ubc_windows_module_identity_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_windows_module_identity_tests PRIVATE kernel32)
-  target_compile_options(ubc_windows_module_identity_tests PRIVATE /W4 /WX)
-  target_link_options(ubc_windows_module_identity_tests PRIVATE /Brepro /INCREMENTAL:NO)
-  add_executable(ubc_batch_probe_host tests/batch_probe_host.cpp)
-  target_compile_definitions(ubc_batch_probe_host PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_batch_probe_host PRIVATE kernel32)
-  target_compile_options(ubc_batch_probe_host PRIVATE /W4 /WX)
-  target_link_options(ubc_batch_probe_host PRIVATE /Brepro /INCREMENTAL:NO)
-  add_executable(ubc_selection_probe_host tests/selection_probe_host.cpp)
-  target_compile_definitions(ubc_selection_probe_host PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_selection_probe_host PRIVATE kernel32)
-  add_executable(ubc_station_probe_host tests/station_probe_host.cpp)
-  target_compile_definitions(ubc_station_probe_host PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_station_probe_host PRIVATE kernel32)
-  add_executable(ubc_native_hook_tests tests/native_hook_tests.cpp)
-  target_include_directories(ubc_native_hook_tests PRIVATE include)
-  target_compile_definitions(ubc_native_hook_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_native_hook_tests PRIVATE kernel32)
-  target_link_options(ubc_native_hook_tests PRIVATE /BASE:0x400000 /DYNAMICBASE:NO /FIXED /OPT:NOICF)
-  add_executable(ubc_frame_bridge_tests tests/frame_bridge_tests.cpp src/bridges/frame_bridge.cpp)
-  target_include_directories(ubc_frame_bridge_tests PRIVATE include)
-  target_compile_definitions(ubc_frame_bridge_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_frame_bridge_tests PRIVATE kernel32)
-  target_link_options(ubc_frame_bridge_tests PRIVATE /BASE:0x400000 /DYNAMICBASE:NO /FIXED /OPT:NOICF)
-  add_executable(ubc_selection_effect_guard_tests tests/selection_effect_guard_tests.cpp
-    src/ui/native_selection_ui.cpp src/bridges/frame_bridge.cpp)
-  target_include_directories(ubc_selection_effect_guard_tests PRIVATE include)
-  target_compile_definitions(ubc_selection_effect_guard_tests PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-  target_link_libraries(ubc_selection_effect_guard_tests PRIVATE kernel32 user32)
-  set_property(TARGET ubc_selection_effect_guard_tests PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded)
-  target_compile_options(ubc_selection_effect_guard_tests PRIVATE /W4 /WX)
-  target_link_options(ubc_selection_effect_guard_tests PRIVATE /Brepro /INCREMENTAL:NO)
-  foreach(target UnionBatchCraftingProbe ubc_probe_host ubc_core_tests ubc_sha256_tests ubc_menu_model_tests UnionBatchCraftingMenuProbe ubc_menu_probe_host ubc_station_snapshot_tests ubc_runtime_script_tests ubc_hand_snapshot_tests UnionBatchCraftingStationProbe ubc_station_probe_host ubc_native_hook_tests ubc_info_snapshot_tests ubc_packed_inventory_tests ubc_selection_session_tests ubc_selection_stock_tests ubc_frame_bridge_tests ubc_selection_snapshot_tests UnionBatchCraftingSelectionProbe ubc_selection_probe_host)
-    target_compile_options(${target} PRIVATE /W4)
-    target_link_options(${target} PRIVATE /Brepro /INCREMENTAL:NO)
-  endforeach()
+    if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
+        message(FATAL_ERROR "Die Gothic-DLL benötigt Windows x86 (32 Bit).")
+    endif()
+    set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
+    set_property(
+        TARGET ubc_core_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    set_property(
+        TARGET ubc_sha256_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    set_property(
+        TARGET ubc_menu_model_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    set_property(
+        TARGET ubc_station_snapshot_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    set_property(
+        TARGET ubc_runtime_script_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    set_property(
+        TARGET ubc_hand_snapshot_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    set_property(
+        TARGET ubc_info_snapshot_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    set_property(
+        TARGET ubc_packed_inventory_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    set_property(
+        TARGET ubc_selection_session_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    set_property(
+        TARGET ubc_selection_stock_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    set_property(
+        TARGET ubc_selection_snapshot_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    add_library(
+        UnionBatchCraftingProbe
+        SHARED
+        src/probes/probe.cpp
+        src/probes/probe.def
+    )
+    target_include_directories(UnionBatchCraftingProbe PRIVATE include)
+    target_compile_definitions(
+        UnionBatchCraftingProbe
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(UnionBatchCraftingProbe PRIVATE kernel32)
+    add_executable(ubc_probe_host tests/probe_host.cpp)
+    target_compile_definitions(
+        ubc_probe_host
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_probe_host PRIVATE kernel32)
+    add_library(
+        UnionBatchCraftingMenuProbe
+        SHARED
+        src/probes/native_menu_probe.cpp
+        src/probes/native_menu_probe.def
+    )
+    target_include_directories(UnionBatchCraftingMenuProbe PRIVATE include)
+    target_compile_definitions(
+        UnionBatchCraftingMenuProbe
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(UnionBatchCraftingMenuProbe PRIVATE kernel32 user32)
+    add_executable(ubc_menu_probe_host tests/menu_probe_host.cpp)
+    target_compile_definitions(
+        ubc_menu_probe_host
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_menu_probe_host PRIVATE kernel32)
+    add_library(
+        UnionBatchCraftingStationProbe
+        SHARED
+        src/probes/native_station_probe.cpp
+        src/probes/native_station_probe.def
+    )
+    target_include_directories(UnionBatchCraftingStationProbe PRIVATE include)
+    target_compile_definitions(
+        UnionBatchCraftingStationProbe
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(UnionBatchCraftingStationProbe PRIVATE kernel32)
+    add_library(
+        UnionBatchCraftingSelectionProbe
+        SHARED
+        src/probes/native_selection_probe.cpp
+        src/probes/native_selection_probe.def
+        src/ui/native_selection_ui.cpp
+        src/bridges/frame_bridge.cpp
+    )
+    target_include_directories(UnionBatchCraftingSelectionProbe PRIVATE include)
+    target_compile_definitions(
+        UnionBatchCraftingSelectionProbe
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(
+        UnionBatchCraftingSelectionProbe
+        PRIVATE kernel32 user32
+    )
+    add_library(
+        UnionBatchCrafting
+        SHARED
+        src/probes/native_batch_probe.cpp
+        src/probes/native_batch_probe.def
+        src/ui/native_batch_ui.cpp
+        src/ui/native_selection_ui.cpp
+        src/bridges/frame_bridge.cpp
+        src/bridges/batch_call_bridge.cpp
+    )
+    target_include_directories(UnionBatchCrafting PRIVATE include)
+    target_compile_definitions(
+        UnionBatchCrafting
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(UnionBatchCrafting PRIVATE kernel32 user32)
+    target_compile_options(UnionBatchCrafting PRIVATE /W4 /WX)
+    target_link_options(UnionBatchCrafting PRIVATE /Brepro /INCREMENTAL:NO)
+    add_library(
+        UnionBatchCraftingRecipes
+        SHARED
+        src/probes/native_recipe_probe.cpp
+        src/probes/native_recipe_probe.def
+        src/ui/native_recipe_ui.cpp
+        src/ui/native_selection_ui.cpp
+        src/bridges/frame_bridge.cpp
+        src/bridges/batch_call_bridge.cpp
+    )
+    target_include_directories(UnionBatchCraftingRecipes PRIVATE include)
+    target_compile_definitions(
+        UnionBatchCraftingRecipes
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(UnionBatchCraftingRecipes PRIVATE kernel32 user32)
+    target_compile_options(UnionBatchCraftingRecipes PRIVATE /W4 /WX)
+    target_link_options(
+        UnionBatchCraftingRecipes
+        PRIVATE /Brepro /INCREMENTAL:NO
+    )
+    set(crafting_runtime_sources
+        src/plugin/native_crafting.cpp
+        src/plugin/crafting/state.cpp
+        src/plugin/crafting/context.cpp
+        src/plugin/crafting/player_contracts.cpp
+        src/plugin/crafting/stations.cpp
+        src/plugin/crafting/cooling.cpp
+        src/plugin/crafting/grinding.cpp
+        src/plugin/crafting/diagnostics.cpp
+        src/plugin/crafting/handoff.cpp
+        src/plugin/crafting/menu.cpp
+        src/plugin/crafting/amount.cpp
+        src/plugin/crafting/tobacco.cpp
+        src/plugin/crafting/hooks.cpp
+    )
+    function(add_crafting_plugin target resource)
+        add_library(
+            ${target}
+            SHARED
+            ${crafting_runtime_sources}
+            src/plugin/native_crafting.def
+            ${resource}
+            src/ui/native_crafting_ui.cpp
+            src/ui/native_selection_ui.cpp
+            src/bridges/frame_bridge.cpp
+            src/bridges/batch_call_bridge.cpp
+            src/plugin/native_crafting_ammo.cpp
+            src/bridges/ammo_presentation_bridge.cpp
+            src/writers/alchemy_extra_writer.cpp
+            src/bridges/alchemy_flask_debit_bridge.cpp
+            src/bridges/cool_predebit_bridge.cpp
+            src/writers/spirit_writer.cpp
+            src/bridges/spirit_flask_debit_bridge.cpp
+        )
+        target_include_directories(${target} PRIVATE include)
+        target_compile_definitions(
+            ${target}
+            PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+        )
+        target_link_libraries(${target} PRIVATE kernel32 user32)
+        target_compile_options(
+            ${target}
+            PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/W4;/WX>"
+        )
+        target_link_options(${target} PRIVATE /Brepro /INCREMENTAL:NO)
+    endfunction()
+    option(
+        UBC_COOL_WORLD_TEST
+        "Getrennter Build für das Kühl-Welttestpaket"
+        OFF
+    )
+    add_crafting_plugin(
+        UnionBatchCraftingExtended
+        src/plugin/native_crafting.rc
+    )
+    add_crafting_plugin(UnionBatchCraftingPlayer src/plugin/player.rc)
+    target_compile_definitions(
+        UnionBatchCraftingPlayer
+        PRIVATE UBC_PLAYER_RELEASE
+    )
+    set_target_properties(
+        UnionBatchCraftingPlayer
+        PROPERTIES
+            OUTPUT_NAME UnionBatchCraftingExtended
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/player"
+            ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/player"
+    )
+    add_executable(
+        ubc_crafting_effect_guard_tests
+        tests/crafting_effect_guard_tests.cpp
+        src/ui/native_crafting_ui.cpp
+        src/ui/native_selection_ui.cpp
+        src/bridges/frame_bridge.cpp
+        src/bridges/batch_call_bridge.cpp
+        src/writers/alchemy_extra_writer.cpp
+        src/bridges/alchemy_flask_debit_bridge.cpp
+        src/bridges/cool_predebit_bridge.cpp
+        src/writers/spirit_writer.cpp
+        src/bridges/spirit_flask_debit_bridge.cpp
+    )
+    target_include_directories(ubc_crafting_effect_guard_tests PRIVATE include)
+    target_compile_definitions(
+        ubc_crafting_effect_guard_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(
+        ubc_crafting_effect_guard_tests
+        PRIVATE kernel32 user32
+    )
+    target_compile_options(ubc_crafting_effect_guard_tests PRIVATE /W4 /WX)
+    target_link_options(
+        ubc_crafting_effect_guard_tests
+        PRIVATE /Brepro /INCREMENTAL:NO
+    )
+    add_executable(
+        ubc_native_crafting_ammo_tests
+        tests/native_crafting_ammo_tests.cpp
+        src/bridges/ammo_presentation_bridge.cpp
+    )
+    target_include_directories(
+        ubc_native_crafting_ammo_tests
+        PRIVATE include src
+    )
+    target_compile_definitions(
+        ubc_native_crafting_ammo_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_native_crafting_ammo_tests PRIVATE kernel32)
+    target_compile_options(ubc_native_crafting_ammo_tests PRIVATE /W4 /WX)
+    target_link_options(
+        ubc_native_crafting_ammo_tests
+        PRIVATE /Brepro /INCREMENTAL:NO
+    )
+    add_executable(ubc_crafting_probe_host tests/crafting_probe_host.cpp)
+    target_compile_definitions(
+        ubc_crafting_probe_host
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_crafting_probe_host PRIVATE kernel32)
+    target_compile_options(ubc_crafting_probe_host PRIVATE /W4 /WX)
+    target_link_options(ubc_crafting_probe_host PRIVATE /Brepro /INCREMENTAL:NO)
+    add_executable(ubc_recipe_probe_host tests/recipe_probe_host.cpp)
+    target_compile_definitions(
+        ubc_recipe_probe_host
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_recipe_probe_host PRIVATE kernel32)
+    target_compile_options(ubc_recipe_probe_host PRIVATE /W4 /WX)
+    target_link_options(ubc_recipe_probe_host PRIVATE /Brepro /INCREMENTAL:NO)
+    add_executable(
+        ubc_recipe_effect_guard_tests
+        tests/recipe_effect_guard_tests.cpp
+        src/ui/native_recipe_ui.cpp
+        src/ui/native_selection_ui.cpp
+        src/bridges/frame_bridge.cpp
+        src/bridges/batch_call_bridge.cpp
+    )
+    target_include_directories(ubc_recipe_effect_guard_tests PRIVATE include)
+    target_compile_definitions(
+        ubc_recipe_effect_guard_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_recipe_effect_guard_tests PRIVATE kernel32 user32)
+    target_compile_options(ubc_recipe_effect_guard_tests PRIVATE /W4 /WX)
+    target_link_options(
+        ubc_recipe_effect_guard_tests
+        PRIVATE /Brepro /INCREMENTAL:NO
+    )
+    add_executable(
+        ubc_batch_call_bridge_tests
+        tests/batch_call_bridge_tests.cpp
+        src/bridges/batch_call_bridge.cpp
+    )
+    target_include_directories(ubc_batch_call_bridge_tests PRIVATE include)
+    target_compile_definitions(
+        ubc_batch_call_bridge_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_batch_call_bridge_tests PRIVATE kernel32)
+    target_compile_options(ubc_batch_call_bridge_tests PRIVATE /W4 /WX)
+    target_link_options(
+        ubc_batch_call_bridge_tests
+        PRIVATE /Brepro /INCREMENTAL:NO
+    )
+    add_executable(
+        ubc_ammo_presentation_bridge_tests
+        tests/ammo_presentation_bridge_tests.cpp
+        src/bridges/ammo_presentation_bridge.cpp
+    )
+    target_include_directories(
+        ubc_ammo_presentation_bridge_tests
+        PRIVATE include src
+    )
+    target_compile_definitions(
+        ubc_ammo_presentation_bridge_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_ammo_presentation_bridge_tests PRIVATE kernel32)
+    target_compile_options(ubc_ammo_presentation_bridge_tests PRIVATE /W4 /WX)
+    target_link_options(
+        ubc_ammo_presentation_bridge_tests
+        PRIVATE /Brepro /INCREMENTAL:NO
+    )
+    add_executable(
+        ubc_alchemy_flask_debit_bridge_tests
+        tests/alchemy_flask_debit_bridge_tests.cpp
+        src/bridges/alchemy_flask_debit_bridge.cpp
+    )
+    target_include_directories(
+        ubc_alchemy_flask_debit_bridge_tests
+        PRIVATE include src
+    )
+    target_compile_definitions(
+        ubc_alchemy_flask_debit_bridge_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_alchemy_flask_debit_bridge_tests PRIVATE kernel32)
+    target_compile_options(ubc_alchemy_flask_debit_bridge_tests PRIVATE /W4 /WX)
+    target_link_options(
+        ubc_alchemy_flask_debit_bridge_tests
+        PRIVATE /Brepro /INCREMENTAL:NO
+    )
+    # Offline integration for Lager2/N2. Deliberately omit the plugin link until EndFence/Reader are available.
+    add_executable(
+        ubc_cool_hotblade_debit_bridge_tests
+        tests/cool_hotblade_debit_bridge_tests.cpp
+        src/bridges/cool_hotblade_debit_bridge.cpp
+    )
+    target_include_directories(
+        ubc_cool_hotblade_debit_bridge_tests
+        PRIVATE include src
+    )
+    target_compile_definitions(
+        ubc_cool_hotblade_debit_bridge_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_cool_hotblade_debit_bridge_tests PRIVATE kernel32)
+    target_compile_options(ubc_cool_hotblade_debit_bridge_tests PRIVATE /W4 /WX)
+    target_link_options(
+        ubc_cool_hotblade_debit_bridge_tests
+        PRIVATE /Brepro /INCREMENTAL:NO
+    )
+    add_library(
+        ubc_cool_predebit_test_host
+        SHARED
+        tests/cool_predebit_bridge_tests.cpp
+        tests/cool_predebit_native_host.cpp
+        src/ui/native_crafting_ui.cpp
+        src/ui/native_selection_ui.cpp
+        src/bridges/frame_bridge.cpp
+        src/bridges/batch_call_bridge.cpp
+        src/plugin/native_crafting_ammo.cpp
+        src/bridges/ammo_presentation_bridge.cpp
+        src/writers/alchemy_extra_writer.cpp
+        src/bridges/alchemy_flask_debit_bridge.cpp
+        src/bridges/cool_predebit_bridge.cpp
+        src/writers/spirit_writer.cpp
+        src/bridges/spirit_flask_debit_bridge.cpp
+    )
+    target_include_directories(ubc_cool_predebit_test_host PRIVATE include src)
+    target_compile_definitions(
+        ubc_cool_predebit_test_host
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX UBC_COOL_PREDEBIT_HOST_TEST
+    )
+    target_link_libraries(ubc_cool_predebit_test_host PRIVATE kernel32 user32)
+    target_compile_options(ubc_cool_predebit_test_host PRIVATE /W4 /WX)
+    target_link_options(
+        ubc_cool_predebit_test_host
+        PRIVATE /Brepro /INCREMENTAL:NO /BASE:0x54000000
+    )
+    # The test executable owns the fixed call pages at load time. As in
+    # the plugin, the actual adapter functions reside outside this image.
+    add_executable(
+        ubc_cool_predebit_bridge_tests
+        tests/cool_predebit_host_main.cpp
+    )
+    target_link_libraries(
+        ubc_cool_predebit_bridge_tests
+        PRIVATE ubc_cool_predebit_test_host
+    )
+    target_compile_options(ubc_cool_predebit_bridge_tests PRIVATE /W4 /WX)
+    target_link_options(
+        ubc_cool_predebit_bridge_tests
+        PRIVATE /Brepro /INCREMENTAL:NO /FIXED /DYNAMICBASE:NO /BASE:0x00500000
+    )
+    add_executable(
+        ubc_alchemy_extra_writer_tests
+        tests/alchemy_extra_writer_tests.cpp
+        src/writers/alchemy_extra_writer.cpp
+        src/bridges/alchemy_flask_debit_bridge.cpp
+    )
+    target_include_directories(
+        ubc_alchemy_extra_writer_tests
+        PRIVATE include src
+    )
+    target_compile_definitions(
+        ubc_alchemy_extra_writer_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX UBC_ALCHEMY_EXTRA_HOST_TEST
+    )
+    target_link_libraries(ubc_alchemy_extra_writer_tests PRIVATE kernel32)
+    target_compile_options(ubc_alchemy_extra_writer_tests PRIVATE /W4 /WX)
+    target_link_options(
+        ubc_alchemy_extra_writer_tests
+        PRIVATE /Brepro /INCREMENTAL:NO
+    )
+    add_executable(
+        ubc_spirit_writer_tests
+        tests/spirit_writer_tests.cpp
+        src/writers/spirit_writer.cpp
+        src/bridges/spirit_flask_debit_bridge.cpp
+    )
+    target_include_directories(ubc_spirit_writer_tests PRIVATE include src)
+    target_compile_definitions(
+        ubc_spirit_writer_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX UBC_SPIRIT_HOST_TEST
+    )
+    target_link_libraries(ubc_spirit_writer_tests PRIVATE kernel32)
+    target_compile_options(ubc_spirit_writer_tests PRIVATE /W4 /WX)
+    target_link_options(ubc_spirit_writer_tests PRIVATE /Brepro /INCREMENTAL:NO)
+    add_executable(
+        ubc_windows_destroy_remove_callsite_tests
+        tests/windows_destroy_remove_callsite_tests.cpp
+    )
+    target_include_directories(
+        ubc_windows_destroy_remove_callsite_tests
+        PRIVATE include
+    )
+    target_compile_definitions(
+        ubc_windows_destroy_remove_callsite_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(
+        ubc_windows_destroy_remove_callsite_tests
+        PRIVATE kernel32
+    )
+    target_compile_options(
+        ubc_windows_destroy_remove_callsite_tests
+        PRIVATE /W4 /WX /GS-
+    )
+    target_link_options(
+        ubc_windows_destroy_remove_callsite_tests
+        PRIVATE /Brepro /INCREMENTAL:NO /OPT:NOICF /DYNAMICBASE:NO /FIXED
+    )
+    add_executable(
+        ubc_windows_module_identity_tests
+        tests/windows_module_identity_tests.cpp
+    )
+    target_include_directories(
+        ubc_windows_module_identity_tests
+        PRIVATE include
+    )
+    target_compile_definitions(
+        ubc_windows_module_identity_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_windows_module_identity_tests PRIVATE kernel32)
+    target_compile_options(ubc_windows_module_identity_tests PRIVATE /W4 /WX)
+    target_link_options(
+        ubc_windows_module_identity_tests
+        PRIVATE /Brepro /INCREMENTAL:NO
+    )
+    add_executable(ubc_batch_probe_host tests/batch_probe_host.cpp)
+    target_compile_definitions(
+        ubc_batch_probe_host
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_batch_probe_host PRIVATE kernel32)
+    target_compile_options(ubc_batch_probe_host PRIVATE /W4 /WX)
+    target_link_options(ubc_batch_probe_host PRIVATE /Brepro /INCREMENTAL:NO)
+    add_executable(ubc_selection_probe_host tests/selection_probe_host.cpp)
+    target_compile_definitions(
+        ubc_selection_probe_host
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_selection_probe_host PRIVATE kernel32)
+    add_executable(ubc_station_probe_host tests/station_probe_host.cpp)
+    target_compile_definitions(
+        ubc_station_probe_host
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_station_probe_host PRIVATE kernel32)
+    add_executable(ubc_native_hook_tests tests/native_hook_tests.cpp)
+    target_include_directories(ubc_native_hook_tests PRIVATE include)
+    target_compile_definitions(
+        ubc_native_hook_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_native_hook_tests PRIVATE kernel32)
+    target_link_options(
+        ubc_native_hook_tests
+        PRIVATE /BASE:0x400000 /DYNAMICBASE:NO /FIXED /OPT:NOICF
+    )
+    add_executable(
+        ubc_frame_bridge_tests
+        tests/frame_bridge_tests.cpp
+        src/bridges/frame_bridge.cpp
+    )
+    target_include_directories(ubc_frame_bridge_tests PRIVATE include)
+    target_compile_definitions(
+        ubc_frame_bridge_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(ubc_frame_bridge_tests PRIVATE kernel32)
+    target_link_options(
+        ubc_frame_bridge_tests
+        PRIVATE /BASE:0x400000 /DYNAMICBASE:NO /FIXED /OPT:NOICF
+    )
+    add_executable(
+        ubc_selection_effect_guard_tests
+        tests/selection_effect_guard_tests.cpp
+        src/ui/native_selection_ui.cpp
+        src/bridges/frame_bridge.cpp
+    )
+    target_include_directories(ubc_selection_effect_guard_tests PRIVATE include)
+    target_compile_definitions(
+        ubc_selection_effect_guard_tests
+        PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
+    )
+    target_link_libraries(
+        ubc_selection_effect_guard_tests
+        PRIVATE kernel32 user32
+    )
+    set_property(
+        TARGET ubc_selection_effect_guard_tests
+        PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded
+    )
+    target_compile_options(ubc_selection_effect_guard_tests PRIVATE /W4 /WX)
+    target_link_options(
+        ubc_selection_effect_guard_tests
+        PRIVATE /Brepro /INCREMENTAL:NO
+    )
+    foreach(
+        target
+        UnionBatchCraftingProbe
+        ubc_probe_host
+        ubc_core_tests
+        ubc_sha256_tests
+        ubc_menu_model_tests
+        UnionBatchCraftingMenuProbe
+        ubc_menu_probe_host
+        ubc_station_snapshot_tests
+        ubc_runtime_script_tests
+        ubc_hand_snapshot_tests
+        UnionBatchCraftingStationProbe
+        ubc_station_probe_host
+        ubc_native_hook_tests
+        ubc_info_snapshot_tests
+        ubc_packed_inventory_tests
+        ubc_selection_session_tests
+        ubc_selection_stock_tests
+        ubc_frame_bridge_tests
+        ubc_selection_snapshot_tests
+        UnionBatchCraftingSelectionProbe
+        ubc_selection_probe_host
+    )
+        target_compile_options(${target} PRIVATE /W4)
+        target_link_options(${target} PRIVATE /Brepro /INCREMENTAL:NO)
+    endforeach()
 else()
-  target_compile_options(ubc_core_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  target_compile_options(ubc_sha256_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  target_compile_options(ubc_menu_model_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  target_compile_options(ubc_station_snapshot_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  target_compile_options(ubc_runtime_script_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  target_compile_options(ubc_hand_snapshot_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  target_compile_options(ubc_info_snapshot_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  target_compile_options(ubc_packed_inventory_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  target_compile_options(ubc_selection_session_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  target_compile_options(ubc_selection_stock_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
-  target_compile_options(ubc_selection_snapshot_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(
+        ubc_core_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
+    target_compile_options(
+        ubc_sha256_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
+    target_compile_options(
+        ubc_menu_model_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
+    target_compile_options(
+        ubc_station_snapshot_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
+    target_compile_options(
+        ubc_runtime_script_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
+    target_compile_options(
+        ubc_hand_snapshot_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
+    target_compile_options(
+        ubc_info_snapshot_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
+    target_compile_options(
+        ubc_packed_inventory_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
+    target_compile_options(
+        ubc_selection_session_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
+    target_compile_options(
+        ubc_selection_stock_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
+    target_compile_options(
+        ubc_selection_snapshot_tests
+        PRIVATE -Wall -Wextra -Wpedantic -Werror
+    )
 endif()

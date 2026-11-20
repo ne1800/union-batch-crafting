@@ -38,6 +38,6 @@ Build the player ZIP with `mise run package-player-WRITES -- --apply`.
 
 ## Development
 
-Run `mise run lint` to check all tracked files with prek. The local format hooks require clang-format 23.1.5 and gersemi 0.17.0. Run `mise run test:report-WRITES -- --apply` for the portable tests. The private development checkout enables pre-commit and commit-msg with `mise x -- prek install`. In the source export, run the mise tasks directly.
+Run `mise run lint` to check all tracked files with prek. prek installs pinned versions of all formatters and linters on first use, including clang-format 23.1.5 and gersemi 0.29.2. Run `mise run test:report-WRITES -- --apply` for the portable tests. The private development checkout enables pre-commit and commit-msg with `mise x -- prek install`. In the source export, run the mise tasks directly.
 
 Write Conventional Commit subjects in English, for example `fix(ui): handle empty recipe lists`. The scope is optional. Add `!` before the colon for a breaking change.

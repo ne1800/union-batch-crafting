@@ -1,15 +1,32 @@
 # Build the INI lookup from the shipped tables, including newly added files.
-file(GLOB language_files CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/include/ubc/text/locales"
-     "${CMAKE_CURRENT_SOURCE_DIR}/include/ubc/text/locales/*.hpp")
+file(
+    GLOB language_files
+    CONFIGURE_DEPENDS
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/include/ubc/text/locales"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/ubc/text/locales/*.hpp"
+)
 set(language_headers "")
 set(language_entries "")
 foreach(filename IN LISTS language_files)
-  get_filename_component(code "${filename}" NAME_WLE)
-  if(NOT code MATCHES "^[a-z][a-z]$")
-    message(FATAL_ERROR "Expected a two-letter language filename, found ${filename}")
-  endif()
-  string(APPEND language_headers "#include \"ubc/text/locales/${filename}\"\n")
-  string(APPEND language_entries "  {L\"${code}\", \"${code}\", &locale_${code}::table},\n")
+    get_filename_component(code "${filename}" NAME_WLE)
+    if(NOT code MATCHES "^[a-z][a-z]$")
+        message(
+            FATAL_ERROR
+            "Expected a two-letter language filename, found ${filename}"
+        )
+    endif()
+    string(
+        APPEND language_headers
+        "#include \"ubc/text/locales/${filename}\"\n"
+    )
+    string(
+        APPEND language_entries
+        "  {L\"${code}\", \"${code}\", &locale_${code}::table},\n"
+    )
 endforeach()
-configure_file(cmake/ui_language_registry.hpp.in generated/ubc/ui_language_registry.hpp @ONLY)
+configure_file(
+    cmake/ui_language_registry.hpp.in
+    generated/ubc/ui_language_registry.hpp
+    @ONLY
+)
 include_directories("${CMAKE_CURRENT_BINARY_DIR}/generated")

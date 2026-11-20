@@ -40,20 +40,20 @@ repos:
     rev: v8.30.1
     hooks:
       - id: gitleaks
-  - repo: local
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v23.1.5
     hooks:
       - id: clang-format
-        name: clang-format
-        language: system
-        entry: python3 tools/pinned-formatter.py clang-format 23.1.5 -i
         types_or: [c, c++]
         exclude: *format_exclude
+  - repo: https://github.com/BlankSpruce/gersemi-pre-commit
+    rev: 0.29.2
+    hooks:
       - id: gersemi
-        name: gersemi
-        language: system
-        entry: python3 tools/pinned-formatter.py gersemi 0.17.0 -i
         types: [cmake]
         exclude: *format_exclude
+  - repo: local
+    hooks:
       - id: bilingual-docs
         name: Check bilingual documentation
         language: system
