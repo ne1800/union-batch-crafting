@@ -10,3 +10,5 @@ include/ubc/stations/bow/bow_item_renderer.hpp
 include/ubc/stations/grind/grind_guild_snapshot.hpp
 include/ubc/stations/grind/grind_recipe_plan.hpp
 include/ubc/stations/grind/grind_zbug_unpack.hpp
+# Two unbraced MS inline assembly statements in this x86 fixture end at a newline.
+tests/windows_destroy_remove_callsite_tests.cpp
