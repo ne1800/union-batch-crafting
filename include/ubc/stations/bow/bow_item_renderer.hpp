@@ -228,4 +228,3 @@ public:
   }
 };
 } // namespace ubc::bow_item_renderer
-

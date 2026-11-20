@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Assemble the 0.0.58 player ZIP from the dedicated Windows x86 target."""
+
 import argparse
 from pathlib import Path
 import os
@@ -10,21 +11,34 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 DLL = "UnionBatchCraftingExtended.dll"
 ARCHIVE = "union-batch-crafting-player-0.0.58.zip"
-DOCUMENTS = ("INSTALL.md", "INSTALL.de.md", "TESTED-WITH.md", "LICENSE", "THIRD-PARTY-NOTICES")
+DOCUMENTS = (
+    "INSTALL.md",
+    "INSTALL.de.md",
+    "TESTED-WITH.md",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES",
+)
 
 
 def validate_dll(data):
     if data[:2] != b"MZ" or len(data) < 64:
         raise ValueError("Missing DOS header")
     pe = struct.unpack_from("<I", data, 60)[0]
-    if (pe < 64 or pe + 26 > len(data) or data[pe:pe+4] != b"PE\0\0"
-            or struct.unpack_from("<H", data, pe+4)[0] != 0x14c
-            or not struct.unpack_from("<H", data, pe+22)[0] & 0x2000
-            or struct.unpack_from("<H", data, pe+24)[0] != 0x10b):
+    if (
+        pe < 64
+        or pe + 26 > len(data)
+        or data[pe : pe + 4] != b"PE\0\0"
+        or struct.unpack_from("<H", data, pe + 4)[0] != 0x14C
+        or not struct.unpack_from("<H", data, pe + 22)[0] & 0x2000
+        or struct.unpack_from("<H", data, pe + 24)[0] != 0x10B
+    ):
         raise ValueError("Expected a Windows x86 DLL")
-    if ("0.0.57\0".encode("utf-16le") not in data or b"EXTENDED_AMOUNTS_V1" in data
-            or ".enable-once".encode("utf-16le") in data
-            or "Enabled\0".encode("utf-16le") not in data):
+    if (
+        "0.0.57\0".encode("utf-16le") not in data
+        or b"EXTENDED_AMOUNTS_V1" in data
+        or ".enable-once".encode("utf-16le") in data
+        or "Enabled\0".encode("utf-16le") not in data
+    ):
         raise ValueError("Expected the permanent 0.0.57 player build")
 
 
@@ -55,4 +69,6 @@ def package(root):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true")
-    print(package(ROOT) if parser.parse_args().apply else "Preview: build dist/" + ARCHIVE)
+    print(
+        package(ROOT) if parser.parse_args().apply else "Preview: build dist/" + ARCHIVE
+    )

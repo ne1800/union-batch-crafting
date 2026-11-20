@@ -15,14 +15,16 @@ namespace ubc {
 namespace recipe_snapshot_detail {
 constexpr std::size_t target_capacity() noexcept {
   std::size_t result = 0;
-  for (const auto& descriptor : recipe_catalog::recipes) result += descriptor.targets.count;
+  for (const auto& descriptor : recipe_catalog::recipes)
+    result += descriptor.targets.count;
   return result;
 }
 } // namespace recipe_snapshot_detail
 
 // Upper bound from exactly this catalog, no new global recipe bound.
 // Repeated shared targets only occupy one active slot at runtime.
-inline constexpr std::size_t recipe_catalogue_target_capacity = recipe_snapshot_detail::target_capacity();
+inline constexpr std::size_t recipe_catalogue_target_capacity =
+    recipe_snapshot_detail::target_capacity();
 static_assert(recipe_catalogue_target_capacity > 0, "Ein Katalog benoetigt Inventarziele");
 
 enum class RecipeCatalogueIssue { none, catalogue, context, reentry, boundary };
@@ -65,24 +67,31 @@ public:
     for (std::size_t i = 0; i < recipe_catalog::recipes.size(); ++i) {
       const auto& descriptor = recipe_catalog::recipes[i];
       if (!recipe_catalog::structurally_valid(descriptor) ||
-          descriptor.targets.count > items_.size()) return;
+          descriptor.targets.count > items_.size())
+        return;
       profiles_[i] = recipe_runtime::assemble(descriptor);
       for (const auto& target : descriptor.targets) {
         bool found = false;
         for (std::size_t j = 0; j < target_count_; ++j) {
           const bool same_symbol = target.symbol == targets_[j].symbol;
           const bool same_name = std::strcmp(target.name, targets_[j].name) == 0;
-          if (same_symbol != same_name) return;
-          if (same_symbol) { found = true; break; }
+          if (same_symbol != same_name)
+            return;
+          if (same_symbol) {
+            found = true;
+            break;
+          }
         }
         if (!found) {
-          if (target_count_ == targets_.size()) return;
+          if (target_count_ == targets_.size())
+            return;
           targets_[target_count_++] = target;
         }
       }
     }
     std::array<std::size_t, recipe_catalogue_target_capacity> lengths{};
-    catalogue_valid_ = target_count_ && packed_detail::validate_targets(targets_.data(), target_count_, lengths);
+    catalogue_valid_ =
+        target_count_ && packed_detail::validate_targets(targets_.data(), target_count_, lengths);
   }
   RecipeCatalogueReader(const RecipeCatalogueReader&) = delete;
   RecipeCatalogueReader& operator=(const RecipeCatalogueReader&) = delete;
@@ -90,8 +99,9 @@ public:
   RecipeCatalogueReader& operator=(RecipeCatalogueReader&&) = delete;
 
   RecipeCatalogueCapture capture(const ReadOnlyMemory& memory, std::uint32_t parser,
-      const StationKey& key, bool stable_boundary_verified,
-      const std::array<bool, recipe_catalog::recipes.size()>& hand_contract_verified = {}) noexcept {
+                                 const StationKey& key, bool stable_boundary_verified,
+                                 const std::array<bool, recipe_catalog::recipes.size()>&
+                                     hand_contract_verified = {}) noexcept {
     RecipeCatalogueCapture result;
     result.snapshot.key = key;
     auto& diagnostic = result.diagnostic;
@@ -100,9 +110,18 @@ public:
       diagnostic.recipes[i].applicable = recipe_catalog::recipes[i].station == key.kind;
       diagnostic.recipes[i].assembly_issue = profiles_[i].issue();
     }
-    if (capturing_) { diagnostic.issue = RecipeCatalogueIssue::reentry; return result; }
-    if (!catalogue_valid_) { diagnostic.issue = RecipeCatalogueIssue::catalogue; return result; }
-    if (!recipe_session_detail::valid_key(key)) { diagnostic.issue = RecipeCatalogueIssue::context; return result; }
+    if (capturing_) {
+      diagnostic.issue = RecipeCatalogueIssue::reentry;
+      return result;
+    }
+    if (!catalogue_valid_) {
+      diagnostic.issue = RecipeCatalogueIssue::catalogue;
+      return result;
+    }
+    if (!recipe_session_detail::valid_key(key)) {
+      diagnostic.issue = RecipeCatalogueIssue::context;
+      return result;
+    }
     capturing_ = true;
     struct CaptureScope {
       bool& active;
@@ -126,7 +145,10 @@ public:
     // An unmodified intermediate state alone confirms no quiet point.
     // Even knowledge and script profiles are only read at the explicitly
     // evidenced point here; old results are never returned as a substitute.
-    if (!stable_boundary_verified) { diagnostic.issue = RecipeCatalogueIssue::boundary; return result; }
+    if (!stable_boundary_verified) {
+      diagnostic.issue = RecipeCatalogueIssue::boundary;
+      return result;
+    }
 
     std::size_t listed_count = 0;
     if (inventory.listed_known && inventory.snapshot_unchanged &&
@@ -149,7 +171,8 @@ public:
 
     for (std::size_t i = 0; i < recipe_catalog::recipes.size(); ++i) {
       auto& detail = diagnostic.recipes[i];
-      if (!detail.applicable) continue;
+      if (!detail.applicable)
+        continue;
       const auto& descriptor = recipe_catalog::recipes[i];
       auto& state = result.snapshot.recipes[i];
       detail.evaluated = true;
@@ -160,20 +183,28 @@ public:
       bool mapped = true;
       for (std::size_t j = 0; j < descriptor.targets.count; ++j) {
         const auto index = target_index(descriptor.targets[j]);
-        if (index == target_count_) { mapped = false; break; }
+        if (index == target_count_) {
+          mapped = false;
+          break;
+        }
         auto& item = items_[j];
         item.symbol = descriptor.targets[j].symbol;
-        item.listed = inventory.listed[index]; item.packed = inventory.packed[index]; item.total = inventory.total[index];
+        item.listed = inventory.listed[index];
+        item.packed = inventory.packed[index];
+        item.total = inventory.total[index];
         item.listed_occurrences = inventory.listed_occurrences[index];
         item.packed_occurrences = inventory.packed_occurrences[index];
         item.duplicate_packed_target = inventory.duplicate_packed_target[index];
         item.has_active_marker = inventory.has_active_marker[index];
         item.mixed_representation = inventory.mixed_representation[index];
       }
-      if (!mapped) { detail.material_issue = RecipeMaterialIssue::target_mapping; continue; }
+      if (!mapped) {
+        detail.material_issue = RecipeMaterialIssue::target_mapping;
+        continue;
+      }
       projected.items = {items_.data(), descriptor.targets.count};
-      const auto material = recipe_material(descriptor, projected, result.hands, 0,
-          rows_.data(), rows_.size(), hand_contract_verified[i]);
+      const auto material = recipe_material(descriptor, projected, result.hands, 0, rows_.data(),
+                                            rows_.size(), hand_contract_verified[i]);
       detail.material_issue = material.issue;
       state.material_known = material.inventory_known;
       state.hand_known = material.hand_known;
@@ -181,11 +212,12 @@ public:
       // The quantity 0 is exclusively a stock/preview capture. It starts
       // nothing. Even with missing ingredients known numbers remain
       // representable; an invalid profile is separately locked by contract.
-      if (material.inventory_known) for (std::size_t j = 0; j < material.count; ++j) {
-        state.materials[j].stored = static_cast<std::int32_t>(rows_[j].stored);
-        // The hand contracts supported here deliver only -1, 0, or 1.
-        state.materials[j].reserved = static_cast<std::int32_t>(rows_[j].reserved);
-      }
+      if (material.inventory_known)
+        for (std::size_t j = 0; j < material.count; ++j) {
+          state.materials[j].stored = static_cast<std::int32_t>(rows_[j].stored);
+          // The hand contracts supported here deliver only -1, 0, or 1.
+          state.materials[j].reserved = static_cast<std::int32_t>(rows_[j].reserved);
+        }
     }
     return result;
   }
@@ -193,7 +225,8 @@ public:
 private:
   std::size_t target_index(const PackedInventoryTarget& target) const noexcept {
     for (std::size_t i = 0; i < target_count_; ++i)
-      if (targets_[i].symbol == target.symbol && std::strcmp(targets_[i].name, target.name) == 0) return i;
+      if (targets_[i].symbol == target.symbol && std::strcmp(targets_[i].name, target.name) == 0)
+        return i;
     return target_count_;
   }
 

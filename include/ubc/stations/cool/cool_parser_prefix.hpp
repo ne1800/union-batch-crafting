@@ -38,24 +38,29 @@ inline constexpr bool known_callback(std::uint32_t callback) noexcept {
 inline Classification classify(const ParserState& state, const Context& context,
                                std::uint32_t callback, Phase phase) noexcept {
   if (!values::valid(context) || !known_callback(callback) ||
-      !values::valid_parser_bindings(state, context)) return {};
+      !values::valid_parser_bindings(state, context))
+    return {};
   if (phase == Phase::before_original)
     return state.data_depth == 0 ? Classification{true, PrintResult::not_called} : Classification{};
-  if (phase != Phase::after_original) return {};
+  if (phase != Phase::after_original)
+    return {};
   if (callback == cancel_callback)
     return state.data_depth == 0 ? Classification{true, PrintResult::not_called} : Classification{};
   const auto expected = callback == single_callback ? 2u : 4u;
-  if (!state.data_words_known || state.data_depth != expected ||
-      state.data_words[0] > 1 || state.data_words[1] != integer_tag) return {};
-  if (callback == triple_callback && (state.data_words[2] != 1 || state.data_words[3] != integer_tag)) return {};
+  if (!state.data_words_known || state.data_depth != expected || state.data_words[0] > 1 ||
+      state.data_words[1] != integer_tag)
+    return {};
+  if (callback == triple_callback &&
+      (state.data_words[2] != 1 || state.data_words[3] != integer_tag))
+    return {};
   return {true, state.data_words[0] == 0 ? PrintResult::returned_zero : PrintResult::returned_one};
 }
 
 // Two individually recognized prefixes are not enough: a change from
 // PrintReturn0 to 1 or from Cursor/UseInstance/Actors is also a change.
 // Only active data words compare; unused stack cells are irrelevant.
-inline bool unchanged(const ParserState& before, const ParserState& after,
-                      const Context& context, std::uint32_t callback, Phase phase) noexcept {
+inline bool unchanged(const ParserState& before, const ParserState& after, const Context& context,
+                      std::uint32_t callback, Phase phase) noexcept {
   return classify(before, context, callback, phase).recognized &&
          classify(after, context, callback, phase).recognized && values::same(before, after);
 }

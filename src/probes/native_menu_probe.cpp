@@ -45,31 +45,36 @@ int __fastcall run_probe(void* self, void* unused_edx);
 int __fastcall handle_probe(void* self, void* unused_edx, int key);
 void __fastcall render_probe(void* self, void* unused_edx);
 
-bool memory_readable(const void* pointer, std::size_t size,
-                     bool executable = false, bool engine = false) noexcept {
+bool memory_readable(const void* pointer, std::size_t size, bool executable = false,
+                     bool engine = false) noexcept {
   auto current = reinterpret_cast<std::uintptr_t>(pointer);
-  if (!current || size > UINTPTR_MAX - current) return false;
+  if (!current || size > UINTPTR_MAX - current)
+    return false;
   const auto end = current + size;
-  if (engine && (current < abi::image_base ||
-                 end > abi::image_base + abi::image_size)) return false;
+  if (engine && (current < abi::image_base || end > abi::image_base + abi::image_size))
+    return false;
   while (current < end) {
     MEMORY_BASIC_INFORMATION memory{};
-    if (VirtualQuery(reinterpret_cast<const void*>(current), &memory,
-                     sizeof(memory)) != sizeof(memory) ||
-        memory.State != MEM_COMMIT || (memory.Protect & PAGE_GUARD)) return false;
+    if (VirtualQuery(reinterpret_cast<const void*>(current), &memory, sizeof(memory)) !=
+            sizeof(memory) ||
+        memory.State != MEM_COMMIT || (memory.Protect & PAGE_GUARD))
+      return false;
     if (engine && (memory.AllocationBase != reinterpret_cast<void*>(abi::image_base) ||
-                   memory.Type != MEM_IMAGE)) return false;
+                   memory.Type != MEM_IMAGE))
+      return false;
     const DWORD access = memory.Protect & 0xff;
-    const bool can_execute = access == PAGE_EXECUTE_READ ||
-                             access == PAGE_EXECUTE_READWRITE ||
+    const bool can_execute = access == PAGE_EXECUTE_READ || access == PAGE_EXECUTE_READWRITE ||
                              access == PAGE_EXECUTE_WRITECOPY;
-    if (executable ? !can_execute :
-        !(can_execute || access == PAGE_READONLY || access == PAGE_READWRITE ||
-          access == PAGE_WRITECOPY)) return false;
+    if (executable ? !can_execute
+                   : !(can_execute || access == PAGE_READONLY || access == PAGE_READWRITE ||
+                       access == PAGE_WRITECOPY))
+      return false;
     const auto region = reinterpret_cast<std::uintptr_t>(memory.BaseAddress);
-    if (memory.RegionSize > UINTPTR_MAX - region) return false;
+    if (memory.RegionSize > UINTPTR_MAX - region)
+      return false;
     const auto next = region + memory.RegionSize;
-    if (next <= current) return false;
+    if (next <= current)
+      return false;
     current = next < end ? next : end;
   }
   return true;
@@ -78,15 +83,17 @@ bool memory_readable(const void* pointer, std::size_t size,
 bool target_identity_matches() noexcept {
   const auto* base = reinterpret_cast<const std::uint8_t*>(GetModuleHandleW(nullptr));
   if (reinterpret_cast<std::uintptr_t>(base) != abi::image_base ||
-      !memory_readable(base, 4096, false, true) ||
-      !ubc::matches_gothic2_header(base, 4096)) return false;
+      !memory_readable(base, 4096, false, true) || !ubc::matches_gothic2_header(base, 4096))
+    return false;
 
   wchar_t path[32768]{};
   const DWORD length = GetModuleFileNameW(nullptr, path, 32768);
-  if (!length || length >= 32768) return false;
-  const HANDLE file = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr,
-                                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE) return false;
+  if (!length || length >= 32768)
+    return false;
+  const HANDLE file = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
+                                  FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (file == INVALID_HANDLE_VALUE)
+    return false;
   LARGE_INTEGER before{}, after{};
   bool valid = GetFileSizeEx(file, &before) && before.QuadPart > 0;
   ubc::Sha256 hash;
@@ -98,12 +105,12 @@ bool target_identity_matches() noexcept {
       valid = false;
       break;
     }
-    if (!read) break;
+    if (!read)
+      break;
     hash.update(buffer.data(), read);
     total += read;
   }
-  valid = valid && GetFileSizeEx(file, &after) &&
-          before.QuadPart == after.QuadPart &&
+  valid = valid && GetFileSizeEx(file, &after) && before.QuadPart == after.QuadPart &&
           total == static_cast<std::uint64_t>(before.QuadPart);
   CloseHandle(file);
   return valid && hash.finish() == abi::executable_sha256;
@@ -112,48 +119,55 @@ bool target_identity_matches() noexcept {
 template <std::size_t N>
 bool sibling_path(wchar_t (&path)[32768], const wchar_t (&filename)[N]) noexcept {
   const DWORD length = GetModuleFileNameW(own_module, path, 32768);
-  if (!length || length >= 32768) return false;
+  if (!length || length >= 32768)
+    return false;
   DWORD directory = length;
   while (directory && path[directory - 1] != L'\\' && path[directory - 1] != L'/')
     --directory;
-  if (!directory || N > 32768 - directory) return false;
+  if (!directory || N > 32768 - directory)
+    return false;
   std::memcpy(path + directory, filename, sizeof(filename));
   return true;
 }
 
 bool consume_activation_marker() noexcept {
   wchar_t path[32768]{};
-  if (!sibling_path(path, L"UnionBatchCraftingMenuProbe.enable-once")) return false;
+  if (!sibling_path(path, L"UnionBatchCraftingMenuProbe.enable-once"))
+    return false;
   const DWORD attributes = GetFileAttributesW(path);
   if (attributes == INVALID_FILE_ATTRIBUTES ||
-      (attributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT))) return false;
-  const HANDLE file = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr,
-                                  OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, nullptr);
-  if (file == INVALID_HANDLE_VALUE) return false;
+      (attributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT)))
+    return false;
+  const HANDLE file = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
+                                  FILE_FLAG_OPEN_REPARSE_POINT, nullptr);
+  if (file == INVALID_HANDLE_VALUE)
+    return false;
   constexpr char expected[] = "UI_PROBE_ONLY_V1\n";
   std::array<char, sizeof(expected)> bytes{};
   DWORD read = 0;
   LARGE_INTEGER size{};
-  const bool exact = GetFileSizeEx(file, &size) &&
-                     size.QuadPart == sizeof(expected) - 1 &&
-                     ReadFile(file, bytes.data(), static_cast<DWORD>(bytes.size()), &read, nullptr) &&
-                     read == sizeof(expected) - 1 &&
-                     std::memcmp(bytes.data(), expected, sizeof(expected) - 1) == 0;
+  const bool exact =
+      GetFileSizeEx(file, &size) && size.QuadPart == sizeof(expected) - 1 &&
+      ReadFile(file, bytes.data(), static_cast<DWORD>(bytes.size()), &read, nullptr) &&
+      read == sizeof(expected) - 1 &&
+      std::memcmp(bytes.data(), expected, sizeof(expected) - 1) == 0;
   CloseHandle(file);
   return exact && DeleteFileW(path);
 }
 
 void log_line(const char* text) noexcept {
-  if (diagnostic == INVALID_HANDLE_VALUE) return;
+  if (diagnostic == INVALID_HANDLE_VALUE)
+    return;
   DWORD written = 0;
   WriteFile(diagnostic, text, static_cast<DWORD>(std::strlen(text)), &written, nullptr);
 }
 
 void open_diagnostic() noexcept {
   wchar_t path[32768]{};
-  if (!sibling_path(path, L"UnionBatchCraftingMenuProbe.log")) return;
-  diagnostic = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, nullptr,
-                           CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (!sibling_path(path, L"UnionBatchCraftingMenuProbe.log"))
+    return;
+  diagnostic = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS,
+                           FILE_ATTRIBUTE_NORMAL, nullptr);
   log_line("probe_version=1\r\ntarget_identity_match=true\r\n"
            "activation_marker_consumed=true\r\nrecipe_calls=false\r\n");
 }
@@ -162,7 +176,8 @@ bool hook_bytes_match(std::size_t index) noexcept {
   const auto& site = abi::hook_sites[index];
   const auto& hook = hooks[index];
   const auto* memory = reinterpret_cast<const std::uint8_t*>(site.address);
-  if (!memory_readable(memory, site.guard_size, true, true)) return false;
+  if (!memory_readable(memory, site.guard_size, true, true))
+    return false;
   if (!hook.written)
     return std::memcmp(memory, site.original.data(), site.guard_size) == 0;
   return std::memcmp(memory, hook.patch.data(), site.patch_size) == 0 &&
@@ -172,41 +187,44 @@ bool hook_bytes_match(std::size_t index) noexcept {
 
 bool all_hook_bytes_match() noexcept {
   for (std::size_t i = 0; i < hooks.size(); ++i)
-    if (!hook_bytes_match(i)) return false;
+    if (!hook_bytes_match(i))
+      return false;
   return true;
 }
 
-void relative_jump(std::uint8_t* bytes, std::uintptr_t from,
-                   std::uintptr_t to) noexcept {
+void relative_jump(std::uint8_t* bytes, std::uintptr_t from, std::uintptr_t to) noexcept {
   bytes[0] = 0xe9;
   // x86 EIP arithmetic is modulo 2^32. No signed overflow in C++.
-  const std::uint32_t displacement = static_cast<std::uint32_t>(to) -
-                                     static_cast<std::uint32_t>(from + 5);
+  const std::uint32_t displacement =
+      static_cast<std::uint32_t>(to) - static_cast<std::uint32_t>(from + 5);
   std::memcpy(bytes + 1, &displacement, sizeof(displacement));
 }
 
 void free_trampolines() noexcept {
   for (auto& hook : hooks) {
-    if (hook.trampoline) VirtualFree(hook.trampoline, 0, MEM_RELEASE);
+    if (hook.trampoline)
+      VirtualFree(hook.trampoline, 0, MEM_RELEASE);
     hook.trampoline = nullptr;
   }
 }
 
 bool prepare_trampolines() noexcept {
-  const std::array<std::uintptr_t, 3> destinations{{
-      reinterpret_cast<std::uintptr_t>(&run_probe),
-      reinterpret_cast<std::uintptr_t>(&handle_probe),
-      reinterpret_cast<std::uintptr_t>(&render_probe)}};
+  const std::array<std::uintptr_t, 3> destinations{
+      {reinterpret_cast<std::uintptr_t>(&run_probe),
+       reinterpret_cast<std::uintptr_t>(&handle_probe),
+       reinterpret_cast<std::uintptr_t>(&render_probe)}};
   for (std::size_t i = 0; i < hooks.size(); ++i) {
     const auto& site = abi::hook_sites[i];
     auto& hook = hooks[i];
     const auto size = site.patch_size + 5;
     hook.trampoline = VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-    if (!hook.trampoline) { free_trampolines(); return false; }
+    if (!hook.trampoline) {
+      free_trampolines();
+      return false;
+    }
     auto* code = static_cast<std::uint8_t*>(hook.trampoline);
     std::memcpy(code, site.original.data(), site.patch_size);
-    relative_jump(code + site.patch_size,
-                  reinterpret_cast<std::uintptr_t>(code) + site.patch_size,
+    relative_jump(code + site.patch_size, reinterpret_cast<std::uintptr_t>(code) + site.patch_size,
                   site.address + site.patch_size);
     DWORD previous = 0;
     if (!VirtualProtect(code, size, PAGE_EXECUTE_READ, &previous) ||
@@ -227,7 +245,8 @@ bool rollback_hooks() noexcept {
   bool restored = true;
   for (std::size_t i = hooks.size(); i-- > 0;) {
     auto& hook = hooks[i];
-    if (!hook.written) continue;
+    if (!hook.written)
+      continue;
     const auto& site = abi::hook_sites[i];
     auto* entry = reinterpret_cast<void*>(site.address);
     DWORD previous = 0;
@@ -243,7 +262,8 @@ bool rollback_hooks() noexcept {
         VirtualProtect(entry, site.patch_size, hook.original_protection, &discarded) != FALSE;
     const bool cache_flushed =
         FlushInstructionCache(GetCurrentProcess(), entry, site.patch_size) != FALSE;
-    if (!protection_restored || !cache_flushed) restored = false;
+    if (!protection_restored || !cache_flushed)
+      restored = false;
   }
   return restored;
 }
@@ -271,9 +291,11 @@ bool install_hooks() noexcept {
     auto& hook = hooks[i];
     auto* entry = reinterpret_cast<void*>(site.address);
     // Verify our existing patches too before each further write.
-    if (!all_hook_bytes_match() ||
-        !VirtualProtect(entry, site.patch_size, PAGE_EXECUTE_READWRITE,
-                        &hook.original_protection)) { complete = false; break; }
+    if (!all_hook_bytes_match() || !VirtualProtect(entry, site.patch_size, PAGE_EXECUTE_READWRITE,
+                                                   &hook.original_protection)) {
+      complete = false;
+      break;
+    }
     std::memcpy(entry, hook.patch.data(), site.patch_size);
     hook.written = true;
     DWORD discarded = 0;
@@ -281,15 +303,19 @@ bool install_hooks() noexcept {
         VirtualProtect(entry, site.patch_size, hook.original_protection, &discarded) != FALSE;
     const bool cache_flushed =
         FlushInstructionCache(GetCurrentProcess(), entry, site.patch_size) != FALSE;
-    if (!protection_restored || !cache_flushed) { complete = false; break; }
+    if (!protection_restored || !cache_flushed) {
+      complete = false;
+      break;
+    }
   }
   if (!complete || !all_hook_bytes_match()) {
     const bool restored = rollback_hooks();
-    if (restored) free_trampolines();
+    if (restored)
+      free_trampolines();
     // If rollback is incomplete, retain the module and trampolines.
     // Without the enable flag the run hook only forwards to the original.
-    log_line(restored ? "hooks_installed=false\r\nrejection=install_rolled_back\r\n" :
-                        "hooks_installed=false\r\nrejection=rollback_incomplete\r\n");
+    log_line(restored ? "hooks_installed=false\r\nrejection=install_rolled_back\r\n"
+                      : "hooks_installed=false\r\nrejection=rollback_incomplete\r\n");
     return false;
   }
   InterlockedExchange(&hooks_installed, 1);
@@ -299,16 +325,19 @@ bool install_hooks() noexcept {
 
 void* global_object(std::uintptr_t address) noexcept {
   const auto* location = reinterpret_cast<const void*>(address);
-  if (!memory_readable(location, sizeof(std::uint32_t), false, true)) return nullptr;
+  if (!memory_readable(location, sizeof(std::uint32_t), false, true))
+    return nullptr;
   auto* object = reinterpret_cast<void*>(abi::read<std::uint32_t>(location, 0));
   return memory_readable(object, sizeof(std::uint32_t)) ? object : nullptr;
 }
 
 std::uintptr_t input_method(void* input, std::size_t slot) noexcept {
-  if (!input || !memory_readable(input, sizeof(std::uint32_t))) return 0;
+  if (!input || !memory_readable(input, sizeof(std::uint32_t)))
+    return 0;
   const auto table = abi::read<std::uint32_t>(input, 0);
   const auto* entry = reinterpret_cast<const void*>(table + slot * sizeof(std::uint32_t));
-  if (!memory_readable(entry, sizeof(std::uint32_t))) return 0;
+  if (!memory_readable(entry, sizeof(std::uint32_t)))
+    return 0;
   const auto method = abi::read<std::uint32_t>(entry, 0);
   return memory_readable(reinterpret_cast<const void*>(method), 1, true) ? method : 0;
 }
@@ -322,20 +351,20 @@ bool key_down(void* input, int key) noexcept {
 bool game_focused() noexcept {
   const HWND window = GetForegroundWindow();
   DWORD process = 0;
-  return window && GetWindowThreadProcessId(window, &process) &&
-         process == GetCurrentProcessId();
+  return window && GetWindowThreadProcessId(window, &process) && process == GetCurrentProcessId();
 }
 
 bool engine_ready() noexcept {
   void* input = global_object(abi::input_pointer);
   if (!input_method(input, abi::key_pressed_slot) ||
-      !input_method(input, abi::clear_key_buffer_slot) ||
-      !global_object(abi::screen_pointer)) return false;
-  constexpr std::array<std::uintptr_t, 8> functions{{
-      abi::menu_ctor, abi::menu_dtor, abi::string_ctor, abi::string_dtor,
-      abi::view_clear_printwin, abi::view_set_font, abi::view_print, abi::input_logical_key}};
+      !input_method(input, abi::clear_key_buffer_slot) || !global_object(abi::screen_pointer))
+    return false;
+  constexpr std::array<std::uintptr_t, 8> functions{
+      {abi::menu_ctor, abi::menu_dtor, abi::string_ctor, abi::string_dtor, abi::view_clear_printwin,
+       abi::view_set_font, abi::view_print, abi::input_logical_key}};
   for (const auto function : functions)
-    if (!memory_readable(reinterpret_cast<const void*>(function), 1, true, true)) return false;
+    if (!memory_readable(reinterpret_cast<const void*>(function), 1, true, true))
+      return false;
   return true;
 }
 
@@ -350,6 +379,7 @@ public:
   NativeString(const NativeString&) = delete;
   NativeString& operator=(const NativeString&) = delete;
   const void* get() const noexcept { return storage_.bytes.data(); }
+
 private:
   abi::StringStorage storage_;
 };
@@ -370,39 +400,56 @@ void log_model() noexcept {
 ubc::MenuAction map_key(int key) noexcept {
   using Action = ubc::MenuAction;
   switch (key) {
-    case abi::key_return: return Action::Confirm;
-    case abi::key_escape: return Action::Back;
-    case abi::key_left: return Action::Left;
-    case abi::key_right: return Action::Right;
-    case abi::key_up: return Action::Up;
-    case abi::key_down: return Action::Down;
-    default: break;
+  case abi::key_return:
+    return Action::Confirm;
+  case abi::key_escape:
+    return Action::Back;
+  case abi::key_left:
+    return Action::Left;
+  case abi::key_right:
+    return Action::Right;
+  case abi::key_up:
+    return Action::Up;
+  case abi::key_down:
+    return Action::Down;
+  default:
+    break;
   }
-  if (key <= 0 || key > 0xffff) return Action::None;
+  if (key <= 0 || key > 0xffff)
+    return Action::None;
   void* input = global_object(abi::input_pointer);
-  if (!input) return Action::None;
+  if (!input)
+    return Action::None;
   const auto logical = reinterpret_cast<abi::LogicalKey>(abi::input_logical_key)(
       input, static_cast<unsigned short>(key));
   switch (logical) {
-    case abi::game_left:
-    case abi::game_strafe_left: return Action::Left;
-    case abi::game_right:
-    case abi::game_strafe_right: return Action::Right;
-    case abi::game_up: return Action::Up;
-    case abi::game_down: return Action::Down;
-    default: return Action::None;
+  case abi::game_left:
+  case abi::game_strafe_left:
+    return Action::Left;
+  case abi::game_right:
+  case abi::game_strafe_right:
+    return Action::Right;
+  case abi::game_up:
+    return Action::Up;
+  case abi::game_down:
+    return Action::Down;
+  default:
+    return Action::None;
   }
 }
 
 bool is_exact_main_menu(const void* self) noexcept {
-  if (!memory_readable(self, abi::menu_size)) return false;
+  if (!memory_readable(self, abi::menu_size))
+    return false;
   const auto table = abi::read<std::uint32_t>(self, abi::vptr_offset);
   // Main agent, first main menu test on 2026-10-31: L'Hiver uses the
   // native base class zCMenu (00830C3C) for MENU_MAIN, not oCMenu_Main.
   // Check both known types, always requiring the exact instance name.
-  if (table != abi::menu_vtable && table != abi::main_menu_vtable) return false;
+  if (table != abi::menu_vtable && table != abi::main_menu_vtable)
+    return false;
   if (abi::read<std::int32_t>(self, abi::menu_name + abi::string_length) !=
-      static_cast<std::int32_t>(sizeof(abi::main_menu_name) - 1)) return false;
+      static_cast<std::int32_t>(sizeof(abi::main_menu_name) - 1))
+    return false;
   const auto* name = reinterpret_cast<const char*>(
       abi::read<std::uint32_t>(self, abi::menu_name + abi::string_data));
   // Read only ten validated bytes including the terminating
@@ -452,32 +499,40 @@ int __fastcall run_probe(void* self, void*) {
 }
 
 int __fastcall handle_probe(void* self, void*, int key) {
-  if (!own_menu || self != own_menu) return original_handle_event(self, key);
-  if (!game_focused()) model.observe(false, false, false);
-  else if (model.on_action(map_key(key))) log_model();
+  if (!own_menu || self != own_menu)
+    return original_handle_event(self, key);
+  if (!game_focused())
+    model.observe(false, false, false);
+  else if (model.on_action(map_key(key)))
+    log_model();
   // Unbound events must not operate the underlying menu either.
   return 1;
 }
 
 void __fastcall render_probe(void* self, void*) {
-  if (!own_menu || self != own_menu) { original_render(self); return; }
-  if (preview_frames != UINT32_MAX) ++preview_frames;
+  if (!own_menu || self != own_menu) {
+    original_render(self);
+    return;
+  }
+  if (preview_frames != UINT32_MAX)
+    ++preview_frames;
   void* input = global_object(abi::input_pointer);
-  model.observe(key_down(input, abi::key_return), key_down(input, abi::key_escape),
-                game_focused());
+  model.observe(key_down(input, abi::key_return), key_down(input, abi::key_escape), game_focused());
   auto* view = reinterpret_cast<void*>(abi::read<std::uint32_t>(self, abi::menu_inner_window));
   if (!memory_readable(view, abi::view_size) ||
       abi::read<std::int32_t>(view, abi::view_id) != abi::view_item) {
-    if (!preview_render_failed) log_line("rejection=inner_view_unavailable\r\n");
+    if (!preview_render_failed)
+      log_line("rejection=inner_view_unavailable\r\n");
     preview_render_failed = true;
   }
   // The error persists across focus loss. When focus returns,
   // request closure again, but never without a release.
-  if (preview_render_failed && model.focused() &&
-      !model.closing() && !model.close_ready()) model.request_close();
+  if (preview_render_failed && model.focused() && !model.closing() && !model.close_ready())
+    model.request_close();
   if (model.close_ready()) {
     const auto clear = input_method(input, abi::clear_key_buffer_slot);
-    if (clear) reinterpret_cast<abi::ObjectFunction>(clear)(input);
+    if (clear)
+      reinterpret_cast<abi::ObjectFunction>(clear)(input);
     abi::write<std::int32_t>(self, abi::menu_exit_state, abi::exit_back);
   }
   if (preview_render_failed) {
@@ -496,9 +551,8 @@ void __fastcall render_probe(void* self, void*) {
   std::snprintf(line, sizeof(line), text[L::probe_amount], model.row() == 0 ? ">" : " ",
                 static_cast<unsigned>(model.quantity()));
   print_line(view, 2100, line);
-  const char* labels[] = {
-      text[L::preset_one], text[L::preset_five], text[L::preset_ten], text[L::preset_max],
-      text[L::probe_confirm], text[L::probe_main]};
+  const char* labels[] = {text[L::preset_one], text[L::preset_five],   text[L::preset_ten],
+                          text[L::preset_max], text[L::probe_confirm], text[L::probe_main]};
   for (unsigned row = 1; row < 7; ++row) {
     std::snprintf(line, sizeof(line), "%s %s", model.row() == row ? ">" : " ", labels[row - 1]);
     print_line(view, 2100 + static_cast<int>(row) * 480, line);
@@ -516,7 +570,7 @@ void __fastcall render_probe(void* self, void*) {
   original_render(self);
 }
 
-}  // namespace
+} // namespace
 
 extern "C" unsigned __cdecl UbcMenuProbeVersion() { return 1; }
 extern "C" int __cdecl UbcMenuProbeHooksInstalled() {

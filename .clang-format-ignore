@@ -1,0 +1,12 @@
+# Regression tests read the spelling of these native contract tables directly.
+include/ubc/catalogs/grind_recipe_profile.hpp
+include/ubc/engine/vob_inventory_insert_compat.hpp
+include/ubc/engine/vob_locator_compat.hpp
+include/ubc/engine/zbug_end_compat.hpp
+include/ubc/stations/alchemy/alchemy_flask_runtime.hpp
+include/ubc/stations/bow/bow_item_code.hpp
+include/ubc/stations/bow/bow_item_native.hpp
+include/ubc/stations/bow/bow_item_renderer.hpp
+include/ubc/stations/grind/grind_guild_snapshot.hpp
+include/ubc/stations/grind/grind_recipe_plan.hpp
+include/ubc/stations/grind/grind_zbug_unpack.hpp

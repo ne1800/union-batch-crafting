@@ -14,11 +14,10 @@ namespace ubc::native_menu {
 
 inline constexpr std::uintptr_t image_base = 0x00400000;
 inline constexpr std::size_t image_size = 0x00752000;
-inline constexpr std::array<std::uint8_t, 32> executable_sha256{{
-    0x06, 0x55, 0xb4, 0x81, 0x1e, 0x00, 0x8a, 0x35,
-    0x3c, 0xe3, 0x72, 0xfd, 0xe4, 0x63, 0xef, 0x00,
-    0xb6, 0x10, 0x1f, 0x3e, 0x89, 0xbe, 0x85, 0x0e,
-    0x2f, 0x14, 0x98, 0x01, 0x40, 0x44, 0x7c, 0x7f}};
+inline constexpr std::array<std::uint8_t, 32> executable_sha256{
+    {0x06, 0x55, 0xb4, 0x81, 0x1e, 0x00, 0x8a, 0x35, 0x3c, 0xe3, 0x72,
+     0xfd, 0xe4, 0x63, 0xef, 0x00, 0xb6, 0x10, 0x1f, 0x3e, 0x89, 0xbe,
+     0x85, 0x0e, 0x2f, 0x14, 0x98, 0x01, 0x40, 0x44, 0x7c, 0x7f}};
 
 inline constexpr std::size_t menu_size = 0x0cc4;
 inline constexpr std::size_t string_size = 0x14;
@@ -82,16 +81,14 @@ struct alignas(4) StringStorage {
 static_assert(sizeof(MenuStorage) == menu_size && alignof(MenuStorage) == 4);
 static_assert(sizeof(StringStorage) == string_size && alignof(StringStorage) == 4);
 
-template <typename T>
-T read(const void* object, std::size_t offset) noexcept {
+template <typename T> T read(const void* object, std::size_t offset) noexcept {
   static_assert(std::is_trivially_copyable_v<T>);
   T value{};
   std::memcpy(&value, static_cast<const std::uint8_t*>(object) + offset, sizeof(T));
   return value;
 }
 
-template <typename T>
-void write(void* object, std::size_t offset, T value) noexcept {
+template <typename T> void write(void* object, std::size_t offset, T value) noexcept {
   static_assert(std::is_trivially_copyable_v<T>);
   std::memcpy(static_cast<std::uint8_t*>(object) + offset, &value, sizeof(T));
 }
@@ -105,16 +102,17 @@ struct HookSite {
 
 // Before the split point (patch_size) only whole instructions without relative
 // operands. The following bytes additionally serve as a version guard.
-inline constexpr std::array<HookSite, 3> hook_sites{{
-    {menu_run, 13, 18,
-     {{0x56, 0x8b, 0xf1, 0xc7, 0x86, 0x24, 0x0c, 0x00, 0x00,
-       0x00, 0x00, 0x00, 0x00, 0xa1, 0x40, 0x1e, 0x8d, 0x00}}},
-    {menu_handle_event, 5, 12,
-     {{0x53, 0x55, 0x56, 0x8b, 0xf1, 0x57, 0x8b, 0xbe,
-       0x40, 0x0c, 0x00, 0x00}}},
-    {menu_render, 5, 11,
-     {{0x51, 0x53, 0x57, 0x8b, 0xf9, 0x8b, 0x87,
-       0xc0, 0x0c, 0x00, 0x00}}}}};
+inline constexpr std::array<HookSite, 3> hook_sites{
+    {{menu_run,
+      13,
+      18,
+      {{0x56, 0x8b, 0xf1, 0xc7, 0x86, 0x24, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xa1, 0x40,
+        0x1e, 0x8d, 0x00}}},
+     {menu_handle_event,
+      5,
+      12,
+      {{0x53, 0x55, 0x56, 0x8b, 0xf1, 0x57, 0x8b, 0xbe, 0x40, 0x0c, 0x00, 0x00}}},
+     {menu_render, 5, 11, {{0x51, 0x53, 0x57, 0x8b, 0xf9, 0x8b, 0x87, 0xc0, 0x0c, 0x00, 0x00}}}}};
 
 #if defined(_WIN32) && defined(_M_IX86)
 static_assert(sizeof(void*) == 4, "Die native ABI ist ausschliesslich x86.");
@@ -128,4 +126,4 @@ using LogicalKey = unsigned short(__thiscall*)(void*, unsigned short);
 using KeyPressed = int(__thiscall*)(void*, int);
 #endif
 
-}  // namespace ubc::native_menu
+} // namespace ubc::native_menu

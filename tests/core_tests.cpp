@@ -27,14 +27,12 @@ void check(bool condition, const char* expression, int line) {
 
 #define CHECK(...) check(static_cast<bool>((__VA_ARGS__)), #__VA_ARGS__, __LINE__)
 
-void write16(std::vector<std::uint8_t>& bytes, std::size_t offset,
-             std::uint16_t value) {
+void write16(std::vector<std::uint8_t>& bytes, std::size_t offset, std::uint16_t value) {
   bytes.at(offset) = static_cast<std::uint8_t>(value);
   bytes.at(offset + 1) = static_cast<std::uint8_t>(value >> 8);
 }
 
-void write32(std::vector<std::uint8_t>& bytes, std::size_t offset,
-             std::uint32_t value) {
+void write32(std::vector<std::uint8_t>& bytes, std::size_t offset, std::uint32_t value) {
   for (unsigned i = 0; i < 4; ++i) {
     bytes.at(offset + i) = static_cast<std::uint8_t>(value >> (8 * i));
   }
@@ -152,8 +150,7 @@ void quantity_tests() {
     q.adjust(step_max);
     CHECK(q.value() <= maximum);
     q.adjust(step_min);
-    CHECK(q.value() == (maximum == 0 ? 0U :
-                        maximum == largest ? 2147483647U : 1U));
+    CHECK(q.value() == (maximum == 0 ? 0U : maximum == largest ? 2147483647U : 1U));
     q.adjust(step_min);
     CHECK(q.value() == (maximum == 0 ? 0U : 1U));
   }
@@ -198,8 +195,7 @@ void pe_header_tests() {
   CHECK(matches(valid));
   CHECK(!ubc::matches_gothic2_header(nullptr, 0));
   CHECK(!ubc::matches_gothic2_header(nullptr, valid.size()));
-  CHECK(!ubc::matches_gothic2_header(
-      nullptr, std::numeric_limits<std::size_t>::max()));
+  CHECK(!ubc::matches_gothic2_header(nullptr, std::numeric_limits<std::size_t>::max()));
   CHECK(!ubc::matches_gothic2_header(valid.data(), 0));
 
   // The declared optional header must be present in full, even
@@ -222,8 +218,8 @@ void pe_header_tests() {
   write32(damaged, 128, 0x50450000);
   CHECK(!matches(damaged));
 
-  for (const auto offset : {0U, 1U, 63U, 489U, 512U, 513U, 0x7fffffffU,
-                            0xffffffe8U, 0xfffffff0U, 0xffffffffU}) {
+  for (const auto offset :
+       {0U, 1U, 63U, 489U, 512U, 513U, 0x7fffffffU, 0xffffffe8U, 0xfffffff0U, 0xffffffffU}) {
     damaged = valid;
     write32(damaged, 60, offset);
     CHECK(!matches(damaged));
@@ -271,9 +267,8 @@ void pe_header_tests() {
 
   // Reject deterministic mutations of fixed identity fields.
   // Changes to unused bytes must not affect identity.
-  const std::vector<std::size_t> fixed_bytes{
-      0, 1, 128, 129, 130, 131, 132, 133, 136, 137, 138, 139,
-      152, 153, 180, 181, 182, 183, 208, 209, 210, 211};
+  const std::vector<std::size_t> fixed_bytes{0,   1,   128, 129, 130, 131, 132, 133, 136, 137, 138,
+                                             139, 152, 153, 180, 181, 182, 183, 208, 209, 210, 211};
   std::mt19937 random(0x39510U);
   for (unsigned i = 0; i < 10000; ++i) {
     damaged = valid;
@@ -323,15 +318,14 @@ void real_header_test(const char* path) {
     return;
   }
   std::vector<std::uint8_t> bytes(4096);
-  stream.read(reinterpret_cast<char*>(bytes.data()),
-              static_cast<std::streamsize>(bytes.size()));
+  stream.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
   bytes.resize(static_cast<std::size_t>(stream.gcount()));
   CHECK(matches(bytes));
   if (matches(bytes)) {
     std::cout << "Read-only executable header matched.\n";
   }
 }
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
   if (argc != 1 && !(argc == 3 && std::string(argv[1]) == "--exe")) {

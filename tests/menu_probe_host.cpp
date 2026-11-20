@@ -14,10 +14,12 @@ int wmain(int argc, wchar_t** argv) {
   using Version = unsigned(__cdecl*)();
   using Installed = int(__cdecl*)();
   const auto version = reinterpret_cast<Version>(GetProcAddress(module, "UbcMenuProbeVersion"));
-  const auto installed = reinterpret_cast<Installed>(GetProcAddress(module, "UbcMenuProbeHooksInstalled"));
+  const auto installed =
+      reinterpret_cast<Installed>(GetProcAddress(module, "UbcMenuProbeHooksInstalled"));
   const bool valid = version && installed && version() == 1 && installed() == 0;
   const bool unloaded = FreeLibrary(module) != 0;
-  if (!valid || !unloaded) return 4;
+  if (!valid || !unloaded)
+    return 4;
   std::puts("menu_probe_version=1 hooks_installed=0 unknown_target_rejected=true");
   return 0;
 }

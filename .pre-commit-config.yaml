@@ -1,0 +1,82 @@
+minimum_prek_version: "0.4.14"
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        exclude: &format_exclude '(^|/)(fixtures|testdata|data|build|dist|local|\.tools|__pycache__)/|^docs/(reports|validation)/|^tests/scenarios/|(_fixture|_test_values|/generated_[^/]+|/player_engine_sites|/grind_recipe_profile|/grind_item_(shape|constructor))\.hpp$|^docs/.*-world-evidence\.json$'
+      - id: end-of-file-fixer
+        exclude: *format_exclude
+      - id: check-merge-conflict
+        args: [--assume-in-merge]
+      - id: check-added-large-files
+        args: [--enforce-all]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.5
+    hooks:
+      - id: ruff-format
+        types_or: [python, pyi]
+        exclude: *format_exclude
+      - id: ruff-check
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.13.1-1
+    hooks:
+      - id: shfmt
+        args: [-w, -i, '2', -ci]
+        exclude: *format_exclude
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.21.0
+    hooks:
+      - id: markdownlint-cli2
+        exclude: ^docs/reports/
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: clang-format
+        name: clang-format
+        language: system
+        entry: python3 tools/pinned-formatter.py clang-format 23.1.5 -i
+        types_or: [c, c++]
+        exclude: *format_exclude
+      - id: gersemi
+        name: gersemi
+        language: system
+        entry: python3 tools/pinned-formatter.py gersemi 0.17.0 -i
+        types: [cmake]
+        exclude: *format_exclude
+      - id: bilingual-docs
+        name: Check bilingual documentation
+        language: system
+        entry: python3 -B -m unittest discover -s tests -p test_user_docs.py
+        pass_filenames: false
+        always_run: true
+      - id: export-leaks
+        name: Scan the source export and all Git objects
+        language: system
+        entry: python3 -B tools/scan-export.py
+        stages: [manual]
+        pass_filenames: false
+        always_run: true
+      - id: clang-tidy
+        name: Report clang-tidy findings against the baseline
+        language: system
+        entry: python3 tools/report-clang-tidy.py
+        stages: [manual]
+        pass_filenames: false
+        always_run: true
+        verbose: true
+      - id: conventional-commit
+        name: Check Conventional Commit subject
+        language: system
+        entry: python3 tools/commit-subject.py
+        stages: [commit-msg]

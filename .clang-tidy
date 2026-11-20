@@ -1,0 +1,2 @@
+Checks: '-*,clang-analyzer-core.NullDereference,bugprone-use-after-move,performance-for-range-copy'
+HeaderFilterRegex: '.*(include/ubc|src)/.*'

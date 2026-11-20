@@ -1,0 +1,29 @@
+# Keep checkout-independent settings and the minimum Python version in the guides.
+target-version = "py310"
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+
+[lint.per-file-ignores]
+# Existing late imports bootstrap helper paths. Callback lambdas and the unused
+# local need individual review before changing execution or captured values.
+"tests/test_bow_world.py" = ["E402"]
+"tests/test_campfire.py" = ["E402"]
+"tests/test_cool_measurement.py" = ["E402"]
+"tests/test_cool_route.py" = ["E402"]
+"tests/test_crafting_cycle.py" = ["E402"]
+"tests/test_grind_route.py" = ["E402"]
+"tests/test_native_code_observation.py" = ["E731"]
+"tests/test_scenario_runner.py" = ["E731"]
+"tests/test_smithy_walk.py" = ["E402"]
+"tests/test_stove_route.py" = ["E402"]
+"tests/test_tobacco_world.py" = ["E402"]
+"tools/evidence-report.py" = ["E731"]
+"tools/player-profile/generate.py" = ["E731"]
+"tools/scenario-test-WRITES.py" = ["E731"]
+"tools/world/helpers/approach-WRITES.py" = ["E731"]
+"tools/world/helpers/frontend-menu.py" = ["E731"]
+"tools/world/helpers/native_code_observation.py" = ["E731"]
+"tools/world/helpers/smithy-walk-WRITES.py" = ["E731"]
+"tools/world/run-station-cycle-WRITES.py" = ["E402", "E731", "F841"]
+"tools/world/tobacco.py" = ["E731"]

@@ -29,7 +29,10 @@ unsigned failures = 0;
 
 void check(bool condition, const char* message) {
   ++checks;
-  if (!condition) { ++failures; std::fprintf(stderr, "FAIL: %s\n", message); }
+  if (!condition) {
+    ++failures;
+    std::fprintf(stderr, "FAIL: %s\n", message);
+  }
 }
 
 struct State {
@@ -135,7 +138,8 @@ using Sites = std::array<Site, 3>;
 using Hooks = ubc::windows_probe::Hooks<Site, 3>;
 
 Sites sites() {
-  constexpr std::array<std::uint8_t, 32> one{{0x55, 0x89, 0xe5, 0x53, 0x56, 0x57, 0x90, 0xff, 0x01}};
+  constexpr std::array<std::uint8_t, 32> one{
+      {0x55, 0x89, 0xe5, 0x53, 0x56, 0x57, 0x90, 0xff, 0x01}};
   constexpr std::array<std::uint8_t, 32> two{{0x55, 0x89, 0xe5, 0x53, 0x56, 0x57, 0xff, 0x01}};
   constexpr std::array<std::uint8_t, 32> update{{0x55, 0x89, 0xe5, 0x53, 0x56, 0x57}};
   return {{{reinterpret_cast<std::uintptr_t>(&synthetic_one), 7, 9, one},
@@ -151,8 +155,9 @@ std::array<std::uintptr_t, 3> destinations() {
 
 bool original_heads(const Sites& values) {
   for (const auto& site : values)
-    if (std::memcmp(reinterpret_cast<const void*>(site.address),
-                    site.original.data(), site.guard_size)) return false;
+    if (std::memcmp(reinterpret_cast<const void*>(site.address), site.original.data(),
+                    site.guard_size))
+      return false;
   return true;
 }
 
@@ -160,14 +165,15 @@ bool trampoline_valid(const Site& site, const void* trampoline) {
   MEMORY_BASIC_INFORMATION region{};
   if (!trampoline || VirtualQuery(trampoline, &region, sizeof(region)) != sizeof(region) ||
       region.State != MEM_COMMIT || region.Type != MEM_PRIVATE ||
-      (region.Protect & 0xffu) != PAGE_EXECUTE_READ || (region.Protect & PAGE_GUARD)) return false;
+      (region.Protect & 0xffu) != PAGE_EXECUTE_READ || (region.Protect & PAGE_GUARD))
+    return false;
   const auto* bytes = static_cast<const std::uint8_t*>(trampoline);
   if (std::memcmp(bytes, site.original.data(), site.patch_size) || bytes[site.patch_size] != 0xe9)
     return false;
   std::uint32_t relative = 0;
   std::memcpy(&relative, bytes + site.patch_size + 1, sizeof(relative));
   const auto target = static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(bytes)) +
-      static_cast<std::uint32_t>(site.patch_size) + 5u + relative;
+                      static_cast<std::uint32_t>(site.patch_size) + 5u + relative;
   return target == site.address + site.patch_size;
 }
 
@@ -177,7 +183,8 @@ void guard_refusal(const Sites& values) {
   Hooks refused(wrong);
   check(!refused.prepare(destinations()), "changed suffix guard rejects preparation");
   check(refused.original(0) == nullptr && refused.original(1) == nullptr &&
-        refused.original(2) == nullptr, "guard refusal owns no trampolines");
+            refused.original(2) == nullptr,
+        "guard refusal owns no trampolines");
   check(original_heads(values), "guard refusal changes no source instruction");
 }
 
@@ -185,7 +192,8 @@ void partial_rollback(const Sites& values) {
   Hooks rollback(values);
   const bool prepared = rollback.prepare(destinations());
   check(prepared, "rollback fixture prepares real trampolines");
-  if (!prepared) return;
+  if (!prepared)
+    return;
   fail_write_at = reinterpret_cast<void*>(values[1].address);
   const auto before = injected_failures;
   check(!rollback.install(reinterpret_cast<std::uintptr_t>(&callback_one)),
@@ -193,7 +201,8 @@ void partial_rollback(const Sites& values) {
   check(injected_failures == before + 1 && !fail_write_at, "failure injected exactly once");
   check(original_heads(values), "partial rollback restores first patch and all guards");
   check(rollback.original(0) == nullptr && rollback.original(1) == nullptr &&
-        rollback.original(2) == nullptr, "complete rollback releases all trampolines");
+            rollback.original(2) == nullptr,
+        "complete rollback releases all trampolines");
   State state;
   const auto one = &synthetic_one;
   check(one(&state, 10) == 17 && state.calls == 1 && callback_calls[0] == 0,
@@ -204,22 +213,27 @@ void exercise(const Sites& values) {
   Hooks installed(values);
   const bool prepared = installed.prepare(destinations());
   check(prepared, "positive fixture prepares real trampolines");
-  if (!prepared) return;
+  if (!prepared)
+    return;
   for (std::size_t i = 0; i < values.size(); ++i)
-    check(trampoline_valid(values[i], installed.original(i)), "trampoline bytes, target and RX protection");
+    check(trampoline_valid(values[i], installed.original(i)),
+          "trampoline bytes, target and RX protection");
   original_one = reinterpret_cast<One>(installed.original(0));
   original_two = reinterpret_cast<Two>(installed.original(1));
   original_update = reinterpret_cast<Update>(installed.original(2));
   State direct;
   check(original_one(&direct, 11) == 18 && direct.calls == 1 && direct.first == 11,
         "uninstalled one-argument trampoline executes original");
-  check(original_two(&direct, -9, 17) == 15 && direct.calls == 2 &&
-        direct.first == -9 && direct.second == 17, "uninstalled two-argument trampoline executes original");
-  check(original_update(&direct, reinterpret_cast<void*>(0x2030)) == 0x2037 &&
-        direct.calls == 3 && direct.first == 0x2030, "fastcall trampoline receives EDX");
+  check(original_two(&direct, -9, 17) == 15 && direct.calls == 2 && direct.first == -9 &&
+            direct.second == 17,
+        "uninstalled two-argument trampoline executes original");
+  check(original_update(&direct, reinterpret_cast<void*>(0x2030)) == 0x2037 && direct.calls == 3 &&
+            direct.first == 0x2030,
+        "fastcall trampoline receives EDX");
   const bool active = installed.install(reinterpret_cast<std::uintptr_t>(&callback_one));
   check(active, "real image hooks installed");
-  if (!active) return;
+  if (!active)
+    return;
 
   const auto one = &synthetic_one;
   const auto two = &synthetic_two;
@@ -231,25 +245,28 @@ void exercise(const Sites& values) {
     values_correct = state.first == i - 128 && values_correct;
     values_correct = (two(&state, i, -2 * i) == 7 - i + 2000) && values_correct;
     values_correct = state.first == i && state.second == -2 * i && values_correct;
-    values_correct = (update(&state, reinterpret_cast<void*>(0x2030)) == 0x2037 + 3000) && values_correct;
+    values_correct =
+        (update(&state, reinterpret_cast<void*>(0x2030)) == 0x2037 + 3000) && values_correct;
     values_correct = state.first == 0x2030 && values_correct;
   }
   check(values_correct, "768 calls preserve arguments and return values through hooks");
   check(state.calls == 768 && callback_calls == std::array<unsigned, 3>{{256, 256, 256}},
         "every intercepted call executes exactly one callback and one original");
   for (std::size_t i = 0; i < values.size(); ++i)
-    check(trampoline_valid(values[i], installed.original(i)), "installed trampoline remains unchanged and RX");
+    check(trampoline_valid(values[i], installed.original(i)),
+          "installed trampoline remains unchanged and RX");
   check(!installed.prepare(destinations()), "second preparation is refused");
-  check(!installed.install(reinterpret_cast<std::uintptr_t>(&callback_one)), "second installation is refused");
+  check(!installed.install(reinterpret_cast<std::uintptr_t>(&callback_one)),
+        "second installation is refused");
   check(one(&state, 3) == 1010 && state.calls == 769 && callback_calls[0] == 257,
         "one-shot refusal keeps existing hook operational");
   // Successful hooks last for the lifetime of the process. Never free
   // them while entry points are active. The OS cleans up at process exit.
 }
-}  // namespace
+} // namespace
 
 BOOL WINAPI test_virtual_protect(LPVOID address, SIZE_T size, DWORD protection,
-                                PDWORD previous) noexcept {
+                                 PDWORD previous) noexcept {
   if (address == fail_write_at && protection == PAGE_EXECUTE_READWRITE) {
     fail_write_at = nullptr;
     ++injected_failures;
@@ -261,19 +278,23 @@ BOOL WINAPI test_virtual_protect(LPVOID address, SIZE_T size, DWORD protection,
 
 int main() {
   const auto values = sites();
-  const bool correct_image = reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr)) == 0x400000;
+  const bool correct_image =
+      reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr)) == 0x400000;
   check(correct_image, "test host has required fixed image base");
-  if (!correct_image) return 2;
+  if (!correct_image)
+    return 2;
   bool readable = true;
   for (const auto& site : values) {
     const bool valid = ubc::windows_probe::readable(reinterpret_cast<const void*>(site.address),
-                                                   site.guard_size, true, true);
+                                                    site.guard_size, true, true);
     check(valid, "synthetic entry is executable MEM_IMAGE inside host range");
     readable = readable && valid;
   }
-  if (!readable) return 3;
+  if (!readable)
+    return 3;
   check(original_heads(values), "compiler emitted exact complete stub instructions");
-  if (failures) return 4;
+  if (failures)
+    return 4;
   guard_refusal(values);
   partial_rollback(values);
   exercise(values);

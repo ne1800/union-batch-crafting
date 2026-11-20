@@ -1,4 +1,5 @@
 """The positive cooling check must not skip missing file contracts."""
+
 from pathlib import Path
 import sys
 import tempfile
@@ -15,13 +16,15 @@ class CoolLocalFactsTests(unittest.TestCase):
         root = Path(self.temp.name)
         self.game = root / "common/Gothic II"
         self.workshop = root / "workshop/content/39510"
-        self.files = [self.game / "system/Gothic2.exe",
-                      self.workshop / "2847787799/Data/ModVDF/Lhiver_marcello.mod",
-                      self.game / "Data/$Templates$/ZBUGFIXES.DLL",
-                      self.workshop / "2787458679/System/Shw32.dll",
-                      self.game / "system/msvcr100.dll",
-                      self.game / "Data/$Templates$/zParserExtender.dll",
-                      self.game / "system/gd3d11/bin/g2a_avx2.dll"]
+        self.files = [
+            self.game / "system/Gothic2.exe",
+            self.workshop / "2847787799/Data/ModVDF/Lhiver_marcello.mod",
+            self.game / "Data/$Templates$/ZBUGFIXES.DLL",
+            self.workshop / "2787458679/System/Shw32.dll",
+            self.game / "system/msvcr100.dll",
+            self.game / "Data/$Templates$/zParserExtender.dll",
+            self.game / "system/gd3d11/bin/g2a_avx2.dll",
+        ]
         for path in self.files:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes("Nur eigene Pfadfixture; kein Binärvertrag".encode())

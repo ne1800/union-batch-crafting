@@ -13,9 +13,9 @@ using AmountEffect = void*(__cdecl*)(void*);
 // The entire mutating window lies in finally, including begin
 // itself. The context of the memory adapter must survive the call.
 // No logging, allocation, or UI between first exchange and return.
-inline void* run_amount_call(AmountPatch& patch, const AmountMemory& memory,
-    std::uint32_t address, const AmountBody& body, std::uint32_t quantity,
-    AmountEffect effect, void* context, bool& restore_verified, AmountOutcome& outcome) {
+inline void* run_amount_call(AmountPatch& patch, const AmountMemory& memory, std::uint32_t address,
+                             const AmountBody& body, std::uint32_t quantity, AmountEffect effect,
+                             void* context, bool& restore_verified, AmountOutcome& outcome) {
   void* result = nullptr;
   DWORD after = GetLastError();
   restore_verified = false;
@@ -26,9 +26,11 @@ inline void* run_amount_call(AmountPatch& patch, const AmountMemory& memory,
       SetLastError(after);
       result = effect(context);
       after = GetLastError();
-    } else outcome.issue = patch.issue();
+    } else
+      outcome.issue = patch.issue();
   } __finally {
-    if (AbnormalTermination()) after = GetLastError();
+    if (AbnormalTermination())
+      after = GetLastError();
     restore_verified = (!patch.active() && !patch.mutation_attempted()) || patch.finish();
     outcome.restored = restore_verified;
     SetLastError(after);

@@ -63,8 +63,7 @@ struct RecipeResultObservation {
 // copies the entire contract; observe retains no View/Choice pointer. A
 // matching end quantity alone proves neither learning rules nor script
 // restore: their own gates remain required; an error can fail() lock.
-template<std::size_t Capacity = recipe_catalog::catalog_target_capacity>
-class RecipeResult {
+template <std::size_t Capacity = recipe_catalog::catalog_target_capacity> class RecipeResult {
 public:
   bool begin(const recipe_catalog::Descriptor& recipe,
              recipe_catalog::View<RecipeResultItem> expected,
@@ -72,10 +71,9 @@ public:
     if (state_ == RecipeResultState::waiting || state_ == RecipeResultState::failed)
       return false;
     if (!binding.generation || binding.generation <= binding_.generation ||
-        binding.start_frame < last_frame_ || !binding.world || !binding.hero ||
-        !binding.station || !expected.data || !expected.count ||
-        expected.count > Capacity || expected.count != recipe.targets.count ||
-        !recipe_catalog::structurally_valid(recipe))
+        binding.start_frame < last_frame_ || !binding.world || !binding.hero || !binding.station ||
+        !expected.data || !expected.count || expected.count > Capacity ||
+        expected.count != recipe.targets.count || !recipe_catalog::structurally_valid(recipe))
       return bad_contract();
     if (recipe.station == recipe_catalog::Station::stove &&
         (!binding.collection || binding.ready_right.state != 1 ||
@@ -88,7 +86,8 @@ public:
     for (std::size_t i = 0; i < expected.count; ++i)
       if (expected[i].symbol != recipe.targets[i].symbol || !valid_total(expected[i].total))
         return bad_contract();
-    for (std::size_t i = 0; i < expected.count; ++i) expected_[i] = expected[i];
+    for (std::size_t i = 0; i < expected.count; ++i)
+      expected_[i] = expected[i];
     count_ = expected.count;
     binding_ = binding;
     station_type_ = recipe.station;
@@ -104,8 +103,8 @@ public:
   bool end_after(const RecipeEndWitness& value) noexcept {
     if (state_ != RecipeResultState::waiting || has_end_ || !value.after_original ||
         value.generation != binding_.generation || value.sequence <= binding_.end_sequence ||
-        value.frame < last_frame_ || value.world != binding_.world ||
-        value.hero != binding_.hero || value.station != binding_.station)
+        value.frame < last_frame_ || value.world != binding_.world || value.hero != binding_.hero ||
+        value.station != binding_.station)
       return false;
     has_end_ = true;
     end_frame_ = value.frame;
@@ -113,11 +112,14 @@ public:
   }
 
   RecipeResultState observe(const RecipeResultObservation& value) noexcept {
-    if (state_ != RecipeResultState::waiting) return state_;
+    if (state_ != RecipeResultState::waiting)
+      return state_;
     // Stale jobs/frames must neither confirm nor contradict current
     // identity. A future own job during waiting is an error.
-    if (value.generation < binding_.generation) return state_;
-    if (value.generation != binding_.generation) return fail(RecipeResultIssue::contract);
+    if (value.generation < binding_.generation)
+      return state_;
+    if (value.generation != binding_.generation)
+      return fail(RecipeResultIssue::contract);
     if (!value.stable_boundary_verified || value.frame <= binding_.start_frame ||
         value.frame < last_frame_)
       return state_;
@@ -135,19 +137,22 @@ public:
     if (!value.identity_known || !value.station_known || !value.production_known)
       return state_;
 
-    const bool ended = has_end_ && value.frame >= end_frame_ &&
-                       !value.station && !value.production;
+    const bool ended = has_end_ && value.frame >= end_frame_ && !value.station && !value.production;
     const bool ready = !has_end_ && station_type_ == recipe_catalog::Station::stove &&
                        value.station == binding_.station && value.production == production_ &&
                        value.selection_known && value.selection_open && value.selection_waiting &&
                        !value.selection_done && value.collection_known &&
                        value.collection > binding_.collection;
-    if (!ended && !ready) return state_;
+    if (!ended && !ready)
+      return state_;
 
-    if (value.stock_known && !matching_stock(value.items)) return fail(RecipeResultIssue::stock);
+    if (value.stock_known && !matching_stock(value.items))
+      return fail(RecipeResultIssue::stock);
     const auto hands = value.hands_known ? matching_hands(value.hands, ended) : Match::unknown;
-    if (hands == Match::different) return fail(RecipeResultIssue::hands);
-    if (!value.stock_known || hands != Match::same) return state_;
+    if (hands == Match::different)
+      return fail(RecipeResultIssue::hands);
+    if (!value.stock_known || hands != Match::same)
+      return state_;
     state_ = RecipeResultState::verified;
     return state_;
   }
@@ -173,39 +178,52 @@ private:
   static bool valid_total(std::int64_t total) noexcept {
     return total >= 0 && total <= std::numeric_limits<std::int32_t>::max();
   }
-  bool bad_contract() noexcept { fail(RecipeResultIssue::contract); return false; }
+  bool bad_contract() noexcept {
+    fail(RecipeResultIssue::contract);
+    return false;
+  }
   bool matching_stock(recipe_catalog::View<RecipeResultItem> values) const noexcept {
-    if (!values.data || values.count != count_) return false;
+    if (!values.data || values.count != count_)
+      return false;
     // count_ is checked against the own array capacity. Missing,
     // duplicate, and foreign symbols are never implicit zero stocks.
     for (std::size_t i = 0; i < count_; ++i) {
-      if (!valid_total(values[i].total)) return false;
+      if (!valid_total(values[i].total))
+        return false;
       for (std::size_t j = 0; j < i; ++j)
-        if (values[j].symbol == values[i].symbol) return false;
+        if (values[j].symbol == values[i].symbol)
+          return false;
       bool found = false;
       for (std::size_t j = 0; j < count_; ++j)
         if (values[i].symbol == expected_[j].symbol) {
-          if (values[i].total != expected_[j].total) return false;
+          if (values[i].total != expected_[j].total)
+            return false;
           found = true;
           break;
         }
-      if (!found) return false;
+      if (!found)
+        return false;
     }
     return true;
   }
   static Match empty_hand(const HandObjectSnapshot& hand) noexcept {
-    if (hand.state == -1) return Match::unknown;
+    if (hand.state == -1)
+      return Match::unknown;
     return hand.state == 0 && !hand.object ? Match::same : Match::different;
   }
   Match matching_hands(const HandsSnapshot& hands, bool ended) const noexcept {
     const auto left = empty_hand(hands.left);
     Match right = Match::unknown;
-    if (ended) right = empty_hand(hands.right);
+    if (ended)
+      right = empty_hand(hands.right);
     else if (hands.right.state != -1)
       right = hands.right.state == 1 && hands.right.symbol == binding_.ready_right.symbol &&
-              hands.right.amount == binding_.ready_right.amount &&
-              hands.right.object == binding_.ready_right.object ? Match::same : Match::different;
-    if (left == Match::different || right == Match::different) return Match::different;
+                      hands.right.amount == binding_.ready_right.amount &&
+                      hands.right.object == binding_.ready_right.object
+                  ? Match::same
+                  : Match::different;
+    if (left == Match::different || right == Match::different)
+      return Match::different;
     return left == Match::same && right == Match::same ? Match::same : Match::unknown;
   }
 

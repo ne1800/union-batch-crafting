@@ -15,7 +15,10 @@ unsigned checks = 0;
 unsigned failures = 0;
 void check(bool condition, const char* message) {
   ++checks;
-  if (!condition) { ++failures; std::fprintf(stderr, "FAIL: %s\n", message); }
+  if (!condition) {
+    ++failures;
+    std::fprintf(stderr, "FAIL: %s\n", message);
+  }
 }
 
 struct MemoryImage {
@@ -29,7 +32,8 @@ struct MemoryImage {
     ++image.calls;
     const std::uint64_t end = static_cast<std::uint64_t>(address) + size;
     if (address < base || end > static_cast<std::uint64_t>(base) + image.bytes.size() ||
-        (image.denied_begin && address < image.denied_end && end > image.denied_begin)) return false;
+        (image.denied_begin && address < image.denied_end && end > image.denied_begin))
+      return false;
     std::memcpy(output, image.bytes.data() + address - base, size);
     return true;
   }
@@ -72,8 +76,10 @@ void populate(MemoryImage& image, unsigned count = 2) {
     image.put(item(i) + 0x32c, i + 1);
     image.put(item(i) + 0x330, 1000 + i);
   }
-  if (count) make_slot(image, 0, "ZS_LEFTHAND", item(0));
-  if (count > 1) make_slot(image, 1, "ZS_RIGHTHAND", item(1));
+  if (count)
+    make_slot(image, 0, "ZS_LEFTHAND", item(0));
+  if (count > 1)
+    make_slot(image, 1, "ZS_RIGHTHAND", item(1));
 }
 
 bool unreadable(const ubc::HandObjectSnapshot& value) {
@@ -99,7 +105,8 @@ void ordinary_cases(MemoryImage& image) {
   image.put(slot(0) + 0x30, 0);
   check(ubc::read_hands(image.memory(), hero).left.state == 0, "null slot vob means empty hand");
   make_slot(image, 0, "OTHER_SLOT", item(0));
-  check(ubc::read_hands(image.memory(), hero).left.state == 0, "missing hand name after full valid walk");
+  check(ubc::read_hands(image.memory(), hero).left.state == 0,
+        "missing hand name after full valid walk");
   populate(image);
   image.put(item(0), 0x87654321);
   result = ubc::read_hands(image.memory(), hero);
@@ -111,7 +118,8 @@ void ordinary_cases(MemoryImage& image) {
   result = ubc::read_hands(image.memory(), hero);
   check(result.left.state == 1 && result.left.amount == 0, "zero-count item is still held");
   image.put(item(0) + 0x32c, INT32_MAX);
-  check(ubc::read_hands(image.memory(), hero).left.amount == INT32_MAX, "INT_MAX amount is representable");
+  check(ubc::read_hands(image.memory(), hero).left.amount == INT32_MAX,
+        "INT_MAX amount is representable");
 }
 
 void broken_slots(MemoryImage& image) {
@@ -144,7 +152,8 @@ void broken_slots(MemoryImage& image) {
   rejected(ubc::read_hands(image.memory(), hero), "duplicate other-slot name rejected");
   populate(image);
   image.put(slot(1) + 0x30, item(0));
-  rejected(ubc::read_hands(image.memory(), hero), "same object cannot count as two unambiguous hands");
+  rejected(ubc::read_hands(image.memory(), hero),
+           "same object cannot count as two unambiguous hands");
   populate(image);
   image.put(array, UINT32_MAX - 8);
   rejected(ubc::read_hands(image.memory(), hero), "slot range overflow rejected");
@@ -170,7 +179,8 @@ void broken_slots(MemoryImage& image) {
   image.bytes.at(name(0) - MemoryImage::base + 2) = 0;
   rejected(ubc::read_hands(image.memory(), hero), "embedded name NUL rejected");
   rejected(ubc::read_hands(image.memory(), 0), "null hero rejected");
-  rejected(ubc::read_hands(image.memory(), UINT32_MAX - 0x9b0), "hero field range overflow rejected");
+  rejected(ubc::read_hands(image.memory(), UINT32_MAX - 0x9b0),
+           "hero field range overflow rejected");
   rejected(ubc::read_hands({nullptr, nullptr}, hero), "absent reader rejected");
 
   populate(image, 256);
@@ -186,20 +196,24 @@ void broken_items_and_guards(MemoryImage& image) {
   populate(image);
   image.put(0x83c804, 0x711400);
   auto result = ubc::read_hands(image.memory(), hero);
-  check(result.left.state == 2 && result.right.state == 2, "changed class method cannot prove item type");
+  check(result.left.state == 2 && result.right.state == 2,
+        "changed class method cannot prove item type");
   populate(image);
   image.bytes.at(0x711410 - MemoryImage::base) = 0xe9;
-  check(ubc::read_hands(image.memory(), hero).left.state == 2, "patched class method is never executed");
+  check(ubc::read_hands(image.memory(), hero).left.state == 2,
+        "patched class method is never executed");
   for (const auto offset : {0x32cu, 0x330u}) {
     populate(image);
     image.put(item(0) + offset, UINT32_MAX);
     result = ubc::read_hands(image.memory(), hero);
-    check(unreadable(result.left) && result.right.state == 1, "negative item fields are not usable metadata");
+    check(unreadable(result.left) && result.right.state == 1,
+          "negative item fields are not usable metadata");
   }
   populate(image);
   image.put(slot(0) + 0x30, UINT32_MAX - 1);
   result = ubc::read_hands(image.memory(), hero);
-  check(unreadable(result.left) && result.right.state == 1, "unreadable held object preserves other hand");
+  check(unreadable(result.left) && result.right.state == 1,
+        "unreadable held object preserves other hand");
   for (std::uint32_t i = 0; i < 8; ++i) {
     populate(image);
     image.denied_begin = item(0) + 0x32c + i;
@@ -220,7 +234,7 @@ void broken_items_and_guards(MemoryImage& image) {
     rejected(ubc::read_hands(image.memory(), hero), "every truncated hand-name byte rejected");
   }
 }
-}  // namespace
+} // namespace
 
 int main() {
   MemoryImage image;

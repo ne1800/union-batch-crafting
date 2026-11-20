@@ -1,0 +1,3 @@
+[
+  "src/plugin/crafting/amount.cpp:214:43: Access to field 'grind' results in a dereference of a null pointer (loaded from variable 'recipe') [clang-analyzer-core.NullDereference]"
+]

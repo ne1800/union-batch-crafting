@@ -33,3 +33,11 @@ mise run build:windows
 Das Plugin liegt unter `build/windows/player/UnionBatchCraftingExtended.dll`. Der Bau benötigt keine Spieldateien. Der eigene Code steht unter der [MIT-Lizenz](LICENSE). Für xwin gilt MIT/Apache-2.0. Für das SDK und die statisch in die Windows-DLL eingebundene Release-CRT gelten Microsofts Bedingungen.
 
 Das Spieler-ZIP entsteht mit `mise run package-player-WRITES -- --apply`.
+
+<a id="development"></a>
+
+## Entwicklung
+
+`mise run lint` führt prek auf allen versionierten Dateien aus. Für die lokalen Formatier-Hooks werden clang-format 23.1.5 und gersemi 0.17.0 benötigt. Mit `mise run test:report-WRITES -- --apply` laufen die portablen Tests. Git-Hooks werden im privaten Entwicklungs-Checkout mit `mise x -- prek install` für pre-commit und commit-msg aktiviert. Im Export laufen die Prüfungen über die mise-Aufgaben.
+
+Commit-Betreffzeilen sind auf Englisch und folgen Conventional Commits, etwa `fix(ui): handle empty recipe lists`. Der Scope ist optional. Ein `!` vor dem Doppelpunkt kennzeichnet eine inkompatible Änderung.

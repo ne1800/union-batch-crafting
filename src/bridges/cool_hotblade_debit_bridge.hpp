@@ -28,7 +28,9 @@ struct Config {
   ReadRestore read_restore = nullptr;
 };
 enum class Outcome { rejected, debit_verified };
-struct Diagnostics { bool configured = false, active = false, disabled = false, native_scope = false; };
+struct Diagnostics {
+  bool configured = false, active = false, disabled = false, native_scope = false;
+};
 
 // Isolated executor for exactly Lager2/N2. NO runtime authorization, hooks, effect
 // admission or end-state machine. cool_hotblade_debit::runtime_ready remains
@@ -59,6 +61,7 @@ public:
   Diagnostics diagnostics() const noexcept;
   void disable() noexcept;
   Outcome run();
+
 private:
   bool read(ReadStage, debit::Observation&) noexcept;
   bool read_restore(const debit::Call&, debit::RestoreObservation&, debit::RestorePlan&) noexcept;

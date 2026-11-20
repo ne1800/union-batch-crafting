@@ -13,7 +13,7 @@ class NativeSelectionUi {
 public:
   const ui_text::Table& texts() const noexcept { return ui_text::table(language_); }
   bool can_open(BowMenuTrace* trace) const noexcept;
-  bool open(BowMenuTrace* trace=nullptr,BowMenuTrace* opened_trace=nullptr) noexcept;
+  bool open(BowMenuTrace* trace = nullptr, BowMenuTrace* opened_trace = nullptr) noexcept;
   void close() noexcept;
   bool render(const SelectionSession&, OriginalRecipe, bool execution_enabled) noexcept;
   int handle(SelectionSession&, int key) noexcept;
@@ -21,9 +21,10 @@ public:
   bool opened() const noexcept { return initialized_; }
   bool owns_input() const noexcept;
   static bool focused() noexcept;
-  static bool buttons_held(bool* known=nullptr) noexcept;
+  static bool buttons_held(bool* known = nullptr) noexcept;
   static bool callback_is_top(std::uint32_t callback) noexcept;
   static std::uint32_t top_callback() noexcept;
+
 private:
   native_menu::MenuStorage storage_{};
   bool created_ = false, initialized_ = false;

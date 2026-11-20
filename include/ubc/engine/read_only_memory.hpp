@@ -14,11 +14,13 @@ struct ReadOnlyMemory {
   bool (*read)(void*, std::uint32_t, void*, std::size_t) noexcept;
 
   bool copy(std::uint32_t address, void* output, std::size_t size) const noexcept {
-    if (!address || !read || (size && !output)) return false;
+    if (!address || !read || (size && !output))
+      return false;
     const std::uint64_t available = (std::uint64_t{1} << 32) - address;
-    if (size > available) return false;
+    if (size > available)
+      return false;
     return size == 0 || read(context, address, output, size);
   }
 };
 
-}  // namespace ubc
+} // namespace ubc

@@ -58,10 +58,12 @@ struct InfoRecord {
 
 inline InfoRecord read_record(const ReadOnlyMemory& memory, std::uint32_t address) noexcept {
   std::array<std::uint8_t, info_size> bytes{};
-  if (!memory.copy(address, bytes.data(), bytes.size()) || u32(bytes.data()) != info_vtable) return {};
+  if (!memory.copy(address, bytes.data(), bytes.size()) || u32(bytes.data()) != info_vtable)
+    return {};
   const auto function = u32(bytes.data() + 0x2c);
   const auto instance = u32(bytes.data() + 0x50);
-  if (!symbol_index(function) || !symbol_index(instance)) return {};
+  if (!symbol_index(function) || !symbol_index(instance))
+    return {};
   return {{true, static_cast<std::int32_t>(instance), static_cast<std::int32_t>(function)},
           u32(bytes.data() + 0x58)};
 }
@@ -69,9 +71,11 @@ inline InfoRecord read_record(const ReadOnlyMemory& memory, std::uint32_t addres
 inline bool read_owner(const ReadOnlyMemory& memory, std::uint32_t manager,
                        std::uint32_t& owner) noexcept {
   constexpr std::uint32_t offset = 0x28;
-  if (!manager || offset > std::numeric_limits<std::uint32_t>::max() - manager) return false;
+  if (!manager || offset > std::numeric_limits<std::uint32_t>::max() - manager)
+    return false;
   std::array<std::uint8_t, 4> bytes{};
-  if (!memory.copy(manager + offset, bytes.data(), bytes.size())) return false;
+  if (!memory.copy(manager + offset, bytes.data(), bytes.size()))
+    return false;
   owner = u32(bytes.data());
   return owner != 0;
 }
@@ -90,11 +94,14 @@ inline InfoSnapshot read_info(const ReadOnlyMemory& memory, std::uint32_t info) 
 // The entire list must remain valid, even after the found entry.
 inline ChoiceSnapshot read_choice(const ReadOnlyMemory& memory, std::uint32_t manager,
                                   std::uint32_t choice) noexcept {
-  if (!choice) return {};
+  if (!choice)
+    return {};
   std::uint32_t owner = 0;
-  if (!info_detail::read_owner(memory, manager, owner)) return {};
+  if (!info_detail::read_owner(memory, manager, owner))
+    return {};
   const auto info = info_detail::read_record(memory, owner);
-  if (!info.metadata.valid) return {};
+  if (!info.metadata.valid)
+    return {};
 
   std::array<std::uint32_t, max_info_choices> seen_nodes{};
   std::array<std::uint32_t, max_info_choices> seen_choices{};
@@ -103,19 +110,26 @@ inline ChoiceSnapshot read_choice(const ReadOnlyMemory& memory, std::uint32_t ma
   std::int32_t selected_function = -1;
   auto node = info.first_node;
   while (node) {
-    if (count == max_info_choices) return {};
+    if (count == max_info_choices)
+      return {};
     for (std::uint32_t i = 0; i < count; ++i)
-      if (seen_nodes[i] == node) return {};
+      if (seen_nodes[i] == node)
+        return {};
     std::array<std::uint8_t, 8> links{};
-    if (!memory.copy(node, links.data(), links.size())) return {};
+    if (!memory.copy(node, links.data(), links.size()))
+      return {};
     const auto data = info_detail::u32(links.data());
-    if (!data) return {};
+    if (!data)
+      return {};
     for (std::uint32_t i = 0; i < count; ++i)
-      if (seen_choices[i] == data) return {};
+      if (seen_choices[i] == data)
+        return {};
     std::array<std::uint8_t, info_detail::choice_size> fields{};
-    if (!memory.copy(data, fields.data(), fields.size())) return {};
+    if (!memory.copy(data, fields.data(), fields.size()))
+      return {};
     const auto function = info_detail::u32(fields.data() + 0x14);
-    if (!info_detail::symbol_index(function)) return {};
+    if (!info_detail::symbol_index(function))
+      return {};
     if (data == choice) {
       selected_index = static_cast<std::int32_t>(count);
       selected_function = static_cast<std::int32_t>(function);
@@ -125,7 +139,8 @@ inline ChoiceSnapshot read_choice(const ReadOnlyMemory& memory, std::uint32_t ma
     ++count;
     node = info_detail::u32(links.data() + 4);
   }
-  if (selected_index < 0) return {};
+  if (selected_index < 0)
+    return {};
   return {true, info.metadata, selected_function, selected_index, count};
 }
 

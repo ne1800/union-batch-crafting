@@ -562,4 +562,3 @@ inline WorldListEvidence read_world_lists(const ReadOnlyMemory& memory,const pat
     snapshot.removals.data(),snapshot.removals.size()},pool);
 }
 } // namespace ubc::bow_item_native
-

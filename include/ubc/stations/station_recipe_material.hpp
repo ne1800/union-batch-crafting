@@ -20,12 +20,28 @@ struct StationRecipeHands {
   std::uint32_t interact_item = 0;
 };
 enum class StationRecipeHandIssue {
-  none, unverified_contract, unsupported_contract, hand_object, unreadable_slot,
-  slot_lifetime, hand_alias, inventory_alias, anchor, stored_prop
+  none,
+  unverified_contract,
+  unsupported_contract,
+  hand_object,
+  unreadable_slot,
+  slot_lifetime,
+  hand_alias,
+  inventory_alias,
+  anchor,
+  stored_prop
 };
 enum class StationRecipeMaterialIssue {
-  none, descriptor, output_buffer, unknown_inventory, invalid_inventory,
-  target_mapping, ambiguous_ingredient, hand_contract, return_capacity, quantity
+  none,
+  descriptor,
+  output_buffer,
+  unknown_inventory,
+  invalid_inventory,
+  target_mapping,
+  ambiguous_ingredient,
+  hand_contract,
+  return_capacity,
+  quantity
 };
 struct StationRecipeMaterialRow {
   std::int32_t symbol = -1;
@@ -50,7 +66,8 @@ struct StationRecipeMaterial {
   bool inventory_known = false, hand_known = false, craftable = false;
   std::uint32_t maximum = 0, quantity = 0;
   std::size_t count = 0;
-  station_recipe_catalog::Completion completion = station_recipe_catalog::Completion::end_production;
+  station_recipe_catalog::Completion completion =
+      station_recipe_catalog::Completion::end_production;
   bool known() const noexcept {
     return issue == StationRecipeMaterialIssue::none && inventory_known && hand_known;
   }
@@ -64,47 +81,66 @@ inline HandIssue check_hand(const cat::HandItem& expected, const HandObjectSnaps
                             bool slot_known, std::int32_t tmp_level) noexcept {
   if (expected.source == cat::HandSource::empty)
     return actual.state == 0 && !actual.object ? HandIssue::none : HandIssue::hand_object;
-  if ((expected.source != cat::HandSource::reserved_inventory_tool && expected.source != cat::HandSource::generated) ||
-      expected.symbol < 0 || !expected.amount || expected.amount > static_cast<std::uint32_t>(INT32_MAX))
+  if ((expected.source != cat::HandSource::reserved_inventory_tool &&
+       expected.source != cat::HandSource::generated) ||
+      expected.symbol < 0 || !expected.amount ||
+      expected.amount > static_cast<std::uint32_t>(INT32_MAX))
     return HandIssue::unsupported_contract;
   if (actual.state != 1 || !actual.object || actual.symbol != expected.symbol ||
-      actual.amount != static_cast<std::int32_t>(expected.amount)) return HandIssue::hand_object;
-  if (!slot_known) return HandIssue::unreadable_slot;
+      actual.amount != static_cast<std::int32_t>(expected.amount))
+    return HandIssue::hand_object;
+  if (!slot_known)
+    return HandIssue::unreadable_slot;
   // INSERT does not guarantee tmpLevel=0 for arbitrary old slot. The
   // normal non-temporary path must currently be read. CREATE sets 1 or 2.
   const bool temporary = expected.source == cat::HandSource::generated;
-  return (temporary ? tmp_level == 1 || tmp_level == 2 : tmp_level == 0) ? HandIssue::none : HandIssue::slot_lifetime;
+  return (temporary ? tmp_level == 1 || tmp_level == 2 : tmp_level == 0) ? HandIssue::none
+                                                                         : HandIssue::slot_lifetime;
 }
 inline bool stored_absent(const RecipeInventory& inventory, const cat::HandItem& hand) noexcept {
-  if (!hand.require_stored_absent) return true;
+  if (!hand.require_stored_absent)
+    return true;
   const auto* item = recipe_material_detail::item(inventory, hand.symbol);
   return item && item->total == 0 && !item->listed_occurrences && !item->packed_occurrences &&
-    !item->duplicate_packed_target && !item->has_active_marker && !item->mixed_representation;
+         !item->duplicate_packed_target && !item->has_active_marker && !item->mixed_representation;
 }
 inline HandIssue check_hands(const cat::Descriptor& descriptor, const RecipeInventory& inventory,
-                            const StationRecipeHands& observed, bool contract_verified) noexcept {
-  if (!contract_verified) return HandIssue::unverified_contract;
-  if (!descriptor.hand.static_lifecycle_verified) return HandIssue::unsupported_contract;
-  auto issue = check_hand(descriptor.hand.left, observed.hands.left, observed.left_slot_known, observed.left_tmp_level);
-  if (issue != HandIssue::none) return issue;
-  issue = check_hand(descriptor.hand.right, observed.hands.right, observed.right_slot_known, observed.right_tmp_level);
-  if (issue != HandIssue::none) return issue;
-  if (observed.hands.left.object && observed.hands.left.object == observed.hands.right.object) return HandIssue::hand_alias;
-  const auto anchor = descriptor.hand.anchor == cat::HandSide::left ? observed.hands.left.object : observed.hands.right.object;
-  if (!observed.interact_item_known || !anchor || observed.interact_item != anchor) return HandIssue::anchor;
-  if (!recipe_material_detail::no_hand_alias(inventory, observed.hands)) return HandIssue::inventory_alias;
+                             const StationRecipeHands& observed, bool contract_verified) noexcept {
+  if (!contract_verified)
+    return HandIssue::unverified_contract;
+  if (!descriptor.hand.static_lifecycle_verified)
+    return HandIssue::unsupported_contract;
+  auto issue = check_hand(descriptor.hand.left, observed.hands.left, observed.left_slot_known,
+                          observed.left_tmp_level);
+  if (issue != HandIssue::none)
+    return issue;
+  issue = check_hand(descriptor.hand.right, observed.hands.right, observed.right_slot_known,
+                     observed.right_tmp_level);
+  if (issue != HandIssue::none)
+    return issue;
+  if (observed.hands.left.object && observed.hands.left.object == observed.hands.right.object)
+    return HandIssue::hand_alias;
+  const auto anchor = descriptor.hand.anchor == cat::HandSide::left ? observed.hands.left.object
+                                                                    : observed.hands.right.object;
+  if (!observed.interact_item_known || !anchor || observed.interact_item != anchor)
+    return HandIssue::anchor;
+  if (!recipe_material_detail::no_hand_alias(inventory, observed.hands))
+    return HandIssue::inventory_alias;
   // The normal EV_DestroyInteractItem follow-up removes after release
   // temporary slots possibly ONE stored instance of the previous anchor.
   // Leather: right 17342. Forge: right 16667. The left forge tongs 16666
   // are not a second destroy anchor and remain unchanged per separately
   // booked normal SetInteractItem follow-up in the store. Both stocks
   // are still expected in Ready/End; abort paths are thus NOT proven.
-  if (!stored_absent(inventory, descriptor.hand.left) || !stored_absent(inventory, descriptor.hand.right))
+  if (!stored_absent(inventory, descriptor.hand.left) ||
+      !stored_absent(inventory, descriptor.hand.right))
     return HandIssue::stored_prop;
   return HandIssue::none;
 }
-inline void copy_hand_amount(const cat::HandItem& hand, bool known, StationRecipeMaterialRow& row) noexcept {
-  if (hand.source == cat::HandSource::empty || hand.symbol != row.symbol) return;
+inline void copy_hand_amount(const cat::HandItem& hand, bool known,
+                             StationRecipeMaterialRow& row) noexcept {
+  if (hand.source == cat::HandSource::empty || hand.symbol != row.symbol)
+    return;
   if (hand.source == cat::HandSource::reserved_inventory_tool)
     row.reserved_tool = known ? static_cast<std::int64_t>(hand.amount) : -1;
   if (hand.source == cat::HandSource::generated)
@@ -125,56 +161,89 @@ inline void copy_hand_amount(const cat::HandItem& hand, bool known, StationRecip
 // separately booked normal station end expects their return.
 // Leather/Forge need the normal native end. No own reimbursement,
 // prop deletion, abort compensation or automatic repetition.
-inline StationRecipeMaterial station_recipe_material(const station_recipe_catalog::Descriptor& descriptor,
-    const RecipeInventory& inventory, const StationRecipeHands& observed, std::uint32_t quantity,
-    StationRecipeMaterialRow* rows, std::size_t capacity, bool hand_contract_verified = false) noexcept {
+inline StationRecipeMaterial
+station_recipe_material(const station_recipe_catalog::Descriptor& descriptor,
+                        const RecipeInventory& inventory, const StationRecipeHands& observed,
+                        std::uint32_t quantity, StationRecipeMaterialRow* rows,
+                        std::size_t capacity, bool hand_contract_verified = false) noexcept {
   namespace common = recipe_material_detail;
   namespace detail = station_recipe_material_detail;
   using Issue = StationRecipeMaterialIssue;
-  StationRecipeMaterial result; result.quantity = quantity; result.completion = descriptor.completion;
-  if (!rows || capacity < descriptor.targets.count) { result.issue = Issue::output_buffer; return result; }
-  if (!station_recipe_catalog::structurally_valid(descriptor)) { result.issue = Issue::descriptor; return result; }
+  StationRecipeMaterial result;
+  result.quantity = quantity;
+  result.completion = descriptor.completion;
+  if (!rows || capacity < descriptor.targets.count) {
+    result.issue = Issue::output_buffer;
+    return result;
+  }
+  if (!station_recipe_catalog::structurally_valid(descriptor)) {
+    result.issue = Issue::descriptor;
+    return result;
+  }
   result.count = descriptor.targets.count;
   for (std::size_t i = 0; i < result.count; ++i) {
-    rows[i] = {}; rows[i].symbol = descriptor.targets[i].symbol;
+    rows[i] = {};
+    rows[i].symbol = descriptor.targets[i].symbol;
     rows[i].unit_cost = common::units(descriptor.costs, rows[i].symbol);
     rows[i].unit_output = common::units(descriptor.outputs, rows[i].symbol);
   }
   if (!inventory.header_known || !inventory.listed_known || !inventory.packed_known ||
-      !inventory.storage_totals_known || !inventory.stable_boundary_verified || !inventory.snapshot_unchanged ||
-      inventory.issue != PackedInventoryIssue::none) { result.issue = Issue::unknown_inventory; return result; }
-  if (inventory.listed_nodes > max_packed_inventory_nodes || inventory.packed_entries > max_packed_inventory_entries) {
-    result.issue = Issue::invalid_inventory; return result;
+      !inventory.storage_totals_known || !inventory.stable_boundary_verified ||
+      !inventory.snapshot_unchanged || inventory.issue != PackedInventoryIssue::none) {
+    result.issue = Issue::unknown_inventory;
+    return result;
   }
-  if (!inventory.items.data || inventory.items.count != result.count) { result.issue = Issue::target_mapping; return result; }
+  if (inventory.listed_nodes > max_packed_inventory_nodes ||
+      inventory.packed_entries > max_packed_inventory_entries) {
+    result.issue = Issue::invalid_inventory;
+    return result;
+  }
+  if (!inventory.items.data || inventory.items.count != result.count) {
+    result.issue = Issue::target_mapping;
+    return result;
+  }
   std::uint64_t listed_occurrences = 0, packed_occurrences = 0;
   for (std::size_t i = 0; i < result.count; ++i) {
     const auto* item = common::item(inventory, rows[i].symbol);
-    if (!item) { result.issue = Issue::target_mapping; return result; }
+    if (!item) {
+      result.issue = Issue::target_mapping;
+      return result;
+    }
     if (item->listed < 0 || item->packed < 0 || item->total < 0 ||
         std::int64_t{item->listed} + item->packed != item->total ||
         (item->listed > 0 && !item->listed_occurrences) ||
         ((item->packed > 0) != (item->packed_occurrences > 0)) ||
-        item->listed_occurrences > inventory.listed_nodes || item->packed_occurrences > inventory.packed_entries) {
-      result.issue = Issue::invalid_inventory; return result;
+        item->listed_occurrences > inventory.listed_nodes ||
+        item->packed_occurrences > inventory.packed_entries) {
+      result.issue = Issue::invalid_inventory;
+      return result;
     }
-    listed_occurrences += item->listed_occurrences; packed_occurrences += item->packed_occurrences;
+    listed_occurrences += item->listed_occurrences;
+    packed_occurrences += item->packed_occurrences;
   }
-  if (listed_occurrences > inventory.listed_nodes || packed_occurrences > inventory.packed_entries) {
-    result.issue = Issue::invalid_inventory; return result;
+  if (listed_occurrences > inventory.listed_nodes ||
+      packed_occurrences > inventory.packed_entries) {
+    result.issue = Issue::invalid_inventory;
+    return result;
   }
   result.inventory_known = true;
   for (std::size_t i = 0; i < result.count; ++i) {
-    auto& row = rows[i]; const auto& item = *common::item(inventory, row.symbol);
-    row.stored = item.total; row.available = row.stored; row.available_known = true;
-    if (row.unit_cost && (item.duplicate_packed_target || item.has_active_marker || item.mixed_representation ||
-        item.listed_occurrences > 1 || item.packed_occurrences > 1 ||
-        (item.listed_occurrences && item.packed_occurrences) || (item.listed > 0 && item.packed > 0)))
+    auto& row = rows[i];
+    const auto& item = *common::item(inventory, row.symbol);
+    row.stored = item.total;
+    row.available = row.stored;
+    row.available_known = true;
+    if (row.unit_cost &&
+        (item.duplicate_packed_target || item.has_active_marker || item.mixed_representation ||
+         item.listed_occurrences > 1 || item.packed_occurrences > 1 ||
+         (item.listed_occurrences && item.packed_occurrences) ||
+         (item.listed > 0 && item.packed > 0)))
       result.issue = Issue::ambiguous_ingredient;
   }
   result.hand_issue = detail::check_hands(descriptor, inventory, observed, hand_contract_verified);
   result.hand_known = result.hand_issue == StationRecipeHandIssue::none;
-  if (!result.hand_known && result.issue == Issue::none) result.issue = Issue::hand_contract;
+  if (!result.hand_known && result.issue == Issue::none)
+    result.issue = Issue::hand_contract;
 
   std::uint64_t maximum = INT32_MAX;
   const bool valid_quantity = quantity <= static_cast<std::uint32_t>(INT32_MAX);
@@ -184,15 +253,18 @@ inline StationRecipeMaterial station_recipe_material(const station_recipe_catalo
     detail::copy_hand_amount(descriptor.hand.right, result.hand_known, row);
     row.missing_for_one = common::positive(std::int64_t{row.unit_cost} - row.available);
     row.output_space = INT32_MAX - row.stored;
-    row.output_shortfall_for_one = common::positive(std::int64_t{row.unit_output} - row.output_space);
+    row.output_shortfall_for_one =
+        common::positive(std::int64_t{row.unit_output} - row.output_space);
     if (row.unit_cost) {
       common::limit(maximum, static_cast<std::uint64_t>(row.available) / row.unit_cost);
       common::limit(maximum, static_cast<std::uint32_t>(INT32_MAX) / row.unit_cost);
     }
-    if (row.unit_output) common::limit(maximum, static_cast<std::uint64_t>(row.output_space) / row.unit_output);
+    if (row.unit_output)
+      common::limit(maximum, static_cast<std::uint64_t>(row.output_space) / row.unit_output);
     // The reserved tool is per catalog disjoint from cost/output. Its
     // safe normal end remainder is thus independent of the raw quantity.
-    if (row.reserved_tool > 0 && row.stored + row.reserved_tool > INT32_MAX && result.issue == Issue::none)
+    if (row.reserved_tool > 0 && row.stored + row.reserved_tool > INT32_MAX &&
+        result.issue == Issue::none)
       result.issue = Issue::return_capacity;
     if (valid_quantity) {
       row.required = std::int64_t{row.unit_cost} * quantity;
@@ -208,8 +280,10 @@ inline StationRecipeMaterial station_recipe_material(const station_recipe_catalo
       }
     }
   }
-  if (result.known()) result.maximum = static_cast<std::uint32_t>(maximum);
-  if (!valid_quantity && result.issue == Issue::none) result.issue = Issue::quantity;
+  if (result.known())
+    result.maximum = static_cast<std::uint32_t>(maximum);
+  if (!valid_quantity && result.issue == Issue::none)
+    result.issue = Issue::quantity;
   result.craftable = result.known() && quantity && quantity <= result.maximum;
   return result;
 }

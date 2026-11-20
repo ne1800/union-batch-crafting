@@ -9,8 +9,14 @@
 namespace ubc {
 
 enum class SelectionPhase { inactive, selecting, releasing, ready, dispatched, original };
-enum class SelectionIssue { none, invalid_snapshot, context_changed, stock_changed,
-                            offer_changed, focus_lost };
+enum class SelectionIssue {
+  none,
+  invalid_snapshot,
+  context_changed,
+  stock_changed,
+  offer_changed,
+  focus_lost
+};
 enum class SelectionMode { info, choice };
 
 // Native identities are comparison values only. No stored pointer is
@@ -52,21 +58,24 @@ struct SelectionSnapshot {
 
 inline bool valid_selection_snapshot(const SelectionSnapshot& s) noexcept {
   const auto& k = s.key;
-  if (!s.selection_contract || !s.stock_at_rest || !k.generation || !k.thread ||
-      !k.world || !k.hero || !k.station || !k.manager || !k.view ||
+  if (!s.selection_contract || !s.stock_at_rest || !k.generation || !k.thread || !k.world ||
+      !k.hero || !k.station || !k.manager || !k.view ||
       (k.mode != SelectionMode::info && k.mode != SelectionMode::choice) ||
-      (k.mode == SelectionMode::choice && k.owner_instance < 0) ||
-      !s.count || s.count > s.offers.size()) return false;
+      (k.mode == SelectionMode::choice && k.owner_instance < 0) || !s.count ||
+      s.count > s.offers.size())
+    return false;
   for (std::size_t i = 0; i < s.stored.size(); ++i)
-    if (s.stored[i] < 0 || s.reserved[i] < 0 ||
-        s.reserved[i] > INT32_MAX - s.stored[i]) return false;
+    if (s.stored[i] < 0 || s.reserved[i] < 0 || s.reserved[i] > INT32_MAX - s.stored[i])
+      return false;
   for (std::size_t i = 0; i < s.count; ++i) {
     const auto& offer = s.offers[i];
-    if (offer.info_instance < 0 || offer.function < 0 || offer.row < 0 ||
-        offer.row >= 256 || !offer.quantity || offer.quantity > INT32_MAX ||
-        (k.mode == SelectionMode::choice && offer.info_instance != k.owner_instance)) return false;
+    if (offer.info_instance < 0 || offer.function < 0 || offer.row < 0 || offer.row >= 256 ||
+        !offer.quantity || offer.quantity > INT32_MAX ||
+        (k.mode == SelectionMode::choice && offer.info_instance != k.owner_instance))
+      return false;
     for (std::size_t j = 0; j < i; ++j)
-      if (s.offers[j].function == offer.function || s.offers[j].row == offer.row) return false;
+      if (s.offers[j].function == offer.function || s.offers[j].row == offer.row)
+        return false;
   }
   return true;
 }
@@ -78,22 +87,38 @@ inline bool valid_selection_snapshot(const SelectionSnapshot& s) noexcept {
 class SelectionInput {
 public:
   void reset() noexcept { *this = SelectionInput{}; }
-  void disarm() noexcept { neutral_ = 0; latched_ = true; }
+  void disarm() noexcept {
+    neutral_ = 0;
+    latched_ = true;
+  }
 
   void observe(std::uint64_t frame, bool held, bool focused) noexcept {
-    if (!focused) { focused_ = false; disarm(); }
+    if (!focused) {
+      focused_ = false;
+      disarm();
+    }
     // Polling can see the fresh press before the native event.
     // It immediately locks the handoff but does not consume its
     // one-time release from the previous two neutral frames.
-    if (held) { neutral_ = 0; event_ = true; }
-    if (!frame || (have_frame_ && frame < last_frame_)) { disarm(); return; }
-    if (have_frame_ && frame == last_frame_) return;
+    if (held) {
+      neutral_ = 0;
+      event_ = true;
+    }
+    if (!frame || (have_frame_ && frame < last_frame_)) {
+      disarm();
+      return;
+    }
+    if (have_frame_ && frame == last_frame_)
+      return;
     have_frame_ = true;
     last_frame_ = frame;
     focused_ = focused;
-    if (!focused || held || event_) neutral_ = 0;
-    else if (neutral_ < 2) ++neutral_;
-    if (neutral_ == 2) latched_ = false;
+    if (!focused || held || event_)
+      neutral_ = 0;
+    else if (neutral_ < 2)
+      ++neutral_;
+    if (neutral_ == 2)
+      latched_ = false;
     event_ = false;
   }
 
@@ -143,18 +168,21 @@ public:
       phase_ = SelectionPhase::selecting;
       issue_ = SelectionIssue::focus_lost;
     }
-    if (phase_ == SelectionPhase::releasing && input_.armed()) phase_ = SelectionPhase::ready;
+    if (phase_ == SelectionPhase::releasing && input_.armed())
+      phase_ = SelectionPhase::ready;
   }
 
   bool select(std::size_t index) noexcept {
-    if (phase_ != SelectionPhase::selecting || !input_.armed() || index >= snapshot_.count) return false;
+    if (phase_ != SelectionPhase::selecting || !input_.armed() || index >= snapshot_.count)
+      return false;
     selected_ = index;
     return true;
   }
 
   bool confirm() noexcept {
     const bool accepted = input_.press();
-    if (!accepted || phase_ != SelectionPhase::selecting) return false;
+    if (!accepted || phase_ != SelectionPhase::selecting)
+      return false;
     pending_ = snapshot_.offers[selected_];
     phase_ = SelectionPhase::releasing;
     issue_ = SelectionIssue::none;
@@ -163,18 +191,21 @@ public:
 
   bool preset(std::size_t index) noexcept {
     const bool accepted = input_.press();
-    if (!accepted || phase_ != SelectionPhase::selecting || index >= snapshot_.count) return false;
+    if (!accepted || phase_ != SelectionPhase::selecting || index >= snapshot_.count)
+      return false;
     selected_ = index;
     return true;
   }
 
   bool back() noexcept {
     const bool accepted = input_.press();
-    if (input_.focused() && (phase_ == SelectionPhase::releasing || phase_ == SelectionPhase::ready)) {
+    if (input_.focused() &&
+        (phase_ == SelectionPhase::releasing || phase_ == SelectionPhase::ready)) {
       original(SelectionIssue::none);
       return true;
     }
-    if (!accepted || (phase_ != SelectionPhase::selecting && phase_ != SelectionPhase::ready)) return false;
+    if (!accepted || (phase_ != SelectionPhase::selecting && phase_ != SelectionPhase::ready))
+      return false;
     original(SelectionIssue::none);
     return true;
   }
@@ -185,7 +216,8 @@ public:
     // An unclear native tail is not a return path to the original
     // dialog. In particular, a late error/reentry event must not
     // restore the consumed crafting order to an input-ready state.
-    if (phase_ == SelectionPhase::dispatched || phase_ == SelectionPhase::original) return;
+    if (phase_ == SelectionPhase::dispatched || phase_ == SelectionPhase::original)
+      return;
     phase_ = SelectionPhase::original;
     issue_ = issue;
     pending_ = {};
@@ -194,7 +226,8 @@ public:
 
   bool refresh(const SelectionSnapshot& current) noexcept {
     if (phase_ == SelectionPhase::inactive || phase_ == SelectionPhase::original ||
-        phase_ == SelectionPhase::dispatched) return false;
+        phase_ == SelectionPhase::dispatched)
+      return false;
     if (!valid_selection_snapshot(current)) {
       original(SelectionIssue::invalid_snapshot);
       return false;
@@ -203,13 +236,16 @@ public:
       original(SelectionIssue::context_changed);
       return false;
     }
-    const bool stock_changed = snapshot_.stored != current.stored || snapshot_.reserved != current.reserved;
-    const auto target = phase_ == SelectionPhase::selecting ? snapshot_.offers[selected_] : pending_;
+    const bool stock_changed =
+        snapshot_.stored != current.stored || snapshot_.reserved != current.reserved;
+    const auto target =
+        phase_ == SelectionPhase::selecting ? snapshot_.offers[selected_] : pending_;
     std::size_t replacement = current.count;
     for (std::size_t i = 0; i < current.count; ++i) {
       const auto& offer = current.offers[i];
       if (offer.info_instance == target.info_instance && offer.function == target.function &&
-          offer.quantity == target.quantity) replacement = i;
+          offer.quantity == target.quantity)
+        replacement = i;
     }
     snapshot_ = current;
     if (stock_changed || replacement == current.count) {
@@ -227,8 +263,10 @@ public:
   std::optional<OriginalOffer> take(const SelectionSnapshot& current, bool ui_closed) noexcept {
     // Consume before every native call. Only the caller performs
     // Select and HandleEvent; recursive calls are already dispatched.
-    if (phase_ != SelectionPhase::ready || !input_.armed() || !ui_closed) return std::nullopt;
-    if (!refresh(current)) return std::nullopt;
+    if (phase_ != SelectionPhase::ready || !input_.armed() || !ui_closed)
+      return std::nullopt;
+    if (!refresh(current))
+      return std::nullopt;
     const auto result = snapshot_.offers[selected_];
     phase_ = SelectionPhase::dispatched;
     pending_ = {};
@@ -239,7 +277,9 @@ public:
   SelectionPhase phase() const noexcept { return phase_; }
   SelectionIssue issue() const noexcept { return issue_; }
   bool armed() const noexcept { return input_.armed(); }
-  bool return_ready() const noexcept { return phase_ == SelectionPhase::original && input_.armed(); }
+  bool return_ready() const noexcept {
+    return phase_ == SelectionPhase::original && input_.armed();
+  }
   std::size_t selected() const noexcept { return selected_; }
   const SelectionSnapshot& preview() const noexcept { return snapshot_; }
 
@@ -247,7 +287,8 @@ private:
   void choose_smallest() noexcept {
     selected_ = 0;
     for (std::size_t i = 1; i < snapshot_.count; ++i)
-      if (snapshot_.offers[i].quantity < snapshot_.offers[selected_].quantity) selected_ = i;
+      if (snapshot_.offers[i].quantity < snapshot_.offers[selected_].quantity)
+        selected_ = i;
   }
   SelectionSnapshot snapshot_{};
   std::uint64_t last_generation_ = 0;

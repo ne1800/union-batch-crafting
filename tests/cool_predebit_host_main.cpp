@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 #include <cstddef>
 
-extern "C" __declspec(dllimport) int __cdecl run_predebit_host(
-    int argc, char** argv, unsigned char* storage, std::size_t size);
+extern "C" __declspec(dllimport) int __cdecl
+run_predebit_host(int argc, char** argv, unsigned char* storage, std::size_t size);
 
 int main(int argc, char** argv) {
   // Our own BSS region, initially writable. The loader reserves it ahead of

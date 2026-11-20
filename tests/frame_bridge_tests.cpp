@@ -12,9 +12,17 @@ namespace {
 unsigned checks = 0, failures = 0, callbacks = 0;
 void check(bool ok, const char* label) {
   ++checks;
-  if (!ok) { ++failures; std::fprintf(stderr, "FAIL: %s\n", label); }
+  if (!ok) {
+    ++failures;
+    std::fprintf(stderr, "FAIL: %s\n", label);
+  }
 }
-struct State { void** vtable; unsigned blits; unsigned observed; DWORD error; };
+struct State {
+  void** vtable;
+  unsigned blits;
+  unsigned observed;
+  DWORD error;
+};
 
 __declspec(naked) void __thiscall blit(void*) {
   __asm {
@@ -64,31 +72,38 @@ int main() {
   std::array<void*, 6> vtable{};
   vtable[5] = reinterpret_cast<void*>(&blit);
   State state{vtable.data(), 0, 0, 0};
-  check(loop(&state) == 1 && state.observed == 1 && callbacks == 0, "original loop calls blit once");
+  check(loop(&state) == 1 && state.observed == 1 && callbacks == 0,
+        "original loop calls blit once");
   // Clang emits 89 F9 for MOV ECX,EDI. The runtime hook site has the semantically
   // equivalent opposite-direction encoding 8B CF. These are our own test bytes.
   const auto address = reinterpret_cast<std::uintptr_t>(&loop) + 5;
-  const std::array<Site, 1> sites{{{address, 7, 10,
-      {{0x8b, 0x07, 0x89, 0xf9, 0xff, 0x50, 0x14, 0x8b, 0x47, 0x04}}}}};
+  const std::array<Site, 1> sites{
+      {{address, 7, 10, {{0x8b, 0x07, 0x89, 0xf9, 0xff, 0x50, 0x14, 0x8b, 0x47, 0x04}}}}};
   ubc::windows_probe::Hooks<Site, 1> hooks(sites);
   const bool prepared = hooks.prepare({{reinterpret_cast<std::uintptr_t>(&UbcFrameBridge)}});
   check(prepared, "prepare complete mid-function instruction span");
-  if (!prepared) return 1;
+  if (!prepared)
+    return 1;
   UbcFrameContinuation = hooks.original(0);
   UbcAfterFrame = after_frame;
-  check(hooks.install(reinterpret_cast<std::uintptr_t>(&UbcFrameBridge)), "install own-process frame bridge");
+  check(hooks.install(reinterpret_cast<std::uintptr_t>(&UbcFrameBridge)),
+        "install own-process frame bridge");
   for (unsigned i = 0; i < 100; ++i) {
     SetLastError(1234 + i);
     const auto result = loop(&state);
     const auto error = GetLastError();
-    check(result == i + 2 && state.blits == i + 2, "original indirect blit and continuation exactly once");
-    check(callbacks == i + 1 && state.observed == 1 + 11 * (i + 1), "observer once before original blit");
-    check(state.error == 1234 + i && error == 1234 + i, "last error preserved across observer and continuation");
+    check(result == i + 2 && state.blits == i + 2,
+          "original indirect blit and continuation exactly once");
+    check(callbacks == i + 1 && state.observed == 1 + 11 * (i + 1),
+          "observer once before original blit");
+    check(state.error == 1234 + i && error == 1234 + i,
+          "last error preserved across observer and continuation");
   }
   // The callback deliberately clobbers XMM0. The gate between instructions
   // must preserve it anyway. Normal C++ callee rules are insufficient.
-  const unsigned pattern=0x12345678;unsigned preserved=0;
-  State* object=&state;
+  const unsigned pattern = 0x12345678;
+  unsigned preserved = 0;
+  State* object = &state;
   __asm {
     movd xmm0, pattern
     push object
@@ -96,7 +111,7 @@ int main() {
     add esp, 4
     movd preserved, xmm0
   }
-  check(preserved==pattern,"SIMD state preserved across arbitrary callback work");
+  check(preserved == pattern, "SIMD state preserved across arbitrary callback work");
   std::printf("FrameBridge: %u checks, %u failures\n", checks, failures);
   return failures ? 1 : 0;
 }

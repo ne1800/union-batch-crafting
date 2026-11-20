@@ -33,8 +33,7 @@ public:
       return;
     }
     // Even UINT32_MAX + INT32_MAX and INT32_MIN are representable here.
-    const auto requested = static_cast<std::int64_t>(value_) +
-                           static_cast<std::int64_t>(delta);
+    const auto requested = static_cast<std::int64_t>(value_) + static_cast<std::int64_t>(delta);
     if (requested < 1) {
       value_ = 1;
     } else if (requested > static_cast<std::int64_t>(maximum_)) {
@@ -64,8 +63,7 @@ private:
 // Only releasing and a new key press produce the next event.
 class PressEdge {
 public:
-  explicit PressEdge(bool already_down = false) noexcept
-      : was_down_(already_down) {}
+  explicit PressEdge(bool already_down = false) noexcept : was_down_(already_down) {}
 
   bool update(bool down) noexcept {
     const bool pressed = down && !was_down_;
@@ -79,4 +77,4 @@ private:
   bool was_down_;
 };
 
-}  // namespace ubc
+} // namespace ubc

@@ -43,7 +43,8 @@ public:
       return false;
     }
     snapshot_ = snapshot;
-    for (std::size_t i = 0; i < snapshot.selection.count; ++i) paths_[i] = snapshot.selection.offers[i];
+    for (std::size_t i = 0; i < snapshot.selection.count; ++i)
+      paths_[i] = snapshot.selection.offers[i];
     quantity_.reset(snapshot.maximum);
     phase_ = SelectionPhase::selecting;
     return true;
@@ -56,21 +57,24 @@ public:
       phase_ = SelectionPhase::selecting;
       issue_ = SelectionIssue::focus_lost;
     }
-    if (phase_ == SelectionPhase::releasing && input_.armed()) phase_ = SelectionPhase::ready;
+    if (phase_ == SelectionPhase::releasing && input_.armed())
+      phase_ = SelectionPhase::ready;
   }
 
   // Directional inputs may be repeated; a step toggle activated
   // via A consumes exactly the same flank as a preset.
   bool adjust(std::int32_t delta, bool activation = false) noexcept {
     const bool accepted = activation ? input_.press() : input_.armed();
-    if (!accepted || phase_ != SelectionPhase::selecting || !maximum()) return false;
+    if (!accepted || phase_ != SelectionPhase::selecting || !maximum())
+      return false;
     quantity_.adjust(delta);
     return true;
   }
 
   bool preset(std::uint32_t amount) noexcept {
     const bool accepted = input_.press();
-    if (!accepted || phase_ != SelectionPhase::selecting) return false;
+    if (!accepted || phase_ != SelectionPhase::selecting)
+      return false;
     return quantity_.preset(amount);
   }
 
@@ -83,7 +87,8 @@ public:
 
   bool confirm() noexcept {
     const bool accepted = input_.press();
-    if (!accepted || phase_ != SelectionPhase::selecting || !quantity()) return false;
+    if (!accepted || phase_ != SelectionPhase::selecting || !quantity())
+      return false;
     pending_ = {path_for(quantity()), quantity()};
     phase_ = SelectionPhase::releasing;
     issue_ = SelectionIssue::none;
@@ -94,17 +99,20 @@ public:
     const bool accepted = input_.press();
     // An already confirmed contract may also be aborted during
     // release. The return path remains even at the release gate.
-    if (input_.focused() && (phase_ == SelectionPhase::releasing || phase_ == SelectionPhase::ready)) {
+    if (input_.focused() &&
+        (phase_ == SelectionPhase::releasing || phase_ == SelectionPhase::ready)) {
       original(SelectionIssue::none);
       return true;
     }
-    if (!accepted || phase_ != SelectionPhase::selecting) return false;
+    if (!accepted || phase_ != SelectionPhase::selecting)
+      return false;
     original(SelectionIssue::none);
     return true;
   }
 
   void original(SelectionIssue issue) noexcept {
-    if (phase_ == SelectionPhase::dispatched || phase_ == SelectionPhase::original) return;
+    if (phase_ == SelectionPhase::dispatched || phase_ == SelectionPhase::original)
+      return;
     pending_ = {};
     phase_ = SelectionPhase::original;
     issue_ = issue;
@@ -113,7 +121,8 @@ public:
 
   bool refresh(const BatchSnapshot& current) noexcept {
     if (phase_ == SelectionPhase::inactive || phase_ == SelectionPhase::original ||
-        phase_ == SelectionPhase::dispatched) return false;
+        phase_ == SelectionPhase::dispatched)
+      return false;
     if (!valid_batch_snapshot(current)) {
       original(SelectionIssue::invalid_snapshot);
       return false;
@@ -163,7 +172,8 @@ public:
   std::optional<BatchRequest> take(const BatchSnapshot& current, bool ui_closed) noexcept {
     if (phase_ != SelectionPhase::ready || !input_.armed() || !ui_closed || !pending_.quantity)
       return std::nullopt;
-    if (!refresh(current)) return std::nullopt;
+    if (!refresh(current))
+      return std::nullopt;
     const BatchRequest result{path_for(pending_.quantity), pending_.quantity};
     // Before every engine effect, consume, even with unclear native follow-up.
     pending_ = {};
@@ -178,7 +188,9 @@ public:
   SelectionPhase phase() const noexcept { return phase_; }
   SelectionIssue issue() const noexcept { return issue_; }
   bool armed() const noexcept { return input_.armed(); }
-  bool return_ready() const noexcept { return phase_ == SelectionPhase::original && input_.armed(); }
+  bool return_ready() const noexcept {
+    return phase_ == SelectionPhase::original && input_.armed();
+  }
 
 private:
   const OriginalOffer& path_for(std::uint32_t amount) const noexcept {

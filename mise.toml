@@ -4,3 +4,6 @@ disable_tools = ["python", "cmake", "ninja"]
 [env]
 CC = "clang"
 CXX = "clang++"
+
+[tools]
+prek = "0.4.14"

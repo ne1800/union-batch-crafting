@@ -1,0 +1,3 @@
+# The published source tree contains no private scanner fixtures.
+[extend]
+useDefault = true

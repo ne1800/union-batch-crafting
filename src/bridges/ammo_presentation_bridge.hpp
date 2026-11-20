@@ -22,10 +22,10 @@ struct PrintSite {
 struct DestructorSite {
   std::uint32_t thread = 0, message = 0, caller = 0;
 };
-using CaptureObserver = void(__cdecl*)(void*,const CaptureSite&);
-using PrintObserver = ammo_presentation::DisplayDecision(__cdecl*)(void*,const PrintSite&);
-using DestructorObserver = void(__cdecl*)(void*,const DestructorSite&);
-using OriginalPrint = int(__thiscall*)(void*,void*);
+using CaptureObserver = void(__cdecl*)(void*, const CaptureSite&);
+using PrintObserver = ammo_presentation::DisplayDecision(__cdecl*)(void*, const PrintSite&);
+using DestructorObserver = void(__cdecl*)(void*, const DestructorSite&);
+using OriginalPrint = int(__thiscall*)(void*, void*);
 using OriginalDestructor = void(__thiscall*)(void*);
 struct Config {
   std::uint32_t owner_thread = 0;
@@ -40,7 +40,14 @@ struct Config {
   PrintObserver print = nullptr;
   DestructorObserver destroy = nullptr;
 };
-enum class Fault : std::uint32_t { none, foreign_thread, reentry, observer_exception, invalid_decision, disabled };
+enum class Fault : std::uint32_t {
+  none,
+  foreign_thread,
+  reentry,
+  observer_exception,
+  invalid_decision,
+  disabled
+};
 struct Diagnostics {
   bool configured = false, disabled = false, observer_active = false;
   Fault fault = Fault::none;
@@ -66,7 +73,7 @@ void disable() noexcept;
 } // namespace ubc::ammo_presentation_bridge
 extern "C" {
 void UbcAmmoCaptureBridge();
-int __thiscall UbcAmmoPrintBridge(void* receiver,void* message);
+int __thiscall UbcAmmoPrintBridge(void* receiver, void* message);
 void __thiscall UbcAmmoDestructorBridge(void* message);
 }
 #endif

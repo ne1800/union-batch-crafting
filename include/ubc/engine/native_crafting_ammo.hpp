@@ -7,27 +7,38 @@
 #if defined(_WIN32) && defined(_M_IX86)
 namespace ubc::native_crafting_ammo {
 namespace presentation = ammo_presentation;
-using ContextReader = bool(__cdecl*)(void*,presentation::Context&);
-using ScopeReader = bool(__cdecl*)(void*,presentation::Scope&);
+using ContextReader = bool(__cdecl*)(void*, presentation::Context&);
+using ScopeReader = bool(__cdecl*)(void*, presentation::Scope&);
 struct Readers {
   void* user = nullptr;
   ContextReader context = nullptr;
   ScopeReader scope = nullptr;
 };
 enum class Fault : std::uint32_t {
-  none, configuration, thread, reentry, original_contract, prepare,
-  bridge, install, installed_contract, reader_exception, context, scope, tracker
+  none,
+  configuration,
+  thread,
+  reentry,
+  original_contract,
+  prepare,
+  bridge,
+  install,
+  installed_contract,
+  reader_exception,
+  context,
+  scope,
+  tracker
 };
 // Diagnostics only, no capture/permission evidence. Reset only after
 // successful new admission. Counters saturate, not overflow. The
 // sample shows the first reader value; the first erroneous reader value
 // replaces one previously successful value once and persists thereafter.
 struct CaptureDiagnostic {
-  std::uint64_t job=0,scope_token=0;
-  std::uint32_t callback=0,attempts=0,reads=0,accepted=0;
-  bool reader_seen=false,reader_valid=false;
-  ammo_runtime::Issue first_issue=ammo_runtime::Issue::none;
-  std::uint32_t vm_pc=0,expected_pc=0,caller=0,expected_caller=0;
+  std::uint64_t job = 0, scope_token = 0;
+  std::uint32_t callback = 0, attempts = 0, reads = 0, accepted = 0;
+  bool reader_seen = false, reader_valid = false;
+  ammo_runtime::Issue first_issue = ammo_runtime::Issue::none;
+  std::uint32_t vm_pc = 0, expected_pc = 0, caller = 0, expected_caller = 0;
 };
 struct Status {
   bool configured = false, install_attempted = false, installed = false;
@@ -61,19 +72,19 @@ bool install(std::uint32_t owner_thread) noexcept;
 // here from the own installed guards. The three remaining evidences
 // come from the immediately confirmed recipe/material/UI adapter.
 // Admission occurs BEFORE the patch with known inactive scope.
-bool admit(const presentation::Job&,const presentation::Admission&) noexcept;
+bool admit(const presentation::Job&, const presentation::Admission&) noexcept;
 // After successful patch check, before exactly one original effect.
 // The scope stays active until close_effect. patched_body_verified
 // attests the just-used own patch transaction, not an old job copy.
-bool enter_effect(const presentation::Context&,const presentation::Scope&) noexcept;
-bool close_effect(const presentation::Context&,const presentation::Scope&) noexcept;
+bool enter_effect(const presentation::Context&, const presentation::Scope&) noexcept;
+bool close_effect(const presentation::Context&, const presentation::Scope&) noexcept;
 // Result only after confirmed material/station completion AND restore.
 // The brought bridge_healthy evidence is additionally linked with
 // the current real bridge state AND the renewed native contract.
 bool observe_result(const presentation::Result&) noexcept;
 presentation::Notice take_notice() noexcept;
 // Only with receipt after genuine successful native text submit.
-bool ack_notice(std::uint64_t job,std::uint64_t ui_receipt,bool registered) noexcept;
+bool ack_notice(std::uint64_t job, std::uint64_t ui_receipt, bool registered) noexcept;
 
 // Not replacing native RAM verification: this occurs at every
 // admission/effect/receipt point and at the bound native callbacks.

@@ -1,0 +1,13 @@
+{
+  // Prose uses one line per paragraph. Stable HTML anchors link both languages.
+  "MD013": false,
+  "MD033": { "allowed_elements": ["a", "details", "summary"] },
+  "MD041": false,
+  // Historical tables and numbered backlog items retain their layout.
+  // Compact checklists in historical plans and skills follow headings directly.
+  "MD022": false,
+  "MD032": false,
+  "MD060": false,
+  "MD029": false,
+  "MD012": { "maximum": 2 }
+}

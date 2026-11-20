@@ -19,7 +19,8 @@ public:
   // Error exit without fabricated key event; the same availability limit
   // applies as for the user. Repeated requests do not restart them.
   void request_close() noexcept {
-    if (!closing_ && !close_ready_) begin_close();
+    if (!closing_ && !close_ready_)
+      begin_close();
   }
 
   bool on_action(MenuAction action) noexcept {
@@ -35,30 +36,53 @@ public:
       back_event_ = true;
       back_neutral_ = 0;
     }
-    if (!focused_ || !armed_ || closing_ || was_latched) return false;
+    if (!focused_ || !armed_ || closing_ || was_latched)
+      return false;
 
     switch (action) {
-      case MenuAction::Left: quantity_.adjust(-1); return true;
-      case MenuAction::Right: quantity_.adjust(1); return true;
-      case MenuAction::Up: row_ = (row_ + 6) % 7; return true;
-      case MenuAction::Down: row_ = (row_ + 1) % 7; return true;
-      case MenuAction::Confirm:
-        switch (row_) {
-          case 1: quantity_.preset(1); break;
-          case 2: quantity_.preset(5); break;
-          case 3: quantity_.preset(10); break;
-          case 4: quantity_.preset(quantity_.maximum()); break;
-          case 5:
-            confirmed_quantity_ = quantity_.value();
-            if (confirmation_count_ != std::numeric_limits<std::uint32_t>::max())
-              ++confirmation_count_;
-            break;
-          case 6: begin_close(); break;
-          default: break;
-        }
-        return true;
-      case MenuAction::Back: begin_close(); return true;
-      case MenuAction::None: return false;
+    case MenuAction::Left:
+      quantity_.adjust(-1);
+      return true;
+    case MenuAction::Right:
+      quantity_.adjust(1);
+      return true;
+    case MenuAction::Up:
+      row_ = (row_ + 6) % 7;
+      return true;
+    case MenuAction::Down:
+      row_ = (row_ + 1) % 7;
+      return true;
+    case MenuAction::Confirm:
+      switch (row_) {
+      case 1:
+        quantity_.preset(1);
+        break;
+      case 2:
+        quantity_.preset(5);
+        break;
+      case 3:
+        quantity_.preset(10);
+        break;
+      case 4:
+        quantity_.preset(quantity_.maximum());
+        break;
+      case 5:
+        confirmed_quantity_ = quantity_.value();
+        if (confirmation_count_ != std::numeric_limits<std::uint32_t>::max())
+          ++confirmation_count_;
+        break;
+      case 6:
+        begin_close();
+        break;
+      default:
+        break;
+      }
+      return true;
+    case MenuAction::Back:
+      begin_close();
+      return true;
+    case MenuAction::None:
+      return false;
     }
     return false;
   }
@@ -80,11 +104,15 @@ public:
     advance_neutral(confirm_neutral_, confirm_active);
     advance_neutral(back_neutral_, back_active);
     advance_neutral(neutral_frames_, confirm_active || back_active);
-    if (confirm_neutral_ == 2) confirm_latched_ = false;
-    if (back_neutral_ == 2) back_latched_ = false;
+    if (confirm_neutral_ == 2)
+      confirm_latched_ = false;
+    if (back_neutral_ == 2)
+      back_latched_ = false;
     if (neutral_frames_ == 2) {
-      if (closing_) close_ready_ = true;
-      else armed_ = true;
+      if (closing_)
+        close_ready_ = true;
+      else
+        armed_ = true;
     }
     confirm_event_ = back_event_ = false;
   }
@@ -101,8 +129,10 @@ public:
 
 private:
   static void advance_neutral(unsigned& count, bool active) noexcept {
-    if (active) count = 0;
-    else if (count < 2) ++count;
+    if (active)
+      count = 0;
+    else if (count < 2)
+      ++count;
   }
   void begin_close() noexcept {
     closing_ = true;
@@ -127,4 +157,4 @@ private:
   unsigned back_neutral_ = 0;
 };
 
-}  // namespace ubc
+} // namespace ubc

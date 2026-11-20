@@ -16,14 +16,18 @@ unsigned checks = 0;
 unsigned failures = 0;
 void check(bool condition, const char* message) {
   ++checks;
-  if (!condition) { ++failures; std::fprintf(stderr, "FAIL: %s\n", message); }
+  if (!condition) {
+    ++failures;
+    std::fprintf(stderr, "FAIL: %s\n", message);
+  }
 }
 
 struct CountingReader {
   unsigned calls = 0;
   static bool read(void* context, std::uint32_t, void* output, std::size_t size) noexcept {
     ++static_cast<CountingReader*>(context)->calls;
-    if (size) std::memset(output, 0x5a, size);
+    if (size)
+      std::memset(output, 0x5a, size);
     return true;
   }
 };
@@ -40,14 +44,16 @@ struct MemoryImage {
     ++image.calls;
     const std::uint64_t end = static_cast<std::uint64_t>(address) + size;
     if (address < base || end > static_cast<std::uint64_t>(base) + image.bytes.size() ||
-        (image.denied_begin && address < image.denied_end && end > image.denied_begin)) return false;
+        (image.denied_begin && address < image.denied_end && end > image.denied_begin))
+      return false;
     std::memcpy(output, image.bytes.data() + (address - base), size);
     return true;
   }
   ubc::ReadOnlyMemory memory() { return {this, read}; }
   void put(std::uint32_t address, std::uint32_t value) {
     const auto offset = static_cast<std::size_t>(address - base);
-    for (unsigned i = 0; i < 4; ++i) bytes.at(offset + i) = static_cast<std::uint8_t>(value >> (8 * i));
+    for (unsigned i = 0; i < 4; ++i)
+      bytes.at(offset + i) = static_cast<std::uint8_t>(value >> (8 * i));
   }
 };
 
@@ -73,7 +79,8 @@ void populate(MemoryImage& image, unsigned count, std::int32_t amount = 1) {
 
 void rejected(const ubc::InventorySnapshot& result, const char* message) {
   check(!result.valid && !result.totals_known &&
-        std::all_of(result.listed.begin(), result.listed.end(), [](auto n) { return n == 0; }), message);
+            std::all_of(result.listed.begin(), result.listed.end(), [](auto n) { return n == 0; }),
+        message);
 }
 
 void memory_boundaries() {
@@ -98,19 +105,24 @@ void inventory_cases() {
   populate(image, 0);
   auto result = ubc::read_inventory(image.memory(), hero, symbols);
   check(result.valid && result.totals_known && result.nodes == 0 &&
-        result.listed == std::array<std::int32_t, 6>{}, "empty inventory is known");
+            result.listed == std::array<std::int32_t, 6>{},
+        "empty inventory is known");
   populate(image, 12, 3);
   result = ubc::read_inventory(image.memory(), hero, symbols);
   check(result.valid && result.totals_known && result.nodes == 12 &&
-        result.listed == std::array<std::int32_t, 6>{{6, 6, 6, 6, 6, 6}}, "six ingredients and multiple stacks");
+            result.listed == std::array<std::int32_t, 6>{{6, 6, 6, 6, 6, 6}},
+        "six ingredients and multiple stacks");
   image.put(item(0) + 0x330, 9999);
   result = ubc::read_inventory(image.memory(), hero, symbols);
-  check(result.valid && result.listed[0] == 3 && result.nodes == 12, "unknown items are ignored in sums");
+  check(result.valid && result.listed[0] == 3 && result.nodes == 12,
+        "unknown items are ignored in sums");
   image.put(inventory + 0xa4, 1);
   result = ubc::read_inventory(image.memory(), hero, symbols);
-  check(result.valid && !result.totals_known && result.listed[0] == 3, "packed total remains unknown");
+  check(result.valid && !result.totals_known && result.listed[0] == 3,
+        "packed total remains unknown");
   image.put(inventory + 0xa4, UINT32_MAX);
-  check(!ubc::read_inventory(image.memory(), hero, symbols).totals_known, "any nonzero pack flag is unknown");
+  check(!ubc::read_inventory(image.memory(), hero, symbols).totals_known,
+        "any nonzero pack flag is unknown");
 
   populate(image, 2);
   image.put(inventory + 0xa0, hero + 4);
@@ -127,12 +139,15 @@ void inventory_cases() {
   rejected(ubc::read_inventory(image.memory(), hero, symbols), "null item pointer rejected");
   populate(image, 2);
   image.put(item(1) + 0x32c, UINT32_MAX);
-  rejected(ubc::read_inventory(image.memory(), hero, symbols), "negative amount rejected after valid prefix");
+  rejected(ubc::read_inventory(image.memory(), hero, symbols),
+           "negative amount rejected after valid prefix");
   image.put(item(1) + 0x330, 9999);
-  rejected(ubc::read_inventory(image.memory(), hero, symbols), "negative unknown-item amount is also rejected");
+  rejected(ubc::read_inventory(image.memory(), hero, symbols),
+           "negative unknown-item amount is also rejected");
   populate(image, 2, 0);
   result = ubc::read_inventory(image.memory(), hero, symbols);
-  check(result.valid && result.totals_known && result.listed == std::array<std::int32_t, 6>{}, "zero amount is valid");
+  check(result.valid && result.totals_known && result.listed == std::array<std::int32_t, 6>{},
+        "zero amount is valid");
 
   populate(image, 2);
   image.put(item(0) + 0x32c, INT32_MAX);
@@ -156,8 +171,10 @@ void inventory_cases() {
   rejected(ubc::read_inventory(image.memory(), hero, symbols), "detached next node rejected");
   populate(image, 1);
   image.put(node(0) + 4, UINT32_MAX - 0x32b);
-  rejected(ubc::read_inventory(image.memory(), hero, symbols), "item field address overflow rejected");
-  rejected(ubc::read_inventory(image.memory(), UINT32_MAX - 0x667, symbols), "inventory address overflow rejected");
+  rejected(ubc::read_inventory(image.memory(), hero, symbols),
+           "item field address overflow rejected");
+  rejected(ubc::read_inventory(image.memory(), UINT32_MAX - 0x667, symbols),
+           "inventory address overflow rejected");
   rejected(ubc::read_inventory(image.memory(), 0, symbols), "null hero rejected");
   const ubc::ReadOnlyMemory absent{nullptr, nullptr};
   rejected(ubc::read_inventory(absent, hero, symbols), "missing inventory reader rejected");
@@ -165,8 +182,10 @@ void inventory_cases() {
   populate(image, 4096);
   result = ubc::read_inventory(image.memory(), hero, symbols);
   std::int32_t total = 0;
-  for (const auto amount : result.listed) total += amount;
-  check(result.valid && result.totals_known && result.nodes == 4096 && total == 4096, "exact node limit allowed");
+  for (const auto amount : result.listed)
+    total += amount;
+  check(result.valid && result.totals_known && result.nodes == 4096 && total == 4096,
+        "exact node limit allowed");
   check(image.calls < 20000, "large inventory uses bounded linear reads");
   populate(image, 4097);
   result = ubc::read_inventory(image.memory(), hero, symbols);
@@ -188,18 +207,20 @@ void inventory_cases() {
 void abi_contracts() {
   namespace abi = ubc::station_abi;
   check(abi::hook_sites.size() == 5, "five outer passive hook sites");
-  constexpr std::array<std::uintptr_t, 5> addresses{{0x721580, 0x721950, 0x660bb0, 0x703970, 0x6629a0}};
+  constexpr std::array<std::uintptr_t, 5> addresses{
+      {0x721580, 0x721950, 0x660bb0, 0x703970, 0x6629a0}};
   constexpr std::array<std::size_t, 5> lengths{{6, 6, 5, 6, 7}};
   for (std::size_t i = 0; i < addresses.size(); ++i) {
     const auto& site = abi::hook_sites[i];
     check(site.address == addresses[i] && site.patch_size == lengths[i] &&
-          site.guard_size > site.patch_size && site.guard_size <= site.original.size(), "complete guarded patch span");
+              site.guard_size > site.patch_size && site.guard_size <= site.original.size(),
+          "complete guarded patch span");
     check(site.address + site.patch_size <= abi::do_stack_entry ||
-          site.address >= abi::do_stack_entry + abi::do_stack_disk_entry.size(),
+              site.address >= abi::do_stack_entry + abi::do_stack_disk_entry.size(),
           "never patch Ikarus DoStack entry");
   }
 }
-}  // namespace
+} // namespace
 
 int main() {
   memory_boundaries();
