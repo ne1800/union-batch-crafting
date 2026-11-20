@@ -5,27 +5,51 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 include(cmake/ui_languages.cmake)
 
-add_executable(ubc_core_tests tests/core_tests.cpp)
+add_executable(ubc_core_tests tests/native/core/core_tests.cpp)
 target_include_directories(ubc_core_tests PRIVATE include)
-add_executable(ubc_sha256_tests tests/sha256_tests.cpp)
+add_executable(ubc_sha256_tests tests/native/core/sha256_tests.cpp)
 target_include_directories(ubc_sha256_tests PRIVATE include)
-add_executable(ubc_menu_model_tests tests/menu_model_tests.cpp)
+add_executable(ubc_menu_model_tests tests/native/ui/menu_model_tests.cpp)
 target_include_directories(ubc_menu_model_tests PRIVATE include)
-add_executable(ubc_station_snapshot_tests tests/station_snapshot_tests.cpp)
+add_executable(
+    ubc_station_snapshot_tests
+    tests/native/stations/station_snapshot_tests.cpp
+)
 target_include_directories(ubc_station_snapshot_tests PRIVATE include)
-add_executable(ubc_runtime_script_tests tests/runtime_script_tests.cpp)
+add_executable(
+    ubc_runtime_script_tests
+    tests/native/engine/runtime_script_tests.cpp
+)
 target_include_directories(ubc_runtime_script_tests PRIVATE include)
-add_executable(ubc_hand_snapshot_tests tests/hand_snapshot_tests.cpp)
+add_executable(
+    ubc_hand_snapshot_tests
+    tests/native/engine/hand_snapshot_tests.cpp
+)
 target_include_directories(ubc_hand_snapshot_tests PRIVATE include)
-add_executable(ubc_info_snapshot_tests tests/info_snapshot_tests.cpp)
+add_executable(
+    ubc_info_snapshot_tests
+    tests/native/engine/info_snapshot_tests.cpp
+)
 target_include_directories(ubc_info_snapshot_tests PRIVATE include)
-add_executable(ubc_packed_inventory_tests tests/packed_inventory_tests.cpp)
+add_executable(
+    ubc_packed_inventory_tests
+    tests/native/engine/packed_inventory_tests.cpp
+)
 target_include_directories(ubc_packed_inventory_tests PRIVATE include)
-add_executable(ubc_selection_session_tests tests/selection_session_tests.cpp)
+add_executable(
+    ubc_selection_session_tests
+    tests/native/core/selection_session_tests.cpp
+)
 target_include_directories(ubc_selection_session_tests PRIVATE include)
-add_executable(ubc_selection_stock_tests tests/selection_stock_tests.cpp)
+add_executable(
+    ubc_selection_stock_tests
+    tests/native/core/selection_stock_tests.cpp
+)
 target_include_directories(ubc_selection_stock_tests PRIVATE include)
-add_executable(ubc_selection_snapshot_tests tests/selection_snapshot_tests.cpp)
+add_executable(
+    ubc_selection_snapshot_tests
+    tests/native/core/selection_snapshot_tests.cpp
+)
 target_include_directories(ubc_selection_snapshot_tests PRIVATE include)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_library(ubc_cool_measurement SHARED tools/world/cool_measurement.cpp)
@@ -45,114 +69,115 @@ add_test(NAME selection_stock COMMAND ubc_selection_stock_tests)
 add_test(NAME selection_snapshot COMMAND ubc_selection_snapshot_tests)
 
 foreach(
-    unit
-    player_engine
-    batch_session
-    batch_menu
-    amount_patch
-    batch_result
-    recipe_catalog
-    recipe_material
-    recipe_result
-    recipe_runtime
-    recipe_session
-    recipe_menu
-    recipe_navigation
-    recipe_handoff
-    recipe_snapshot
-    station_recipe_catalog
-    station_recipe_material
-    station_recipe_navigation
-    station_recipe_result
-    station_recipe_runtime
-    station_recipe_snapshot
-    post_remove_choice
-    crafting_catalog
-    recipe_family_table
-    tobacco_recipe
-    crafting_session
-    crafting_menu
-    crafting_ui_diagnostics
-    grind_ui_readiness
-    crafting_handoff
-    crafting_result
-    ammo_presentation
-    ammo_runtime
-    alchemy_flask_debit
-    station_end_contract
-    alchemy_recipe_catalog
-    alchemy_flask_runtime
-    alchemy_extra_snapshot
-    alchemy_extra_result
-    alchemy_extra_navigation
-    alchemy_extra_execution
-    alchemy_extra_dependencies
-    alchemy_extra_dependency_reader
-    alchemy_extra_end_snapshot
-    crafting_alchemy_extra_reader
-    vob_locator_compat
-    vob_inventory_insert_compat
-    zbug_end_compat
-    anvil_recipe_catalog
-    anvil_recipe_runtime
-    anvil_recipe_navigation
-    anvil_recipe_snapshot
-    ore_recipe_catalog
-    ore_recipe_runtime
-    ore_recipe_navigation
-    ore_recipe_snapshot
-    mixed_hotsteel
-    spirit_recipe_catalog
-    spirit_recipe_runtime
-    spirit_recipe_navigation
-    spirit_recipe_snapshot
-    spirit_execution
-    spirit_result
-    spirit_end_snapshot
-    spirit_crafting_reader
-    crafting_spirit_projection
-    crafting_bow_projection
-    crafting_bow_execution
-    bow_recipe_catalog
-    bow_recipe_runtime
-    bow_recipe_navigation
-    bow_recipe_snapshot
-    bow_item_path
-    bow_item_code
-    bow_item_native
-    bow_item_renderer
-    bow_item_runtime
-    grind_recipe_plan
-    grind_recipe_material
-    grind_recipe_snapshot
-    grind_item_binding
-    grind_item_path
-    grind_item_runtime
-    grind_preview_batch
-    grind_zbug_unpack
-    grind_destroy_observation
-    grind_guild_snapshot
-    grind_recipe_runtime
-    grind_recipe_navigation
-    cool_recipe_plan
-    cool_recipe_runtime
-    cool_recipe_snapshot
-    cool_recipe_navigation
-    cool_recipe_facts
-    cool_parser_prefix
-    cool_hotblade_debit
-    cool_predebit_contract
-    cool_predebit_reader
-    cool_nofx_reader
-    cool_message_malloc_reader
-    cool_direct_contract
-    cool_actor_preview
-    destroy_remove_callsite
-    cool_native_path
-    cool_destroy_dispatch
-    cool_destroy_observation
+    test_path
+    engine/player_engine
+    core/batch_session
+    ui/batch_menu
+    engine/amount_patch
+    core/batch_result
+    catalogs/recipe_catalog
+    core/recipe_material
+    core/recipe_result
+    core/recipe_runtime
+    core/recipe_session
+    ui/recipe_menu
+    core/recipe_navigation
+    core/recipe_handoff
+    core/recipe_snapshot
+    catalogs/station_recipe_catalog
+    stations/station_recipe_material
+    stations/station_recipe_navigation
+    stations/station_recipe_result
+    stations/station_recipe_runtime
+    stations/station_recipe_snapshot
+    core/post_remove_choice
+    catalogs/crafting_catalog
+    catalogs/recipe_family_table
+    stations/tobacco/tobacco_recipe
+    core/crafting_session
+    ui/crafting_menu
+    ui/crafting_ui_diagnostics
+    stations/grind/grind_ui_readiness
+    core/crafting_handoff
+    core/crafting_result
+    stations/saw/ammo_presentation
+    stations/saw/ammo_runtime
+    stations/alchemy/alchemy_flask_debit
+    stations/station_end_contract
+    catalogs/alchemy_recipe_catalog
+    stations/alchemy/alchemy_flask_runtime
+    stations/alchemy/alchemy_extra_snapshot
+    stations/alchemy/alchemy_extra_result
+    stations/alchemy/alchemy_extra_navigation
+    stations/alchemy/alchemy_extra_execution
+    stations/alchemy/alchemy_extra_dependencies
+    stations/alchemy/alchemy_extra_dependency_reader
+    stations/alchemy/alchemy_extra_end_snapshot
+    stations/alchemy/crafting_alchemy_extra_reader
+    engine/vob_locator_compat
+    engine/vob_inventory_insert_compat
+    engine/zbug_end_compat
+    catalogs/anvil_recipe_catalog
+    stations/anvil/anvil_recipe_runtime
+    stations/anvil/anvil_recipe_navigation
+    stations/anvil/anvil_recipe_snapshot
+    catalogs/ore_recipe_catalog
+    stations/ore/ore_recipe_runtime
+    stations/ore/ore_recipe_navigation
+    stations/ore/ore_recipe_snapshot
+    stations/mixed_hotsteel
+    catalogs/spirit_recipe_catalog
+    stations/spirit/spirit_recipe_runtime
+    stations/spirit/spirit_recipe_navigation
+    stations/spirit/spirit_recipe_snapshot
+    stations/spirit/spirit_execution
+    stations/spirit/spirit_result
+    stations/spirit/spirit_end_snapshot
+    stations/spirit/spirit_crafting_reader
+    stations/spirit/crafting_spirit_projection
+    stations/bow/crafting_bow_projection
+    stations/bow/crafting_bow_execution
+    catalogs/bow_recipe_catalog
+    stations/bow/bow_recipe_runtime
+    stations/bow/bow_recipe_navigation
+    stations/bow/bow_recipe_snapshot
+    stations/bow/bow_item_path
+    stations/bow/bow_item_code
+    stations/bow/bow_item_native
+    stations/bow/bow_item_renderer
+    stations/bow/bow_item_runtime
+    stations/grind/grind_recipe_plan
+    stations/grind/grind_recipe_material
+    stations/grind/grind_recipe_snapshot
+    stations/grind/grind_item_binding
+    stations/grind/grind_item_path
+    stations/grind/grind_item_runtime
+    stations/grind/grind_preview_batch
+    stations/grind/grind_zbug_unpack
+    stations/grind/grind_destroy_observation
+    stations/grind/grind_guild_snapshot
+    stations/grind/grind_recipe_runtime
+    stations/grind/grind_recipe_navigation
+    stations/cool/cool_recipe_plan
+    stations/cool/cool_recipe_runtime
+    stations/cool/cool_recipe_snapshot
+    stations/cool/cool_recipe_navigation
+    stations/cool/cool_recipe_facts
+    stations/cool/cool_parser_prefix
+    stations/cool/cool_hotblade_debit
+    stations/cool/cool_predebit_contract
+    stations/cool/cool_predebit_reader
+    stations/cool/cool_nofx_reader
+    stations/cool/cool_message_malloc_reader
+    stations/cool/cool_direct_contract
+    stations/cool/cool_actor_preview
+    engine/destroy_remove_callsite
+    stations/cool/cool_native_path
+    stations/cool/cool_destroy_dispatch
+    stations/cool/cool_destroy_observation
 )
-    add_executable(ubc_${unit}_tests tests/${unit}_tests.cpp)
+    get_filename_component(unit "${test_path}" NAME)
+    add_executable(ubc_${unit}_tests tests/native/${test_path}_tests.cpp)
     target_include_directories(ubc_${unit}_tests PRIVATE include)
     add_test(NAME ${unit} COMMAND ubc_${unit}_tests)
     if(WIN32)
@@ -176,7 +201,7 @@ set_tests_properties(
 
 add_executable(
     ubc_native_crafting_ui_tests
-    tests/native_crafting_ui_tests.cpp
+    tests/native/ui/native_crafting_ui_tests.cpp
     src/ui/native_crafting_ui.cpp
 )
 target_include_directories(ubc_native_crafting_ui_tests PRIVATE include)
@@ -205,7 +230,7 @@ endif()
 
 add_executable(
     ubc_crafting_spirit_shared_tests
-    tests/crafting_spirit_shared_tests.cpp
+    tests/native/stations/spirit/crafting_spirit_shared_tests.cpp
     src/ui/native_crafting_ui.cpp
 )
 target_include_directories(ubc_crafting_spirit_shared_tests PRIVATE include)
@@ -234,7 +259,7 @@ endif()
 
 add_executable(
     ubc_crafting_cool_shared_tests
-    tests/crafting_cool_shared_tests.cpp
+    tests/native/stations/cool/crafting_cool_shared_tests.cpp
     src/ui/native_crafting_ui.cpp
 )
 target_include_directories(ubc_crafting_cool_shared_tests PRIVATE include)
@@ -263,7 +288,7 @@ endif()
 
 add_executable(
     ubc_crafting_grind_shared_tests
-    tests/crafting_grind_shared_tests.cpp
+    tests/native/stations/grind/crafting_grind_shared_tests.cpp
     src/ui/native_crafting_ui.cpp
 )
 target_include_directories(ubc_crafting_grind_shared_tests PRIVATE include)
@@ -502,7 +527,7 @@ if(WIN32)
         PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
     )
     target_link_libraries(UnionBatchCraftingProbe PRIVATE kernel32)
-    add_executable(ubc_probe_host tests/probe_host.cpp)
+    add_executable(ubc_probe_host tests/native/probes/probe_host.cpp)
     target_compile_definitions(
         ubc_probe_host
         PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
@@ -520,7 +545,7 @@ if(WIN32)
         PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
     )
     target_link_libraries(UnionBatchCraftingMenuProbe PRIVATE kernel32 user32)
-    add_executable(ubc_menu_probe_host tests/menu_probe_host.cpp)
+    add_executable(ubc_menu_probe_host tests/native/probes/menu_probe_host.cpp)
     target_compile_definitions(
         ubc_menu_probe_host
         PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
@@ -663,7 +688,7 @@ if(WIN32)
     )
     add_executable(
         ubc_crafting_effect_guard_tests
-        tests/crafting_effect_guard_tests.cpp
+        tests/native/engine/crafting_effect_guard_tests.cpp
         src/ui/native_crafting_ui.cpp
         src/ui/native_selection_ui.cpp
         src/bridges/frame_bridge.cpp
@@ -690,7 +715,7 @@ if(WIN32)
     )
     add_executable(
         ubc_native_crafting_ammo_tests
-        tests/native_crafting_ammo_tests.cpp
+        tests/native/engine/native_crafting_ammo_tests.cpp
         src/bridges/ammo_presentation_bridge.cpp
     )
     target_include_directories(
@@ -707,7 +732,10 @@ if(WIN32)
         ubc_native_crafting_ammo_tests
         PRIVATE /Brepro /INCREMENTAL:NO
     )
-    add_executable(ubc_crafting_probe_host tests/crafting_probe_host.cpp)
+    add_executable(
+        ubc_crafting_probe_host
+        tests/native/probes/crafting_probe_host.cpp
+    )
     target_compile_definitions(
         ubc_crafting_probe_host
         PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
@@ -715,7 +743,10 @@ if(WIN32)
     target_link_libraries(ubc_crafting_probe_host PRIVATE kernel32)
     target_compile_options(ubc_crafting_probe_host PRIVATE /W4 /WX)
     target_link_options(ubc_crafting_probe_host PRIVATE /Brepro /INCREMENTAL:NO)
-    add_executable(ubc_recipe_probe_host tests/recipe_probe_host.cpp)
+    add_executable(
+        ubc_recipe_probe_host
+        tests/native/probes/recipe_probe_host.cpp
+    )
     target_compile_definitions(
         ubc_recipe_probe_host
         PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
@@ -725,7 +756,7 @@ if(WIN32)
     target_link_options(ubc_recipe_probe_host PRIVATE /Brepro /INCREMENTAL:NO)
     add_executable(
         ubc_recipe_effect_guard_tests
-        tests/recipe_effect_guard_tests.cpp
+        tests/native/engine/recipe_effect_guard_tests.cpp
         src/ui/native_recipe_ui.cpp
         src/ui/native_selection_ui.cpp
         src/bridges/frame_bridge.cpp
@@ -744,7 +775,7 @@ if(WIN32)
     )
     add_executable(
         ubc_batch_call_bridge_tests
-        tests/batch_call_bridge_tests.cpp
+        tests/native/engine/batch_call_bridge_tests.cpp
         src/bridges/batch_call_bridge.cpp
     )
     target_include_directories(ubc_batch_call_bridge_tests PRIVATE include)
@@ -760,7 +791,7 @@ if(WIN32)
     )
     add_executable(
         ubc_ammo_presentation_bridge_tests
-        tests/ammo_presentation_bridge_tests.cpp
+        tests/native/ui/ammo_presentation_bridge_tests.cpp
         src/bridges/ammo_presentation_bridge.cpp
     )
     target_include_directories(
@@ -779,7 +810,7 @@ if(WIN32)
     )
     add_executable(
         ubc_alchemy_flask_debit_bridge_tests
-        tests/alchemy_flask_debit_bridge_tests.cpp
+        tests/native/stations/alchemy/alchemy_flask_debit_bridge_tests.cpp
         src/bridges/alchemy_flask_debit_bridge.cpp
     )
     target_include_directories(
@@ -799,7 +830,7 @@ if(WIN32)
     # Offline integration for Lager2/N2. Deliberately omit the plugin link until EndFence/Reader are available.
     add_executable(
         ubc_cool_hotblade_debit_bridge_tests
-        tests/cool_hotblade_debit_bridge_tests.cpp
+        tests/native/stations/cool/cool_hotblade_debit_bridge_tests.cpp
         src/bridges/cool_hotblade_debit_bridge.cpp
     )
     target_include_directories(
@@ -819,8 +850,8 @@ if(WIN32)
     add_library(
         ubc_cool_predebit_test_host
         SHARED
-        tests/cool_predebit_bridge_tests.cpp
-        tests/cool_predebit_native_host.cpp
+        tests/native/stations/cool/cool_predebit_bridge_tests.cpp
+        tests/native/stations/cool/cool_predebit_native_host.cpp
         src/ui/native_crafting_ui.cpp
         src/ui/native_selection_ui.cpp
         src/bridges/frame_bridge.cpp
@@ -848,7 +879,7 @@ if(WIN32)
     # the plugin, the actual adapter functions reside outside this image.
     add_executable(
         ubc_cool_predebit_bridge_tests
-        tests/cool_predebit_host_main.cpp
+        tests/native/stations/cool/cool_predebit_host_main.cpp
     )
     target_link_libraries(
         ubc_cool_predebit_bridge_tests
@@ -861,7 +892,7 @@ if(WIN32)
     )
     add_executable(
         ubc_alchemy_extra_writer_tests
-        tests/alchemy_extra_writer_tests.cpp
+        tests/native/stations/alchemy/alchemy_extra_writer_tests.cpp
         src/writers/alchemy_extra_writer.cpp
         src/bridges/alchemy_flask_debit_bridge.cpp
     )
@@ -881,7 +912,7 @@ if(WIN32)
     )
     add_executable(
         ubc_spirit_writer_tests
-        tests/spirit_writer_tests.cpp
+        tests/native/stations/spirit/spirit_writer_tests.cpp
         src/writers/spirit_writer.cpp
         src/bridges/spirit_flask_debit_bridge.cpp
     )
@@ -895,7 +926,7 @@ if(WIN32)
     target_link_options(ubc_spirit_writer_tests PRIVATE /Brepro /INCREMENTAL:NO)
     add_executable(
         ubc_windows_destroy_remove_callsite_tests
-        tests/windows_destroy_remove_callsite_tests.cpp
+        tests/native/engine/windows_destroy_remove_callsite_tests.cpp
     )
     target_include_directories(
         ubc_windows_destroy_remove_callsite_tests
@@ -919,7 +950,7 @@ if(WIN32)
     )
     add_executable(
         ubc_windows_module_identity_tests
-        tests/windows_module_identity_tests.cpp
+        tests/native/engine/windows_module_identity_tests.cpp
     )
     target_include_directories(
         ubc_windows_module_identity_tests
@@ -935,7 +966,10 @@ if(WIN32)
         ubc_windows_module_identity_tests
         PRIVATE /Brepro /INCREMENTAL:NO
     )
-    add_executable(ubc_batch_probe_host tests/batch_probe_host.cpp)
+    add_executable(
+        ubc_batch_probe_host
+        tests/native/probes/batch_probe_host.cpp
+    )
     target_compile_definitions(
         ubc_batch_probe_host
         PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
@@ -943,19 +977,28 @@ if(WIN32)
     target_link_libraries(ubc_batch_probe_host PRIVATE kernel32)
     target_compile_options(ubc_batch_probe_host PRIVATE /W4 /WX)
     target_link_options(ubc_batch_probe_host PRIVATE /Brepro /INCREMENTAL:NO)
-    add_executable(ubc_selection_probe_host tests/selection_probe_host.cpp)
+    add_executable(
+        ubc_selection_probe_host
+        tests/native/probes/selection_probe_host.cpp
+    )
     target_compile_definitions(
         ubc_selection_probe_host
         PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
     )
     target_link_libraries(ubc_selection_probe_host PRIVATE kernel32)
-    add_executable(ubc_station_probe_host tests/station_probe_host.cpp)
+    add_executable(
+        ubc_station_probe_host
+        tests/native/probes/station_probe_host.cpp
+    )
     target_compile_definitions(
         ubc_station_probe_host
         PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX
     )
     target_link_libraries(ubc_station_probe_host PRIVATE kernel32)
-    add_executable(ubc_native_hook_tests tests/native_hook_tests.cpp)
+    add_executable(
+        ubc_native_hook_tests
+        tests/native/engine/native_hook_tests.cpp
+    )
     target_include_directories(ubc_native_hook_tests PRIVATE include)
     target_compile_definitions(
         ubc_native_hook_tests
@@ -968,7 +1011,7 @@ if(WIN32)
     )
     add_executable(
         ubc_frame_bridge_tests
-        tests/frame_bridge_tests.cpp
+        tests/native/engine/frame_bridge_tests.cpp
         src/bridges/frame_bridge.cpp
     )
     target_include_directories(ubc_frame_bridge_tests PRIVATE include)
@@ -983,7 +1026,7 @@ if(WIN32)
     )
     add_executable(
         ubc_selection_effect_guard_tests
-        tests/selection_effect_guard_tests.cpp
+        tests/native/engine/selection_effect_guard_tests.cpp
         src/ui/native_selection_ui.cpp
         src/bridges/frame_bridge.cpp
     )
@@ -1078,3 +1121,17 @@ else()
         PRIVATE -Wall -Wextra -Wpedantic -Werror
     )
 endif()
+
+# The first source of each registered target is its native test translation unit.
+get_property(native_tests DIRECTORY PROPERTY TESTS)
+foreach(unit IN LISTS native_tests)
+    get_target_property(sources ubc_${unit}_tests SOURCES)
+    list(GET sources 0 source)
+    get_filename_component(directory "${source}" DIRECTORY)
+    get_filename_component(area "${directory}" NAME)
+    if(area STREQUAL "cool")
+        set(area cooling)
+    endif()
+    set_tests_properties(${unit} PROPERTIES LABELS "${area}")
+endforeach()
+set_property(TEST native_crafting_ui APPEND PROPERTY LABELS text)

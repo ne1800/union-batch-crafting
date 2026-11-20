@@ -1,0 +1,13 @@
+[
+  "build:native",
+  "build:windows",
+  "lint:all",
+  "package:player-WRITES",
+  "package:probe-WRITES",
+  "setup:windows-WRITES",
+  "test:core",
+  "test:report-WRITES",
+  "test:sanitizers",
+  "test:tools",
+  "test:wine-WRITES"
+]

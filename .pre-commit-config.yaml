@@ -57,20 +57,20 @@ repos:
       - id: bilingual-docs
         name: Check bilingual documentation
         language: system
-        entry: python3 -B -m unittest discover -s tests -p test_user_docs.py
+        entry: python3 -B -m unittest discover -s tests/python/package -p test_user_docs.py
         pass_filenames: false
         always_run: true
       - id: export-leaks
         name: Scan the source export and all Git objects
         language: system
-        entry: python3 -B tools/scan-export.py
+        entry: python3 -B tools/publish/scan-export.py
         stages: [manual]
         pass_filenames: false
         always_run: true
       - id: clang-tidy
         name: Report clang-tidy findings against the baseline
         language: system
-        entry: python3 tools/report-clang-tidy.py
+        entry: python3 tools/lint/report-clang-tidy.py
         stages: [manual]
         pass_filenames: false
         always_run: true
@@ -78,5 +78,5 @@ repos:
       - id: conventional-commit
         name: Check Conventional Commit subject
         language: system
-        entry: python3 tools/commit-subject.py
+        entry: python3 tools/lint/commit-subject.py
         stages: [commit-msg]

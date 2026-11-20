@@ -29,8 +29,12 @@
 | `include/ubc/text/` | Hier liegen Sprachwahl, Textschlüssel und Tabellenformat. |
 | `include/ubc/text/locales/` | Jede unterstützte Sprache definiert hier ihre vollständige Übersetzungstabelle. |
 
+Die nativen Tests folgen unter `tests/native/` den Headerbereichen. Gemeinsame C++-Testhelfer stehen in `tests/native/helpers/`. Die Python-Tests unter `tests/python/` folgen den Werkzeugordnern. Build, Paketerstellung, Testläufe und Belegauswertung liegen in `tools/build/`, `tools/package/`, `tools/test/` und `tools/evidence/`. Der Entwicklungsstand bündelt Projektberichte, Überwachung und Exportvorbereitung in `tools/report/`, `tools/watch/` und `tools/publish/`. Die Hook-Skripte liegen in `tools/lint/`.
+
+Die mise-Aufgaben folgen denselben Zuständigkeiten. `package:probe-WRITES` baut das Diagnosepaket, `package:player-WRITES` das Spielerpaket. `lint:all` prüft die versionierten Dateien. Im Entwicklungsrepo zeigt `report:state` den lokalen Zustand und `publish:export-WRITES` bereitet den Quell-Export vor.
+
 <a id="tables"></a>
 
 ## Pflege der Rezepttabellen
 
-Die eingecheckten Kataloge sind die Quelle für den Build. Der Bogenkatalog wird direkt im Header gepflegt, etwa bei Korrekturen der gemessenen Laufzeitnamen. Die Tabelle im Schleifprofil sowie die zugehörigen Gegenstandsformen und Konstruktordaten stammen aus einer früheren Offline-Auswertung. Ihre Header nennen den Erzeugerbefehl für die damalige Arbeitsumgebung. Der Test `recipe_family_table` vergleicht die 98 kompilierten Profile mit den eingecheckten Referenzzeilen. [Profilvergleich](../tests/recipe_family_table_tests.cpp)
+Die eingecheckten Kataloge sind die Quelle für den Build. Der Bogenkatalog wird direkt im Header gepflegt, etwa bei Korrekturen der gemessenen Laufzeitnamen. Die Tabelle im Schleifprofil sowie die zugehörigen Gegenstandsformen und Konstruktordaten stammen aus einer früheren Offline-Auswertung. Ihre Header nennen den Erzeugerbefehl für die damalige Arbeitsumgebung. Der Test `recipe_family_table` vergleicht die 98 kompilierten Profile mit den eingecheckten Referenzzeilen. [Profilvergleich](../tests/native/catalogs/recipe_family_table_tests.cpp)
