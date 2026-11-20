@@ -10,7 +10,7 @@ This local build for Marcello L’Hiver DE 2.0.4 covers 98 recipe profiles at th
 
 ## Player installation
 
-The **0.0.57 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](../INSTALL.md)
+The **0.0.58 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](../INSTALL.md)
 
 <a id="compatibility"></a>
 
@@ -106,4 +106,4 @@ The bow bench supports 20 upgrades. “Stock for” is the material limit. The m
 
 ## Test coverage and limits
 
-0.0.55 documents the 0.0.54 feature set and was tested offline. The latest world result, from 0.0.53, confirms automatic German quantity text and cost-free cancellation. The station comparisons above come from earlier runs. Physical controller input at stations still awaits testing. The original controls remain available for the game's recipes. [Project overview](../README.md) · [Changes by version](../CHANGELOG.md#english)
+0.0.55 documents the 0.0.54 feature set and was tested offline. The 0.0.53 world run confirms automatic German quantity text and cost-free cancellation. The player DLL from 0.0.57 loaded without a marker. At the alchemy table, selecting two swamp tobaccos used two apple tobaccos and two laboratory flasks. Swampweed was unchanged. Package 0.0.58 includes this result and the same DLL. The station comparisons above come from earlier runs. Physical controller input at stations still awaits testing. The original controls remain available for the game's recipes. [Project overview](../README.md) · [Changes by version](../CHANGELOG.md#english)

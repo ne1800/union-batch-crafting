@@ -10,7 +10,7 @@ Die lokale Testfassung für Marcello L’Hiver DE 2.0.4 verbindet 98 Rezeptprofi
 
 ## Installation für Spieler
 
-Das Spieler-ZIP **0.0.57** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](../INSTALL.de.md)
+Das Spieler-ZIP **0.0.58** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](../INSTALL.de.md)
 
 <a id="compatibility"></a>
 
@@ -137,4 +137,4 @@ zwei Drachenjägerarmbrüste mindestens 24 Rohstahl im Vorrat, verbrauchen aber
 
 ## Prüfstand und Grenzen
 
-0.0.55 dokumentiert den Funktionsstand von 0.0.54 und wurde offline geprüft. Der letzte Weltbeleg von 0.0.53 bestätigt die automatische deutsche Mengenanzeige und den kostenfreien Abbruch. Die Stationsvergleiche oben stammen aus früheren Läufen. Für die physische Controllerbedienung an Stationen steht die Prüfung aus. Über die Originalbedienung bleiben die ursprünglichen Rezepte erreichbar. [Projektübersicht](../README.de.md) · [Änderungen je Version](../CHANGELOG.md#deutsch)
+0.0.55 dokumentiert den Funktionsstand von 0.0.54 und wurde offline geprüft. 0.0.53 bestätigt die automatische deutsche Mengenanzeige und den kostenfreien Abbruch. Die Spieler-DLL aus 0.0.57 lud ohne Marker. Am Alchemietisch verbrauchte die Herstellung von zwei Sumpftabaken zwei Apfeltabake und zwei Laborwasserflaschen. Das Sumpfkraut blieb erhalten. Das Paket 0.0.58 enthält diesen Nachweis und dieselbe DLL. Die Stationsvergleiche oben stammen aus früheren Läufen. Für die physische Controllerbedienung an Stationen steht die Prüfung aus. Über die Originalbedienung bleiben die ursprünglichen Rezepte erreichbar. [Projektübersicht](../README.de.md) · [Änderungen je Version](../CHANGELOG.md#deutsch)

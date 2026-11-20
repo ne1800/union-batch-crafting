@@ -4,7 +4,9 @@
 
 ## English
 
-- **0.0.57** splits the native crafting code into separate modules. The player and one-run test packages have been rebuilt. The player installation and crafting order await their combined in-game test.
+- **0.0.58** packages the in-game results with the byte-identical 0.0.57 player DLL.
+
+- **0.0.57** splits the native crafting code into separate modules. The player and one-run test packages have been rebuilt. The player installation and an order of two swamp tobaccos passed the combined in-game test.
 
 - **0.0.56** adds the permanent player ZIP, INI switch, scoped compatibility checks and bilingual install and removal instructions. The player installation awaits an in-game test.
 
@@ -18,7 +20,9 @@
 
 ## Deutsch
 
-- **0.0.57** teilt den nativen Herstellungscode in einzelne Module auf. Spieler- und Einmal-Testpaket wurden neu gebaut. Der gemeinsame Spielnachweis für Spielerinstallation und Mengenauftrag steht aus.
+- **0.0.58** enthält den Spielnachweis und die bytegleiche Spieler-DLL aus 0.0.57.
+
+- **0.0.57** teilt den nativen Herstellungscode in einzelne Module auf. Spieler- und Einmal-Testpaket wurden neu gebaut. Die Spielerinstallation und ein Auftrag über zwei Sumpftabake bestanden den gemeinsamen Weltlauf.
 
 - **0.0.56** bringt das dauerhaft aktive Spieler-ZIP, den INI-Schalter, abgestufte Versionsprüfungen und die zweisprachige Anleitung für Installation und Deinstallation. Der Spielnachweis mit diesem ZIP steht aus.
 

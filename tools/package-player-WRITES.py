@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assemble the 0.0.57 player ZIP from the dedicated Windows x86 target."""
+"""Assemble the 0.0.58 player ZIP from the dedicated Windows x86 target."""
 import argparse
 from pathlib import Path
 import os
@@ -9,7 +9,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 DLL = "UnionBatchCraftingExtended.dll"
-ARCHIVE = "union-batch-crafting-player-0.0.57.zip"
+ARCHIVE = "union-batch-crafting-player-0.0.58.zip"
 DOCUMENTS = ("INSTALL.md", "INSTALL.de.md", "TESTED-WITH.md", "LICENSE", "THIRD-PARTY-NOTICES")
 
 

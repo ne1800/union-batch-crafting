@@ -4,7 +4,7 @@
 
 [English](README.md) · [Deutsch](README.de.md)
 
-Das Spieler-ZIP **0.0.57** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](INSTALL.de.md)
+Das Spieler-ZIP **0.0.58** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](INSTALL.de.md)
 
 Wähle in Gothic II: Die Nacht des Raben mit Marcello L’Hiver DE 2.0.4 und Union ein Rezept und stelle mehrere Portionen auf einmal her. Version 0.0.57 deckt 98 Profile an neun Stationen ab. Die Anleitung nennt die im Spiel geprüften Mengen und erklärt freie Mengenwahl, Abbruch und den Prüfstand zur Controllerbedienung. [Stationsanleitung](docs/STATIONEN.md) · [Changelog](CHANGELOG.md#deutsch)
 
