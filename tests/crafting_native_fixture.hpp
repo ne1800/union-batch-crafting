@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: MIT
+// Include under the host's engine and UI substitutions.
+#include "../src/crafting/state.cpp"
+#include "../src/crafting/context.cpp"
+#include "../src/crafting/player_contracts.cpp"
+#include "../src/crafting/stations.cpp"
+#include "../src/crafting/cooling.cpp"
+#include "../src/crafting/grinding.cpp"
+#include "../src/crafting/diagnostics.cpp"
+#include "../src/crafting/handoff.cpp"
+#include "../src/crafting/menu.cpp"
+#include "../src/crafting/amount.cpp"
+#include "../src/crafting/tobacco.cpp"
+#include "../src/crafting/hooks.cpp"
+#include "../src/native_crafting.cpp"

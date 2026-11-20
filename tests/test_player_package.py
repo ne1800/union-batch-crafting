@@ -25,7 +25,7 @@ class PlayerPackage(unittest.TestCase):
             data[128:132] = b"PE\0\0"
             for offset, value in ((132, 0x14c), (150, 0x2000), (152, 0x10b)):
                 struct.pack_into("<H", data, offset, value)
-            data.extend("0.0.56\0Enabled\0".encode("utf-16le"))
+            data.extend("0.0.57\0Enabled\0".encode("utf-16le"))
             dll.write_bytes(data)
             for name in DOCS:
                 (root / name).write_bytes((ROOT / name).read_bytes())

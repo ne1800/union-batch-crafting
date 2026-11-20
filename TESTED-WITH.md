@@ -9,6 +9,6 @@ Gothic II: Night of the Raven / Die Nacht des Raben, Windows x86, 2.6 fix, Marce
 | zBugFixes.dll | `50c3dc669a451dc084c4691b6e6fb7a39838d40627629e59e884579873811963` |
 | UNION_VOB_LOCATOR.DLL (New Vob Locator) | `72fc040ffe3d9ee6995493d4e5879336bbccf2f2301f5daa4578ff8f31b234fc` |
 
-These fingerprints identify the earlier in-game reference. Engine sites and recipe contracts determine which crafting paths are available. Some native inventory paths also require specific module layouts. 0.0.56 has an offline x86 build and package check. The first in-game installation from this ZIP is pending.
+These fingerprints identify the earlier in-game reference. Engine sites and recipe contracts determine which crafting paths are available. Some native inventory paths also require specific module layouts. 0.0.57 has an offline x86 build and package check. The first in-game installation from this ZIP is pending.
 
-Die Prüfsummen identifizieren die Referenz früherer Spieltests. Engine-Prüfstellen und Rezeptverträge bestimmen die verfügbaren Mengenpfade. Einzelne native Inventarpfade erfordern außerdem bestimmte Modullayouts. Für 0.0.56 wurden x86-Bau und Paketinhalt offline geprüft. Die erste Installation dieses ZIPs mit Spielnachweis steht aus.
+Die Prüfsummen identifizieren die Referenz früherer Spieltests. Engine-Prüfstellen und Rezeptverträge bestimmen die verfügbaren Mengenpfade. Einzelne native Inventarpfade erfordern außerdem bestimmte Modullayouts. Für 0.0.57 wurden x86-Bau und Paketinhalt offline geprüft. Die erste Installation dieses ZIPs mit Spielnachweis steht aus.

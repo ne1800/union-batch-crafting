@@ -4,9 +4,9 @@
 
 [English](README.md) · [Deutsch](README.de.md)
 
-The **0.0.56 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](INSTALL.md)
+The **0.0.57 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](INSTALL.md)
 
-Choose a recipe and craft several portions at once in Gothic II: Night of the Raven with Marcello L’Hiver DE 2.0.4 and Union. Version 0.0.56 covers 98 profiles across nine stations. The guide lists the quantities tested in the game and explains custom quantities, cancellation, and the limits of controller testing. [Station guide](docs/STATIONS.md) · [Changelog](CHANGELOG.md#english)
+Choose a recipe and craft several portions at once in Gothic II: Night of the Raven with Marcello L’Hiver DE 2.0.4 and Union. Version 0.0.57 covers 98 profiles across nine stations. The guide lists the quantities tested in the game and explains custom quantities, cancellation, and the limits of controller testing. [Station guide](docs/STATIONS.md) · [Changelog](CHANGELOG.md#english)
 
 <a id="build"></a>
 

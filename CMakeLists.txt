@@ -203,8 +203,14 @@ if(WIN32)
   target_link_libraries(UnionBatchCraftingRecipes PRIVATE kernel32 user32)
   target_compile_options(UnionBatchCraftingRecipes PRIVATE /W4 /WX)
   target_link_options(UnionBatchCraftingRecipes PRIVATE /Brepro /INCREMENTAL:NO)
+  set(crafting_runtime_sources
+    src/native_crafting.cpp
+    src/crafting/state.cpp src/crafting/context.cpp src/crafting/player_contracts.cpp src/crafting/stations.cpp
+    src/crafting/cooling.cpp src/crafting/grinding.cpp src/crafting/diagnostics.cpp
+    src/crafting/handoff.cpp src/crafting/menu.cpp src/crafting/amount.cpp
+    src/crafting/tobacco.cpp src/crafting/hooks.cpp)
   function(add_crafting_plugin target resource)
-    add_library(${target} SHARED src/native_crafting.cpp src/native_crafting.def ${resource}
+    add_library(${target} SHARED ${crafting_runtime_sources} src/native_crafting.def ${resource}
     src/native_crafting_ui.cpp src/native_selection_ui.cpp src/frame_bridge.cpp src/batch_call_bridge.cpp
     src/native_crafting_ammo.cpp src/ammo_presentation_bridge.cpp
     src/alchemy_extra_writer.cpp src/alchemy_flask_debit_bridge.cpp src/cool_predebit_bridge.cpp

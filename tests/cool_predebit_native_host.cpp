@@ -79,7 +79,7 @@ public:
 #define windows_probe cool_host_windows
 #define windows_destroy_remove_callsite cool_host_remove
 #define NativeCraftingUi CoolHostUi
-#include "../src/native_crafting.cpp"
+#include "crafting_native_fixture.hpp"
 #undef NativeCraftingUi
 #undef windows_destroy_remove_callsite
 #undef windows_probe

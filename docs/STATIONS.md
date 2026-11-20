@@ -1,6 +1,6 @@
 <a id="guide"></a>
 
-# Union Batch Crafting 0.0.56
+# Union Batch Crafting 0.0.57
 
 [English](STATIONS.md) · [Deutsch](STATIONEN.md)
 
@@ -10,7 +10,7 @@ This local build for Marcello L’Hiver DE 2.0.4 covers 98 recipe profiles at th
 
 ## Player installation
 
-The **0.0.56 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](../INSTALL.md)
+The **0.0.57 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](../INSTALL.md)
 
 <a id="compatibility"></a>
 

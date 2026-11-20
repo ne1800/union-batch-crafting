@@ -4,6 +4,8 @@
 
 ## English
 
+- **0.0.57** splits the native crafting code into separate modules. The player and one-run test packages have been rebuilt. The player installation and crafting order await their combined in-game test.
+
 - **0.0.56** adds the permanent player ZIP, INI switch, scoped compatibility checks and bilingual install and removal instructions. The player installation awaits an in-game test.
 
 - **0.0.55** documents tested recipes, quantities, module versions and removal of the one-run installation.
@@ -15,6 +17,8 @@
 - **0.0.30–0.0.35** measured and bounded the grinding preview. Rough swords passed the in-game comparison at 1, 2, 5 and maximum 3 in 0.0.35.
 
 ## Deutsch
+
+- **0.0.57** teilt den nativen Herstellungscode in einzelne Module auf. Spieler- und Einmal-Testpaket wurden neu gebaut. Der gemeinsame Spielnachweis für Spielerinstallation und Mengenauftrag steht aus.
 
 - **0.0.56** bringt das dauerhaft aktive Spieler-ZIP, den INI-Schalter, abgestufte Versionsprüfungen und die zweisprachige Anleitung für Installation und Deinstallation. Der Spielnachweis mit diesem ZIP steht aus.
 

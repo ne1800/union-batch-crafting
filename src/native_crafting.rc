@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 LANGUAGE 7, 1
 1 VERSIONINFO
- FILEVERSION 0,0,55,0
- PRODUCTVERSION 0,0,55,0
+ FILEVERSION 0,0,57,0
+ PRODUCTVERSION 0,0,57,0
  FILEOS 0x40004
  FILETYPE 2
 BEGIN
@@ -10,9 +10,9 @@ BEGIN
   BEGIN
     BLOCK "040704b0"
     BEGIN
-      VALUE "FileVersion", "0.0.55\0"
+      VALUE "FileVersion", "0.0.57\0"
       VALUE "ProductName", "Union Batch Crafting\0"
-      VALUE "ProductVersion", "0.0.55\0"
+      VALUE "ProductVersion", "0.0.57\0"
     END
   END
   BLOCK "VarFileInfo"

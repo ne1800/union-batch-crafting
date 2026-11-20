@@ -265,7 +265,7 @@ bool crafting_guard_copy_memory(void* user,std::uint32_t value,void* out,std::si
 #define plan_quantity crafting_guard_plan_quantity
 #define verify_path crafting_guard_verify_path
 #define WriteFile crafting_guard_test::diagnostic_write_file
-#include "../src/native_crafting.cpp"
+#include "crafting_native_fixture.hpp"
 #undef target_matches
 #undef WriteFile
 #undef verify_path

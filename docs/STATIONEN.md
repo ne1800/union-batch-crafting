@@ -1,6 +1,6 @@
 <a id="guide"></a>
 
-# Union Batch Crafting 0.0.56
+# Union Batch Crafting 0.0.57
 
 [English](STATIONS.md) · [Deutsch](STATIONEN.md)
 
@@ -10,7 +10,7 @@ Die lokale Testfassung für Marcello L’Hiver DE 2.0.4 verbindet 98 Rezeptprofi
 
 ## Installation für Spieler
 
-Das Spieler-ZIP **0.0.56** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](../INSTALL.de.md)
+Das Spieler-ZIP **0.0.57** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](../INSTALL.de.md)
 
 <a id="compatibility"></a>
 
