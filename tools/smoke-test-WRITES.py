@@ -107,6 +107,7 @@ def main() -> None:
     if args.station or args.batch or args.crafting:
         files += [build / name for name in recipe_tests]
     if args.crafting:
+        files.append(build / "ubc_player_engine_tests.exe")
         files += [build / name for name in ("UnionBatchCraftingExtended.dll", "ubc_crafting_probe_host.exe",
             "ubc_crafting_result_tests.exe", "ubc_native_crafting_ui_tests.exe", "ubc_ammo_runtime_tests.exe",
             "ubc_crafting_effect_guard_tests.exe",
@@ -338,6 +339,43 @@ def main() -> None:
                         print(run([str(executable), windows_path(crafting_dll)]), flush=True)
                         if (payload / "UnionBatchCraftingExtended.log").exists() or marker.read_bytes() != activation:
                             raise RuntimeError("Fremder Stations-Host hat Marker/Log verändert.")
+                print(run([str(payload / "ubc_player_engine_tests.exe"), facts[0]]), flush=True)
+                # Pin the synthetic host at the target base to reach the real
+                # player activation branch. Its engine-site contracts must fail.
+                flags = struct.unpack_from("<H", spoofed_data, crafting_pe + 24 + 70)[0]
+                struct.pack_into("<H", spoofed_data, crafting_pe + 24 + 70, flags & ~0x40)
+                spoofed.write_bytes(spoofed_data)
+                player = payload / "player"
+                player.mkdir()
+                player_dll = player / crafting_dll.name
+                shutil.copy2(build / "player" / crafting_dll.name, player_dll)
+                player_marker = player / marker.name
+                player_log = player / "UnionBatchCraftingExtended.log"
+                activation = b"EXTENDED_AMOUNTS_V1\n"
+                marker_name = marker.name.encode("utf-16le")
+                if marker_name not in crafting_dll.read_bytes() or marker_name in player_dll.read_bytes():
+                    raise RuntimeError("Unexpected activation variant in compiled DLL")
+                marker.write_bytes(activation)
+                activation_host = payload / "ubc_crafting_effect_guard_tests.exe"
+                print(run([str(activation_host), "--marker-present"]), flush=True)
+                if marker.exists():
+                    raise RuntimeError("Test activation failed to consume its marker")
+                print(run([str(activation_host), "--marker-absent"]), flush=True)
+                ini = payload / "Gothic.INI"
+                ini.unlink(missing_ok=True)
+                print(run([str(spoofed), windows_path(player_dll)]), flush=True)
+                if "engine_station_disabled" not in player_log.read_text():
+                    raise RuntimeError("Default player activation or engine guard failed")
+                player_marker.write_bytes(activation)
+                player_log.write_text("old")
+                print(run([str(spoofed), windows_path(player_dll)]), flush=True)
+                if "engine_station_disabled" not in player_log.read_text() or player_marker.read_bytes() != activation:
+                    raise RuntimeError("Repeated player activation or marker isolation failed")
+                player_log.unlink()
+                ini.write_text("[UNIONBATCHCRAFTING]\nEnabled=0\n")
+                print(run([str(spoofed), windows_path(player_dll)]), flush=True)
+                if player_log.exists() or player_marker.read_bytes() != activation:
+                    raise RuntimeError("Enabled=0 failed")
         print("Negative und synthetische positive DLL-Ladetests bestanden; kein Gothic-Prozess gestartet.")
         for checked_dll in sorted(payload.glob("*.dll")):
             print(checked_dll.name + " SHA-256: " + hashlib.sha256(checked_dll.read_bytes()).hexdigest())

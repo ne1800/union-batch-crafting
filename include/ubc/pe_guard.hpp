@@ -29,7 +29,7 @@ inline std::uint32_t read_le32_unchecked(const std::uint8_t* bytes) noexcept {
 // be readable for size bytes; the caller limits process memory
 // for example with VirtualQuery before invoking this filter.
 inline bool matches_gothic2_header(const std::uint8_t* data,
-                                  std::size_t size) noexcept {
+                                  std::size_t size, bool require_timestamp = true) noexcept {
   constexpr std::size_t dos_header_size = 64;
   constexpr std::size_t nt_prefix_size = 24;  // Signature + COFF header.
   constexpr std::uint16_t minimum_optional_size = 60;
@@ -51,7 +51,7 @@ inline bool matches_gothic2_header(const std::uint8_t* data,
   const auto* nt = data + pe_offset;
   if (detail::read_le32_unchecked(nt) != 0x00004550U ||
       detail::read_le16_unchecked(nt + 4) != 0x014cU ||
-      detail::read_le32_unchecked(nt + 8) != 0x3f966d87U) {
+      (require_timestamp && detail::read_le32_unchecked(nt + 8) != 0x3f966d87U)) {
     return false;
   }
 

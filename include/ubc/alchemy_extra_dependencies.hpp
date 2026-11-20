@@ -104,14 +104,14 @@ inline bool module(const Module& m,std::uint32_t size,const lhiver::Digest& hash
   return m.mapping_verified&&m.image_size==size&&m.file_sha256==hash&&range(m.base,size)&&
     !zbug_end_compat::detail::overlaps(m.base,size,0x400000,0x752000);
 }
-inline Check pe(const ReadOnlyMemory& m,const Module& module,std::uint32_t timestamp,std::uint32_t preferred) noexcept {
+inline Check pe(const ReadOnlyMemory& m,const Module& module,std::uint32_t timestamp,std::uint32_t preferred, bool require_timestamp=true) noexcept {
   std::array<std::uint8_t,64> head{};auto r=twice(m,module.base,head.data(),head.size());if(!r.valid)return r;
   const auto at=script::detail::u32(head.data()+60);
   if(head[0]!='M'||head[1]!='Z'||at<64||at>4096-128)return fail(Issue::module,module.base);
   std::array<std::uint8_t,128> nt{};r=twice(m,module.base+at,nt.data(),nt.size());if(!r.valid)return r;
   const auto base=script::detail::u32(nt.data()+52);
   if(script::detail::u32(nt.data())!=0x4550||zbug_end_compat::detail::u16(nt.data()+4)!=0x14c||
-    script::detail::u32(nt.data()+8)!=timestamp||zbug_end_compat::detail::u16(nt.data()+20)!=224||
+    (require_timestamp && script::detail::u32(nt.data()+8)!=timestamp)||zbug_end_compat::detail::u16(nt.data()+20)!=224||
     zbug_end_compat::detail::u16(nt.data()+24)!=0x10b||(base!=preferred&&base!=module.base)||
     script::detail::u32(nt.data()+80)!=module.image_size)return fail(Issue::module,module.base);
   return ok();

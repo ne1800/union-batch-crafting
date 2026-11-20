@@ -39,6 +39,7 @@ struct Input {
   // Only the own already-validated AmountPatch instance; the Reader
   // normalizes exactly Operand62 from 2 to 1 for the original hash.
   const AmountPatch* amount_patch=nullptr;
+  bool engine_sites_verified=false;
   const Call* call=nullptr; // Restore only; never use after original.
 };
 struct Capture {
@@ -337,8 +338,9 @@ inline void engine(const ReadOnlyMemory& m,const Input& q,check::Checks& checks)
   checks.flag("engine.mapping",q.engine.mapping_verified);
   checks.equal("engine.base",0x400000,q.engine.base);
   checks.equal("engine.size",0x752000,q.engine.image_size);
-  checks.digest("engine.file",station_abi::executable_sha256,q.engine.file_sha256);
-  const auto pe=dep::detail::pe(m,q.engine,0x3f966d87,0x400000);
+  if (q.engine_sites_verified) checks.flag("engine.sites", q.engine.mapping_verified);
+  else checks.digest("engine.file",station_abi::executable_sha256,q.engine.file_sha256);
+  const auto pe=dep::detail::pe(m,q.engine,0x3f966d87,0x400000,!q.engine_sites_verified);
   checks.equal("engine.pe",0,static_cast<int>(pe.issue));
   for(const auto& range:profile::engine){
     const zbug_end_compat::Binding plugins{q.modules.zbug,q.modules.union_core,true};

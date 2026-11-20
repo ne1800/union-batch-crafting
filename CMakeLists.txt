@@ -44,7 +44,7 @@ add_test(NAME selection_session COMMAND ubc_selection_session_tests)
 add_test(NAME selection_stock COMMAND ubc_selection_stock_tests)
 add_test(NAME selection_snapshot COMMAND ubc_selection_snapshot_tests)
 
-foreach(unit batch_session batch_menu amount_patch batch_result recipe_catalog recipe_material recipe_result
+foreach(unit player_engine batch_session batch_menu amount_patch batch_result recipe_catalog recipe_material recipe_result
     recipe_runtime recipe_session recipe_menu recipe_navigation recipe_handoff recipe_snapshot
     station_recipe_catalog station_recipe_material station_recipe_navigation station_recipe_result
     station_recipe_runtime station_recipe_snapshot post_remove_choice
@@ -203,17 +203,26 @@ if(WIN32)
   target_link_libraries(UnionBatchCraftingRecipes PRIVATE kernel32 user32)
   target_compile_options(UnionBatchCraftingRecipes PRIVATE /W4 /WX)
   target_link_options(UnionBatchCraftingRecipes PRIVATE /Brepro /INCREMENTAL:NO)
-  add_library(UnionBatchCraftingExtended SHARED src/native_crafting.cpp src/native_crafting.def src/native_crafting.rc
+  function(add_crafting_plugin target resource)
+    add_library(${target} SHARED src/native_crafting.cpp src/native_crafting.def ${resource}
     src/native_crafting_ui.cpp src/native_selection_ui.cpp src/frame_bridge.cpp src/batch_call_bridge.cpp
     src/native_crafting_ammo.cpp src/ammo_presentation_bridge.cpp
     src/alchemy_extra_writer.cpp src/alchemy_flask_debit_bridge.cpp src/cool_predebit_bridge.cpp
     src/spirit_writer.cpp src/spirit_flask_debit_bridge.cpp)
-  target_include_directories(UnionBatchCraftingExtended PRIVATE include)
-  target_compile_definitions(UnionBatchCraftingExtended PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    target_include_directories(${target} PRIVATE include)
+    target_compile_definitions(${target} PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    target_link_libraries(${target} PRIVATE kernel32 user32)
+    target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/W4;/WX>")
+    target_link_options(${target} PRIVATE /Brepro /INCREMENTAL:NO)
+  endfunction()
   option(UBC_COOL_WORLD_TEST "Getrennter Build für das Kühl-Welttestpaket" OFF)
-  target_link_libraries(UnionBatchCraftingExtended PRIVATE kernel32 user32)
-  target_compile_options(UnionBatchCraftingExtended PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/W4;/WX>")
-  target_link_options(UnionBatchCraftingExtended PRIVATE /Brepro /INCREMENTAL:NO)
+  add_crafting_plugin(UnionBatchCraftingExtended src/native_crafting.rc)
+  add_crafting_plugin(UnionBatchCraftingPlayer src/player.rc)
+  target_compile_definitions(UnionBatchCraftingPlayer PRIVATE UBC_PLAYER_RELEASE)
+  set_target_properties(UnionBatchCraftingPlayer PROPERTIES
+    OUTPUT_NAME UnionBatchCraftingExtended
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/player"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/player")
   add_executable(ubc_crafting_effect_guard_tests tests/crafting_effect_guard_tests.cpp
     src/native_crafting_ui.cpp src/native_selection_ui.cpp src/frame_bridge.cpp src/batch_call_bridge.cpp
     src/alchemy_extra_writer.cpp src/alchemy_flask_debit_bridge.cpp src/cool_predebit_bridge.cpp

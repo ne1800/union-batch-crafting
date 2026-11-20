@@ -425,6 +425,22 @@ int main() {
     check(!result.matches && result.issue == rs::Issue::symbol_signature && result.failed_symbol == first.symbol,
           "public verify preserves exact function metadata before hashing the body");
   }
+  {
+    Fixture f(health);
+    auto left = f.assembly.profile();
+    auto right = left;
+    left.functions = &f.synthetic_functions.at(0);
+    right.functions = &f.synthetic_functions.at(1);
+    left.function_count = right.function_count = 1;
+    const auto verify = [&](const ubc::lhiver::Profile& profile) {
+      return rs::verify_local_contract(f.image.memory(), ubc::lhiver::game_parser, profile).matches;
+    };
+    f.image.block(code + ubc::lhiver::code_length - 1, 1);
+    *f.image.at(code + ubc::lhiver::code_length - 1, 1) = 0x73;
+    check(verify(left) && verify(right), "unreferenced byte does not reject either script family");
+    *f.image.at(code + left.functions->byte_offset, 1) ^= 1;
+    check(!verify(left) && verify(right), "one mutated script body rejects only its consumer");
+  }
   std::printf("RecipeRuntime: %u checks, %u failures\n", checks, failures);
   return failures ? 1 : 0;
 }

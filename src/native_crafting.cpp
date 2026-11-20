@@ -6,6 +6,9 @@
 #include <cstring>
 #include <new>
 #include <memory>
+#ifdef UBC_PLAYER_RELEASE
+#include "player_engine_windows.hpp"
+#endif
 #include "ubc/frame_bridge.hpp"
 #include "ubc/crafting_hook_sites.hpp"
 #include "ubc/batch_call_bridge.hpp"
@@ -205,7 +208,9 @@ std::optional<cwriter::Executor> cool_predebit_executor;
 cpre::DestroyJournal cool_predebit_journal;
 const bc::WriterScope* cool_writer_scope=nullptr;
 std::uint64_t cool_fence_token=0;
+#ifndef UBC_PLAYER_RELEASE
 ubc::windows_probe::LoadedModuleIdentity cool_predebit_engine;
+#endif
 ubc::PackedInventoryWorkspace cool_inventory;
 ubc::station_recipe_snapshot_detail::HandWorkspace cool_hands;
 ubc::windows_destroy_remove_callsite::Adapter cool_remove_observer;
@@ -448,6 +453,50 @@ bool station_owns(std::uint32_t mob,std::uint32_t hero) noexcept {
   }
   return matches==1;
 }
+#ifdef UBC_PLAYER_RELEASE
+ubc::player_engine::Result player_image;
+static_assert(static_cast<unsigned>(cat::Station::saw) == 3 &&
+              static_cast<unsigned>(cat::Station::grind) == 8);
+std::array<bool, cat::recipe_count> player_recipes{};
+std::array<bool, 9> checked_stations{}, available_stations{};
+
+bool player_recipe_matches(const cat::Descriptor& recipe) noexcept {
+  const auto parser = s::game_parser;
+  switch (recipe.route) {
+    case cat::Route::base: return ubc::recipe_runtime::verify(memory, parser, *recipe.base).matches;
+    case cat::Route::station: return ubc::station_recipe_runtime::verify(memory, parser, *recipe.station_descriptor).matches;
+    case cat::Route::alchemy_extra: return ubc::alchemy_extra_execution::verify_recipe(memory, *recipe.alchemy_extra).valid;
+    case cat::Route::anvil: return art::verify(memory, parser, *recipe.anvil).matches;
+    case cat::Route::ore: return ort::verify(memory, parser, *recipe.ore).matches;
+    case cat::Route::spirit: return grt::verify_recipe(memory, parser, grt::assemble(*recipe.spirit)).valid;
+    case cat::Route::bow: return brt::verify_recipe(memory, parser, *recipe.bow, brt::assemble(*recipe.bow)).valid;
+    case cat::Route::cool: return crt::verify_recipe(memory, parser, *recipe.cool).valid;
+    case cat::Route::grind: return shrt::verify_recipe(memory, parser, *recipe.grind).valid;
+    case cat::Route::tobacco: {
+      ubc::GrindCheck check;
+      return tobacco::verify_script(memory, check);
+    }
+  }
+  return false;
+}
+bool player_scripts_match(cat::Station station) noexcept {
+  const auto index = static_cast<unsigned>(station);
+  if (!own_thread()) return false;
+  if (!checked_stations[index]) {
+    if (frame_depth != 1 || update_depth || info_depth || choice_depth ||
+        station_depth || collection_depth || handoff.active() || amount_patch.active()) return false;
+    for (std::size_t i = 0; i < cat::recipes.size(); ++i) {
+      const auto& recipe = cat::recipes[i];
+      if (recipe.station != station) continue;
+      player_recipes[i] = player_recipe_matches(recipe);
+      if (player_recipes[i]) available_stations[index] = true;
+      else event("script_contract_rejected", static_cast<int>(recipe.id), index);
+    }
+    checked_stations[index] = true;
+  }
+  return available_stations[index];
+}
+#endif
 struct Context {
   bool valid=false,identity_known=false,station_known=false,ownership_known=false;
   std::uint32_t game=0,world=0,hero=0,station=0;
@@ -516,6 +565,9 @@ Context context() noexcept {
   // profile may use target 0. All previous stations still require target 1.
   const auto target=integer(c.station,0x1fc);
   if(target!=1&&!(c.kind==cat::Station::cool&&target==0))return c;
+#ifdef UBC_PLAYER_RELEASE
+  if (player_image.failure[static_cast<unsigned>(c.kind)] || !player_scripts_match(c.kind)) return c;
+#endif
   c.valid=true;return c;
 }
 bool __cdecl read_ammo_context(void*,ap::Context& out) {
@@ -639,6 +691,9 @@ bool complete_collection(const Context& c,ubc::SelectionChoices* choice_out=null
   return true;
 }
 bool bow_candidate(const Context& c) noexcept {
+#ifdef UBC_PLAYER_RELEASE
+  if (!c.valid) return false;
+#endif
   return c.station&&(c.valid?c.kind==cat::Station::bow:
     name_is(c.station,0x1e0,bcat::station.on_state)||name_is(c.station,0x1b8,bcat::station.scheme)||
     name_is(c.station,0x120,"MOBNAME_BOW_WBENCH"));
@@ -924,6 +979,20 @@ cpath::Verification cool_runtime_path(bool predebit=false) noexcept {
   return destroy_verified_path(cool_owned_patches(),nullptr,predebit);
 }
 bool __cdecl cool_predebit_boundary(void*,cpre::reader::Phase,cpre::reader::Input&) noexcept;
+bool cool_engine_current() noexcept {
+#ifdef UBC_PLAYER_RELEASE
+  return player_image.failure[static_cast<unsigned>(cat::Station::cool)] == 0 && w::player_image_header();
+#else
+  return cool_predebit_engine.current();
+#endif
+}
+bool bind_cool_engine() noexcept {
+#ifdef UBC_PLAYER_RELEASE
+  return cool_engine_current();
+#else
+  return cool_predebit_engine.acquire(L"Gothic2.exe",0x752000,s::executable_sha256);
+#endif
+}
 void initialize_cool(const Context& c) noexcept {
   if(!generation||cool_install_attempted||(c.kind==cat::Station::grind&&grind_probe_failed)||!c.valid||(c.kind!=cat::Station::cool&&c.kind!=cat::Station::grind)||!own_thread()||frame_depth!=1||
     update_depth||info_depth||choice_depth||station_depth||collection_depth||cool_destroy_depth||
@@ -951,7 +1020,7 @@ void initialize_cool(const Context& c) noexcept {
   cool_ready=true;
   const auto installed_path=cool_runtime_path(cooling);cool_ready=installed_path.valid;
   if(cool_ready&&initialize_item_modules(true)&&
-     cool_predebit_engine.acquire(L"Gothic2.exe",0x752000,s::executable_sha256)){
+     bind_cool_engine()){
     cool_predebit_reader.emplace(GetCurrentThreadId());
     const cwriter::Config config{GetCurrentThreadId(),memory,nullptr,cool_predebit_boundary,
       reinterpret_cast<cwriter::Remove>(xdep::expected_targets.remove),
@@ -1646,6 +1715,13 @@ Capture capture(const Context& c,const GrindPreviewLease* shared_grind=nullptr,u
     if(issue!=last_end_path_issue){last_end_path_issue=issue;event("end_path_issue",issue);}
     if(!path.valid)for(auto& state:captured.snapshot.recipes)state.contract=false;
   }
+#ifdef UBC_PLAYER_RELEASE
+  for (std::size_t i = 0; i < player_recipes.size(); ++i)
+    if (!player_recipes[i]) {
+      captured.snapshot.recipes[i].contract = false;
+      captured.snapshot.recipes[i].known = false;
+    }
+#endif
   captured.hands=captured.snapshot.hands;
   const bool current=same_context(c,context());
   if(trace)trace->equal("catalogue.same_context",1,current);
@@ -1689,7 +1765,7 @@ void observe_cool_quantity(const Context& c) noexcept {
     const auto fresh=capture(c);
     available=ubc::cool_quantity_available(request,fresh.snapshot,cool_info_page(c,true),[]() noexcept {
       if(!cool_predebit_executor||!cool_predebit_reader||cool_predebit_tracker.status().blocked||
-         bc::quarantined(cpre::callback)||!cool_predebit_engine.current()||!end_compatibility(true)||!extra_zpe_module.current()||!extra_crt_module.current())return false;
+         bc::quarantined(cpre::callback)||!cool_engine_current()||!end_compatibility(true)||!extra_zpe_module.current()||!extra_crt_module.current())return false;
       const auto d=cool_predebit_executor->diagnostics();
       return d.configured&&!d.disabled&&!d.active&&!d.native_scope;
     })&&collection==rows.generation&&same_context(c,context());
@@ -2991,7 +3067,7 @@ bool inspect_cool_boundary(cpre::reader::Phase phase,cpre::reader::Input& input,
   const auto now=context();group(Gate::context);
   k.flag("call.closing_context",after?(now.identity_known&&now.station_known&&cpre::value::same(extra_context(c),extra_context(now))):same_context(c,now));
   k.equal("call.closing_info",actual,current_info_effect(now));
-  group(Gate::modules);k.flag("module.engine",cool_predebit_engine.current());k.flag("module.plugins",end_compatibility(true)!=nullptr);
+  group(Gate::modules);k.flag("module.engine",cool_engine_current());k.flag("module.plugins",end_compatibility(true)!=nullptr);
   k.flag("module.zpe",extra_zpe_module.current());k.flag("module.crt",extra_crt_module.current());
   group(Gate::hooks);k.flag("hooks.writer",scope&&bc::writer_undisturbed(*scope));k.flag("hooks.installed",cpath::installed_hooks_current(memory,cool_owned_patches()));
   group(Gate::journal);k.flag("journal.quiet",cool_predebit_journal.sample(cool_fence_token,input.destroy_started,input.destroy_completed));
@@ -3001,7 +3077,12 @@ bool inspect_cool_boundary(cpre::reader::Phase phase,cpre::reader::Input& input,
   input.job={report?expected:extra_context(now),request.key.generation,scope?scope->token:0,cool_fence_token,bound.token,report?bound.actual_info:actual,s::information_manager};
   input.scope={{input.job.id,input.job.writer_token,cpre::callback,1,0,native?1u:0u,true},bound.token,input.job.actual_info,true};
   input.phase=phase;input.serial=next_cool_serial();input.frame=frame;input.current_thread=GetCurrentThreadId();
+#ifdef UBC_PLAYER_RELEASE
+  input.engine_sites_verified = cool_engine_current();
+  input.engine = {s::image_base, s::image_size, {}, input.engine_sites_verified};
+#else
   input.engine={cool_predebit_engine.base(),cool_predebit_engine.image_size(),cool_predebit_engine.digest(),true};
+#endif
   input.modules=extra_modules(true);input.amount_patch=&patch;
   input.encoded_null_handler=reinterpret_cast<std::uint32_t>(EncodePointer(nullptr));
   const auto* tib=reinterpret_cast<const NT_TIB*>(NtCurrentTeb());
@@ -4256,13 +4337,27 @@ bool configure_batch_symbols(bc::Config& config) noexcept {
   return true;
 }
 void install() noexcept {
-  std::array<std::uint8_t,a::frame_prefix_bytes.size()> prefix{};
-  if(!memory.copy(a::frame_prefix,prefix.data(),prefix.size())||prefix!=a::frame_prefix_bytes)return;
   wchar_t path[32768]{};if(!w::sibling_path(module,path,L"UnionBatchCraftingExtended.log"))return;
-  log_file=CreateFileW(path,GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);
+#ifdef UBC_PLAYER_RELEASE
+  constexpr DWORD disposition = CREATE_ALWAYS;
+#else
+  constexpr DWORD disposition = CREATE_NEW;
+#endif
+  log_file=CreateFileW(path,GENERIC_WRITE,FILE_SHARE_READ,nullptr,disposition,FILE_ATTRIBUTE_NORMAL,nullptr);
   if(log_file==INVALID_HANDLE_VALUE)return;
   const char* header=execution_enabled?"crafting_version=1\r\nmode=recipe_amounts\r\n":"crafting_version=1\r\nmode=ui_only\r\n";
   DWORD written=0;WriteFile(log_file,header,static_cast<DWORD>(std::strlen(header)),&written,nullptr);log_bytes=written;
+#ifdef UBC_PLAYER_RELEASE
+  if (!w::player_image_header()) { event("engine_header_rejected"); return; }
+  player_image = ubc::player_engine::inspect_executable();
+  for (unsigned i = 0; i < player_image.failure.size(); ++i)
+    if (player_image.failure[i]) event("engine_station_disabled", i, player_image.failure[i]);
+  if (!player_image.any()) return;
+#endif
+  std::array<std::uint8_t,a::frame_prefix_bytes.size()> prefix{};
+  if(!memory.copy(a::frame_prefix,prefix.data(),prefix.size())||prefix!=a::frame_prefix_bytes){
+    event("frame_prefix_rejected");return;
+  }
   const std::array<std::uintptr_t,sites.size()> destinations{{reinterpret_cast<std::uintptr_t>(&UbcFrameBridge),
     reinterpret_cast<std::uintptr_t>(&observe_add),reinterpret_cast<std::uintptr_t>(&observe_clear),
     reinterpret_cast<std::uintptr_t>(&observe_update),reinterpret_cast<std::uintptr_t>(&observe_resolve),
@@ -4292,6 +4387,15 @@ extern "C" int __cdecl UbcSelectionProbeHooksInstalled(){return static_cast<int>
 BOOL WINAPI DllMain(HINSTANCE instance,DWORD reason,LPVOID){
   if(reason==DLL_PROCESS_ATTACH){
     module=instance;const auto error=GetLastError();
+#ifdef UBC_PLAYER_RELEASE
+    wchar_t ini[32768]{};
+    if (w::sibling_path(nullptr, ini, L"Gothic.INI") &&
+        GetPrivateProfileIntW(L"UNIONBATCHCRAFTING", L"Enabled", 1, ini) != 0 &&
+        ubc::player_engine::game_process()) {
+      execution_enabled = true;
+      install();
+    }
+#else
     if(w::target_matches()){
       // The external cooling measurement reads only the bound
       // process. No hooks, UI, writers or engine calls in this mode.
@@ -4306,7 +4410,9 @@ BOOL WINAPI DllMain(HINSTANCE instance,DWORD reason,LPVOID){
       cool_context_mode=!campfire_observation_mode&&w::consume_marker(instance,L"UnionBatchCraftingExtended.enable-once","EXTENDED_COOL_CONTEXT_V1\n");
       execution_enabled=bow_comparison||cool_context_mode||(!campfire_observation_mode&&!grind_measurement_mode&&!preview&&w::consume_marker(instance,L"UnionBatchCraftingExtended.enable-once","EXTENDED_AMOUNTS_V1\n"));
       if(bow_diagnosis||campfire_observation_mode||grind_measurement_mode||preview||execution_enabled)install();
-    }SetLastError(error);
+    }
+#endif
+    SetLastError(error);
   }else if(reason==DLL_PROCESS_DETACH&&log_file!=INVALID_HANDLE_VALUE){CloseHandle(log_file);log_file=INVALID_HANDLE_VALUE;}
   return TRUE;
 }

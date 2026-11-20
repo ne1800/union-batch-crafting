@@ -4,7 +4,9 @@
 
 [English](README.md) · [Deutsch](README.de.md)
 
-Choose a recipe and craft several portions at once in Gothic II: Night of the Raven with Marcello L’Hiver DE 2.0.4 and Union. Version 0.0.55 covers 98 profiles across nine stations. The guide lists the quantities tested in the game and explains custom quantities, cancellation, and the limits of controller testing. [Station guide](docs/STATIONS.md) · [Changelog](CHANGELOG.md#english)
+The **0.0.56 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](INSTALL.md)
+
+Choose a recipe and craft several portions at once in Gothic II: Night of the Raven with Marcello L’Hiver DE 2.0.4 and Union. Version 0.0.56 covers 98 profiles across nine stations. The guide lists the quantities tested in the game and explains custom quantities, cancellation, and the limits of controller testing. [Station guide](docs/STATIONS.md) · [Changelog](CHANGELOG.md#english)
 
 <a id="build"></a>
 
@@ -28,4 +30,6 @@ mise run setup:windows-WRITES -- --apply
 mise run build:windows
 ```
 
-The plugin is `build/windows/UnionBatchCraftingExtended.dll`. Building it requires no game files. The project's own code uses the [MIT licence](LICENSE). xwin uses MIT/Apache-2.0. Microsoft's terms apply to the SDK and to the release CRT linked into the Windows DLL.
+The plugin is `build/windows/player/UnionBatchCraftingExtended.dll`. Building it requires no game files. The project's own code uses the [MIT licence](LICENSE). xwin uses MIT/Apache-2.0. Microsoft's terms apply to the SDK and to the release CRT linked into the Windows DLL.
+
+Build the player ZIP with `mise run package-player-WRITES -- --apply`.

@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: MIT
+LANGUAGE 7, 1
+1 VERSIONINFO
+ FILEVERSION 0,0,56,0
+ PRODUCTVERSION 0,0,56,0
+ FILEOS 0x40004
+ FILETYPE 2
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040704b0"
+    BEGIN
+      VALUE "FileVersion", "0.0.56\0"
+      VALUE "ProductName", "Union Batch Crafting\0"
+      VALUE "ProductVersion", "0.0.56\0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0407, 1200
+  END
+END

@@ -1,6 +1,6 @@
 <a id="guide"></a>
 
-# Union Batch Crafting 0.0.55
+# Union Batch Crafting 0.0.56
 
 [English](STATIONS.md) · [Deutsch](STATIONEN.md)
 
@@ -8,9 +8,9 @@ This local build for Marcello L’Hiver DE 2.0.4 covers 98 recipe profiles at th
 
 <a id="install"></a>
 
-## Using a source build
+## Player installation
 
-The Windows build produces a Union plugin for the versions listed below. The plugin uses a one-run activation marker. Copying the DLL alone leaves crafting disabled. Installation and removal instructions for a packaged release belong to that release. [Build instructions](../README.md#build)
+The **0.0.56 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](../INSTALL.md)
 
 <a id="compatibility"></a>
 
@@ -38,6 +38,7 @@ This optional section in `system/Gothic.INI` sets the language for the plugin me
 
 ```ini
 [UNIONBATCHCRAFTING]
+Enabled=1
 Language=auto
 ```
 

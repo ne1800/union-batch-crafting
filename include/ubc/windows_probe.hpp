@@ -50,6 +50,12 @@ inline bool copy_memory(void*, std::uint32_t address, void* output,
                            output, size, &copied) && copied == size;
 }
 
+inline bool player_image_header() noexcept {
+  const auto* base = reinterpret_cast<const std::uint8_t*>(GetModuleHandleW(nullptr));
+  return reinterpret_cast<std::uintptr_t>(base) == 0x00400000u &&
+      readable(base, 4096, false, true) && matches_gothic2_header(base, 4096, false);
+}
+
 inline bool target_matches() noexcept {
   constexpr char expected_hex[] =
       "0655b4811e008a353ce372fde463ef00b6101f3e89be850e2f14980140447c7f";

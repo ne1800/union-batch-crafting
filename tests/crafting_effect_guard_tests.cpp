@@ -228,6 +228,11 @@ ammo_presentation::Notice take_notice() noexcept;
 bool ack_notice(std::uint64_t,std::uint64_t,bool) noexcept;
 }
 namespace windows_probe {
+// Only this private host can admit its synthetic process to the test DLL entry.
+bool activation_fixture = false;
+bool crafting_guard_target_matches() noexcept {
+  return activation_fixture || target_matches();
+}
 bool crafting_guard_copy_memory(void* user,std::uint32_t value,void* out,std::size_t size) noexcept {
   using namespace crafting_guard_test;
   ++preview_memory_reads;
@@ -243,6 +248,7 @@ bool crafting_guard_copy_memory(void* user,std::uint32_t value,void* out,std::si
 }
 }
 #define _ReturnAddress() crafting_guard_test::return_address()
+#define target_matches crafting_guard_target_matches
 #define copy_memory crafting_guard_copy_memory
 #define RecipeCatalogueReader CraftingGuardCatalogueReader
 #define StationRecipeCatalogueReader CraftingGuardCatalogueReader
@@ -260,6 +266,7 @@ bool crafting_guard_copy_memory(void* user,std::uint32_t value,void* out,std::si
 #define verify_path crafting_guard_verify_path
 #define WriteFile crafting_guard_test::diagnostic_write_file
 #include "../src/native_crafting.cpp"
+#undef target_matches
 #undef WriteFile
 #undef verify_path
 #undef plan_quantity
@@ -1916,6 +1923,14 @@ bool ack_notice(std::uint64_t,std::uint64_t,bool) noexcept{return true;}
 }
 int main(int argc,char** argv){
   using namespace crafting_guard_test;
+  if (argc == 2 && (!std::strcmp(argv[1], "--marker-present") || !std::strcmp(argv[1], "--marker-absent"))) {
+    ubc::windows_probe::activation_fixture = true;
+    const auto instance = GetModuleHandleW(nullptr);
+    DllMain(instance, DLL_PROCESS_ATTACH, nullptr);
+    const bool ok = execution_enabled == (!std::strcmp(argv[1], "--marker-present")) && !installed;
+    DllMain(instance, DLL_PROCESS_DETACH, nullptr);
+    return ok ? 0 : 1;
+  }
   registry_tests();PrivatePages pages;if(!pages.open()){check(false,"private test pages allocated");return 1;}
   static_assert(sizeof(Fixture)<=PrivatePages::size-0x1000,"fixture stays in private bounded memory");
   auto& f=*new(pages.space())Fixture;

@@ -4,6 +4,8 @@
 
 ## English
 
+- **0.0.56** adds the permanent player ZIP, INI switch, scoped compatibility checks and bilingual install and removal instructions. The player installation awaits an in-game test.
+
 - **0.0.55** documents tested recipes, quantities, module versions and removal of the one-run installation.
 - **0.0.53–0.0.54** added automatic German menu text with English fallback, manual language selection, and bilingual guides.
 - **0.0.52** accounts for apple tobacco and laboratory flasks when crafting refined tobacco.
@@ -13,6 +15,8 @@
 - **0.0.30–0.0.35** measured and bounded the grinding preview. Rough swords passed the in-game comparison at 1, 2, 5 and maximum 3 in 0.0.35.
 
 ## Deutsch
+
+- **0.0.56** bringt das dauerhaft aktive Spieler-ZIP, den INI-Schalter, abgestufte Versionsprüfungen und die zweisprachige Anleitung für Installation und Deinstallation. Der Spielnachweis mit diesem ZIP steht aus.
 
 - **0.0.55** dokumentiert geprüfte Rezepte, Mengen, Modulstände und die Entfernung der Einmalinstallation.
 - **0.0.53–0.0.54** brachten die automatische deutsche Menüanzeige mit englischem Rückfall, manuelle Sprachwahl und zweisprachige Anleitungen.

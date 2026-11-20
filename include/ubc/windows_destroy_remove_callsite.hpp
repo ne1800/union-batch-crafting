@@ -148,7 +148,13 @@ private:
 #if defined(UBC_DESTROY_REMOVE_HOST_TEST)
     if (host_) return true;
 #endif
-    if (!windows_probe::target_matches()) { issue_ = Issue::image; return false; }
+#ifdef UBC_PLAYER_RELEASE
+    // The release adapter is reached only after the station's disk-site admission.
+    const bool valid_image = windows_probe::player_image_header();
+#else
+    const bool valid_image = windows_probe::target_matches();
+#endif
+    if (!valid_image) { issue_ = Issue::image; return false; }
     const ReadOnlyMemory memory{nullptr,&windows_probe::copy_memory};
     const auto proof = alchemy_flask_runtime::verify_native(memory,policy_);
     if (!proof.reviewed_ranges_match || !proof.vtable_slots_match ||

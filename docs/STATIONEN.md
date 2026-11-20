@@ -1,6 +1,6 @@
 <a id="guide"></a>
 
-# Union Batch Crafting 0.0.55
+# Union Batch Crafting 0.0.56
 
 [English](STATIONS.md) · [Deutsch](STATIONEN.md)
 
@@ -8,9 +8,9 @@ Die lokale Testfassung für Marcello L’Hiver DE 2.0.4 verbindet 98 Rezeptprofi
 
 <a id="install"></a>
 
-## Aus dem Quellcode gebautes Plugin
+## Installation für Spieler
 
-Der Windows-Bau erzeugt ein Union-Plugin für die unten aufgeführten Versionen. Das Plugin verwendet eine Aktivierungsdatei für einen einzelnen Start. Wenn du nur die DLL kopierst, bleibt die Herstellung deaktiviert. Die Anleitung zur Installation und Entfernung eines Releasepakets gehört zum jeweiligen Release. [Bauanleitung](../README.de.md#build)
+Das Spieler-ZIP **0.0.56** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](../INSTALL.de.md)
 
 <a id="compatibility"></a>
 
@@ -38,6 +38,7 @@ In `system/Gothic.INI` steuert dieser optionale Abschnitt die Sprache der Plugin
 
 ```ini
 [UNIONBATCHCRAFTING]
+Enabled=1
 Language=auto
 ```
 
