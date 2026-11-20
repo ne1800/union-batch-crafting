@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/recipe_handoff.hpp"
+#include "ubc/core/recipe_handoff.hpp"
 
 #include <cstdio>
 #include <utility>

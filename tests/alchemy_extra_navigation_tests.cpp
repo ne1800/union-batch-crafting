@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/alchemy_extra_navigation.hpp"
+#include "ubc/stations/alchemy/alchemy_extra_navigation.hpp"
 #include <cstdio>
 namespace n=ubc::alchemy_extra_navigation;
 namespace c=ubc::alchemy_recipe_catalog;

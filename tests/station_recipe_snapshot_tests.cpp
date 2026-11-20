@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/station_recipe_snapshot.hpp"
+#include "ubc/stations/station_recipe_snapshot.hpp"
 // Our shared synthetic memory image. No test seam in production,
 // original script bytes or additional runtime dependency.
 #define UBC_STATION_RECIPE_FIXTURE_ONLY

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/station_recipe_navigation.hpp"
+#include "ubc/stations/station_recipe_navigation.hpp"
 #include <cstdio>
 
 namespace {

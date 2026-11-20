@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/ore_recipe_navigation.hpp"
+#include "ubc/stations/ore/ore_recipe_navigation.hpp"
 #include <cstdio>
 namespace n=ubc::ore_recipe_navigation;namespace c=ubc::ore_recipe_catalog;
 namespace {unsigned checks=0,failures=0;void check(bool b,const char* why){++checks;if(!b){++failures;std::fprintf(stderr,"FAIL: %s\n",why);}}}

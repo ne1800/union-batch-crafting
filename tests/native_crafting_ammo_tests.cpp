@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 #include <windows.h>
-#include "ubc/native_crafting_ammo.hpp"
-#include "ammo_presentation_bridge.hpp"
+#include "ubc/engine/native_crafting_ammo.hpp"
+#include "bridges/ammo_presentation_bridge.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -55,7 +55,7 @@ struct Backend {
 };
 }
 #define UBC_NATIVE_CRAFTING_AMMO_HOST
-#include "../src/native_crafting_ammo.cpp"
+#include "../src/plugin/native_crafting_ammo.cpp"
 
 namespace {
 bool __cdecl read_context(void*,p::Context& out) {

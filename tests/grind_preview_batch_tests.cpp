@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 #define UBC_GRIND_ITEM_RUNTIME_FIXTURE_MAIN grind_runtime_fixture_main
 #include "grind_item_runtime_tests.cpp"
-#include "ubc/grind_preview_batch.hpp"
-#include "ubc/grind_preview_measurement.hpp"
-#include "ubc/crafting_session.hpp"
+#include "ubc/stations/grind/grind_preview_batch.hpp"
+#include "ubc/stations/grind/grind_preview_measurement.hpp"
+#include "ubc/core/crafting_session.hpp"
 #include "grind_preview_capacity_fixture.hpp"
 #include <memory>
 #include <optional>

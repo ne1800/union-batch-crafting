@@ -18,7 +18,7 @@
 // partial rollback. All other calls go directly to Kernel32.
 BOOL WINAPI test_virtual_protect(LPVOID, SIZE_T, DWORD, PDWORD) noexcept;
 #define VirtualProtect test_virtual_protect
-#include "ubc/windows_probe.hpp"
+#include "ubc/engine/windows_probe.hpp"
 #undef VirtualProtect
 
 namespace {

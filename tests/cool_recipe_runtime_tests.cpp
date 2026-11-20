@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/cool_recipe_runtime.hpp"
+#include "ubc/stations/cool/cool_recipe_runtime.hpp"
 #define UBC_STATION_RECIPE_FIXTURE_ONLY
 #include "station_recipe_runtime_tests.cpp"
 namespace cool_test {

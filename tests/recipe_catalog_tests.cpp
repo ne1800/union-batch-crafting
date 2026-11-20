@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/recipe_catalog.hpp"
+#include "ubc/catalogs/recipe_catalog.hpp"
 #include <array>
 #include <cstdio>
 #include <cstring>

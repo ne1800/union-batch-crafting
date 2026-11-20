@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/crafting_catalog.hpp"
+#include "ubc/catalogs/crafting_catalog.hpp"
 
 #include <algorithm>
 #include <array>

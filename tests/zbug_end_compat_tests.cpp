@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/zbug_end_compat.hpp"
-#include "ubc/cool_set_interact_path.hpp"
-#include "ubc/cool_native_path.hpp"
-#include "ubc/station_end_contract.hpp"
+#include "ubc/engine/zbug_end_compat.hpp"
+#include "ubc/stations/cool/cool_set_interact_path.hpp"
+#include "ubc/stations/cool/cool_native_path.hpp"
+#include "ubc/stations/station_end_contract.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>

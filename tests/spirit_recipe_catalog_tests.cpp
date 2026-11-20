@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/spirit_recipe_catalog.hpp"
+#include "ubc/catalogs/spirit_recipe_catalog.hpp"
 #include <cstdio>
 #include <vector>
 namespace c=ubc::spirit_recipe_catalog;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/cool_hotblade_debit.hpp"
+#include "ubc/stations/cool/cool_hotblade_debit.hpp"
 #include <algorithm>
 #include <array>
 #include <cstdio>

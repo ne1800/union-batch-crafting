@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/vob_locator_compat.hpp"
-#include "ubc/ammo_compat_memory.hpp"
-#include "ubc/station_abi.hpp"
+#include "ubc/engine/vob_locator_compat.hpp"
+#include "ubc/stations/saw/ammo_compat_memory.hpp"
+#include "ubc/stations/station_abi.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>

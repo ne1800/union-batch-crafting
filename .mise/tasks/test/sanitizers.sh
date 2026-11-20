@@ -51,19 +51,19 @@ for unit in station_snapshot runtime_script hand_snapshot info_snapshot packed_i
   fi
 done
 clang++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer \
-  -Wall -Wextra -Werror -Wconversion -pedantic -I include -I "$language_include" tests/native_crafting_ui_tests.cpp src/native_crafting_ui.cpp \
+  -Wall -Wextra -Werror -Wconversion -pedantic -I include -I "$language_include" tests/native_crafting_ui_tests.cpp src/ui/native_crafting_ui.cpp \
   -o "$test_root/native_crafting_ui_tests"
 "$test_root/native_crafting_ui_tests"
 clang++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer \
-  -Wall -Wextra -Werror -Wconversion -pedantic -I include -I "$language_include" tests/crafting_spirit_shared_tests.cpp src/native_crafting_ui.cpp \
+  -Wall -Wextra -Werror -Wconversion -pedantic -I include -I "$language_include" tests/crafting_spirit_shared_tests.cpp src/ui/native_crafting_ui.cpp \
   -o "$test_root/crafting_spirit_shared_tests"
 "$test_root/crafting_spirit_shared_tests"
 clang++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer \
-  -Wall -Wextra -Werror -Wconversion -pedantic -I include -I "$language_include" tests/crafting_cool_shared_tests.cpp src/native_crafting_ui.cpp \
+  -Wall -Wextra -Werror -Wconversion -pedantic -I include -I "$language_include" tests/crafting_cool_shared_tests.cpp src/ui/native_crafting_ui.cpp \
   -o "$test_root/crafting_cool_shared_tests"
 "$test_root/crafting_cool_shared_tests"
 
 clang++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer \
-  -Wall -Wextra -Werror -Wconversion -pedantic -I include -I "$language_include" tests/crafting_grind_shared_tests.cpp src/native_crafting_ui.cpp \
+  -Wall -Wextra -Werror -Wconversion -pedantic -I include -I "$language_include" tests/crafting_grind_shared_tests.cpp src/ui/native_crafting_ui.cpp \
   -o "$test_root/crafting_grind_shared_tests"
 "$test_root/crafting_grind_shared_tests"

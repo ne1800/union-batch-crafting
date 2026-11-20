@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/bow_item_native.hpp"
+#include "ubc/stations/bow/bow_item_native.hpp"
 #include "bow_item_test_values.hpp"
 
 namespace {

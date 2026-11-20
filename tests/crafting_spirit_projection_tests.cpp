@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/crafting_spirit_projection.hpp"
+#include "ubc/stations/spirit/crafting_spirit_projection.hpp"
 #define UBC_SPIRIT_EXECUTION_TEST_EMBEDDED
 #include "spirit_execution_tests.cpp"
 #define UBC_CRAFTING_FIXTURE_ONLY

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Linux-Diagnose im Testkoordinator. Kein Code aus dieser Datei läuft in Gothic.
-#include "ubc/cool_predebit_reader.hpp"
-#include "ubc/cool_native_path.hpp"
-#include "ubc/crafting_hook_sites.hpp"
-#include "ubc/station_end_contract.hpp"
+#include "ubc/stations/cool/cool_predebit_reader.hpp"
+#include "ubc/stations/cool/cool_native_path.hpp"
+#include "ubc/engine/crafting_hook_sites.hpp"
+#include "ubc/stations/station_end_contract.hpp"
 #include <cstring>
 
 namespace {

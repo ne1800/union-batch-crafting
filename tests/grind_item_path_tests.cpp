@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/grind_item_path.hpp"
+#include "ubc/stations/grind/grind_item_path.hpp"
 #define UBC_GRIND_SNAPSHOT_FIXTURE_ONLY
 #include "grind_recipe_snapshot_tests.cpp"
 #define UBC_GRIND_FACTS_FIXTURE_ONLY

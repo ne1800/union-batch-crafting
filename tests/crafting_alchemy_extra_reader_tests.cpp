@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 #define UBC_ALCHEMY_EXTRA_EXECUTION_TEST_EMBEDDED
 #include "alchemy_extra_execution_tests.cpp"
-#include "ubc/crafting_alchemy_extra_reader.hpp"
+#include "ubc/stations/alchemy/crafting_alchemy_extra_reader.hpp"
 
 namespace catalogue_test {
 namespace detail=ubc::crafting_alchemy_extra_detail;

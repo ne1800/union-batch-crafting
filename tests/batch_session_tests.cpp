@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/batch_session.hpp"
+#include "ubc/core/batch_session.hpp"
 
 #include <cstdio>
 #include <utility>

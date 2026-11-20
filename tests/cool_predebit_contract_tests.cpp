@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/cool_predebit_contract.hpp"
-#include "ubc/cool_predebit_journal.hpp"
-#include "ubc/cool_predebit_admission.hpp"
+#include "ubc/stations/cool/cool_predebit_contract.hpp"
+#include "ubc/stations/cool/cool_predebit_journal.hpp"
+#include "ubc/stations/cool/cool_predebit_admission.hpp"
 #include <cstdio>
 #include <type_traits>
 namespace p=ubc::cool_predebit;

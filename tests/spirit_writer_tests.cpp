@@ -4,7 +4,7 @@
 #endif
 #define UBC_SPIRIT_EXECUTION_TEST_EMBEDDED
 #include "spirit_execution_tests.cpp"
-#include "spirit_writer.hpp"
+#include "writers/spirit_writer.hpp"
 #include <intrin.h>
 #include <memory>
 

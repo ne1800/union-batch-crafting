@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Our own synthetic values only. No native or game test and no memory reads.
-#include "ubc/grind_result_diagnostic.hpp"
-#include "ubc/generated_blade_hand_shape.hpp"
-#include "ubc/grind_item_shape.hpp"
+#include "ubc/stations/grind/grind_result_diagnostic.hpp"
+#include "ubc/stations/cool/generated_blade_hand_shape.hpp"
+#include "ubc/stations/grind/grind_item_shape.hpp"
 #include <cstdio>
 #include <string_view>
 #include <type_traits>

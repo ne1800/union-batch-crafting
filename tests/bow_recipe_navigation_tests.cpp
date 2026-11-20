@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/bow_menu_checks.hpp"
-#include "ubc/selection_snapshot.hpp"
+#include "ubc/stations/bow/bow_menu_checks.hpp"
+#include "ubc/core/selection_snapshot.hpp"
 #include "bow_item_test_values.hpp"
 #include <cstdio>
 namespace n=ubc::bow_recipe_navigation;namespace c=ubc::bow_recipe_catalog;

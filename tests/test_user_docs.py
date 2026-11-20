@@ -7,7 +7,7 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 PAIRS = (("README.md", "README.de.md"), ("docs/STATIONS.md", "docs/STATIONEN.md"),
-         ("INSTALL.md", "INSTALL.de.md"))
+         ("INSTALL.md", "INSTALL.de.md"), ("docs/STRUCTURE.md", "docs/STRUKTUR.md"))
 CANONICAL = {de: en for en, de in PAIRS}
 HEADING = re.compile(r"^(#{1,6}) (.+)$", re.M)
 ANCHOR = re.compile(r'<a id="([\w-]+)"></a>')

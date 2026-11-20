@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include <windows.h>
-#include "ammo_presentation_bridge.hpp"
+#include "bridges/ammo_presentation_bridge.hpp"
 #include <array>
 #include <cstdio>
 #include <cstdlib>

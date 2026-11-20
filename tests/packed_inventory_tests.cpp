@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/packed_inventory.hpp"
+#include "ubc/engine/packed_inventory.hpp"
 
 #include <algorithm>
 #include <array>

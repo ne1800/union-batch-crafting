@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/amount_patch.hpp"
+#include "ubc/engine/amount_patch.hpp"
 #include <cstdio>
 #include <cstring>
 #if defined(_WIN32)
 #include <windows.h>
-#include "ubc/batch_amount_call.hpp"
+#include "ubc/core/batch_amount_call.hpp"
 #endif
 
 namespace {

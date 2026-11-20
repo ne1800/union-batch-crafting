@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/ore_recipe_catalog.hpp"
+#include "ubc/catalogs/ore_recipe_catalog.hpp"
 #include <cstdio>
 #include <vector>
 

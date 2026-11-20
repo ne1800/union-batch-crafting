@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/ore_recipe_snapshot.hpp"
+#include "ubc/stations/ore/ore_recipe_snapshot.hpp"
 #define UBC_ORE_RUNTIME_FIXTURE_ONLY
 #include "ore_recipe_runtime_tests.cpp"
 #include <type_traits>

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 #include "cool_predebit_native_host.hpp"
-#include "ubc/native_crafting_ui.hpp"
-#include "ubc/windows_destroy_remove_callsite.hpp"
-#include "ubc/windows_module_identity.hpp"
+#include "ubc/ui/native_crafting_ui.hpp"
+#include "ubc/engine/windows_destroy_remove_callsite.hpp"
+#include "ubc/engine/windows_module_identity.hpp"
 
 // The host supplies the environment (file images, private hook registry,
 // focus). Selection, dispatch reader, INFO ownership, CallFunc and writer

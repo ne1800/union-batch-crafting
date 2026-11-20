@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/alchemy_extra_result.hpp"
+#include "ubc/stations/alchemy/alchemy_extra_result.hpp"
 // Shared value fixture only. No test seam in production.
 #define UBC_ALCHEMY_EXTRA_FIXTURE_ONLY
 #include "alchemy_extra_snapshot_tests.cpp"

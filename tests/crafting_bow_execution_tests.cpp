@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Binding and UI value fixtures only. The existing bow_item_runtime
 // host reads actual local code paths separately with --local-files.
-#include "ubc/crafting_bow_execution.hpp"
-#include "ubc/crafting_bow_projection.hpp"
-#include "ubc/crafting_session.hpp"
+#include "ubc/stations/bow/crafting_bow_execution.hpp"
+#include "ubc/stations/bow/crafting_bow_projection.hpp"
+#include "ubc/core/crafting_session.hpp"
 #define UBC_CRAFTING_FIXTURE_ONLY
 #include "crafting_catalog_tests.cpp"
 

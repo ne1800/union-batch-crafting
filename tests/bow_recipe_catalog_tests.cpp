@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/bow_recipe_catalog.hpp"
+#include "ubc/catalogs/bow_recipe_catalog.hpp"
 #include <cstdio>
 #include <set>
 #include <cstring>

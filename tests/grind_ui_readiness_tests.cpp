@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Our synthetic menu values. No engine or physical input.
-#include "ubc/grind_ui_readiness.hpp"
+#include "ubc/stations/grind/grind_ui_readiness.hpp"
 #define UBC_CRAFTING_FIXTURE_ONLY
 #include "crafting_catalog_tests.cpp"
 using namespace crafting_test;

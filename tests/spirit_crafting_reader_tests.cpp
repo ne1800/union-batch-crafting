@@ -2,7 +2,7 @@
 // Our own memory fixture. Optional original data stays exclusively in RAM.
 #define UBC_SPIRIT_EXECUTION_TEST_EMBEDDED
 #include "spirit_execution_tests.cpp"
-#include "ubc/spirit_crafting_reader.hpp"
+#include "ubc/stations/spirit/spirit_crafting_reader.hpp"
 #include <type_traits>
 
 namespace spirit_crafting_test {

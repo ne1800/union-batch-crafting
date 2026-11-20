@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/recipe_snapshot.hpp"
+#include "ubc/core/recipe_snapshot.hpp"
 
 #include <array>
 #include <cstdio>

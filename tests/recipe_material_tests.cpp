@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/recipe_material.hpp"
+#include "ubc/core/recipe_material.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>

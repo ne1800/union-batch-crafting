@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/selection_snapshot.hpp"
+#include "ubc/core/selection_snapshot.hpp"
 #include <cstdio>
 #include <cstring>
 #include <vector>

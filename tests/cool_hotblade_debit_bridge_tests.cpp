@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "cool_hotblade_debit_bridge.hpp"
+#include "bridges/cool_hotblade_debit_bridge.hpp"
 #include <intrin.h>
 #include <cstdio>
 namespace b = ubc::cool_hotblade_debit_bridge;

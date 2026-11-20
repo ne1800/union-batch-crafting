@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/grind_recipe_navigation.hpp"
+#include "ubc/stations/grind/grind_recipe_navigation.hpp"
 #include <algorithm>
 #include <cstdio>
 

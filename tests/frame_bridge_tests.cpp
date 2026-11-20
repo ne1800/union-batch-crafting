@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 #include <windows.h>
-#include "ubc/frame_bridge.hpp"
-#include "ubc/windows_probe.hpp"
+#include "ubc/engine/frame_bridge.hpp"
+#include "ubc/engine/windows_probe.hpp"
 
 #include <array>
 #include <cstdint>

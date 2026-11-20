@@ -4,7 +4,7 @@
 #define main alchemy_flask_runtime_fixture_main
 #include "alchemy_flask_runtime_tests.cpp"
 #undef main
-#include "ubc/alchemy_extra_execution.hpp"
+#include "ubc/stations/alchemy/alchemy_extra_execution.hpp"
 
 namespace execution_test {
 namespace e=ubc::alchemy_extra_execution;

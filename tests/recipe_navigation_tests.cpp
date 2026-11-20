@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/recipe_navigation.hpp"
+#include "ubc/core/recipe_navigation.hpp"
 
 #include <algorithm>
 #include <array>

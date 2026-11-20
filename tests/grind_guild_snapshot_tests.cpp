@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/grind_guild_snapshot.hpp"
+#include "ubc/stations/grind/grind_guild_snapshot.hpp"
 #include "grind_runtime_fixture.hpp"
 #include <iostream>
 

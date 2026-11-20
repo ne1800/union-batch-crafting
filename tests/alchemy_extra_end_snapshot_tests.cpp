@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 #define UBC_ALCHEMY_EXTRA_FIXTURE_ONLY
 #include "alchemy_extra_snapshot_tests.cpp"
-#include "ubc/alchemy_extra_end_snapshot.hpp"
+#include "ubc/stations/alchemy/alchemy_extra_end_snapshot.hpp"
 
 namespace end_test {
 namespace d=ubc::alchemy_flask_debit;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/cool_recipe_plan.hpp"
+#include "ubc/stations/cool/cool_recipe_plan.hpp"
 #include <cstdio>
 #include <utility>
 namespace {unsigned checks=0,failures=0;void check(bool v,const char* n){++checks;if(!v){++failures;std::fprintf(stderr,"FAIL: %s\n",n);}}

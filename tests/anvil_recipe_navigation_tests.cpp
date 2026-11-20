@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/anvil_recipe_navigation.hpp"
+#include "ubc/stations/anvil/anvil_recipe_navigation.hpp"
 #include <cstdio>
 
 namespace {

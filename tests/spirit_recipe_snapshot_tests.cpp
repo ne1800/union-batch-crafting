@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/spirit_recipe_snapshot.hpp"
+#include "ubc/stations/spirit/spirit_recipe_snapshot.hpp"
 #define UBC_SPIRIT_RUNTIME_FIXTURE_ONLY
 #include "spirit_recipe_runtime_tests.cpp"
 #include <type_traits>

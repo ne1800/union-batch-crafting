@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/cool_nofx_reader.hpp"
+#include "ubc/stations/cool/cool_nofx_reader.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>

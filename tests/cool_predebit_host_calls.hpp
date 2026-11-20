@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 #pragma once
 #include "cool_predebit_native_host.hpp"
-#include "ubc/station_end_contract.hpp"
+#include "ubc/stations/station_end_contract.hpp"
 
 // Private Win32 pages. Execute only our own call stubs. Compare
 // the call sites with the pinned PE or our verified Remove

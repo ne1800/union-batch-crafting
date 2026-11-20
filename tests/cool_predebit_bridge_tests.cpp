@@ -5,19 +5,19 @@
 #endif
 #define UBC_COOL_PREDEBIT_READER_MAIN predebit_reader_fixture_main
 #include "cool_predebit_reader_tests.cpp"
-#include "cool_predebit_bridge.hpp"
-#include "ubc/cool_predebit_projection.hpp"
-#include "ubc/cool_predebit_journal.hpp"
-#include "ubc/cool_destroy_observation.hpp"
-#include "ubc/cool_native_path.hpp"
-#include "ubc/cool_listed_input.hpp"
-#include "ubc/crafting_cool_projection.hpp"
-#include "ubc/crafting_info_effect.hpp"
-#include "ubc/native_crafting_ui.hpp"
+#include "bridges/cool_predebit_bridge.hpp"
+#include "ubc/stations/cool/cool_predebit_projection.hpp"
+#include "ubc/stations/cool/cool_predebit_journal.hpp"
+#include "ubc/stations/cool/cool_destroy_observation.hpp"
+#include "ubc/stations/cool/cool_native_path.hpp"
+#include "ubc/stations/cool/cool_listed_input.hpp"
+#include "ubc/stations/cool/crafting_cool_projection.hpp"
+#include "ubc/core/crafting_info_effect.hpp"
+#include "ubc/ui/native_crafting_ui.hpp"
 #include <intrin.h>
 #include <memory>
 #include "cool_predebit_host_calls.hpp"
-#include "ubc/station_end_contract.hpp"
+#include "ubc/stations/station_end_contract.hpp"
 
 namespace bridge_test {
 namespace bridge=ubc::cool_predebit_bridge;

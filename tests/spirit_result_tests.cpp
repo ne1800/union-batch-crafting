@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/spirit_result.hpp"
-#include "ubc/spirit_item_restore.hpp"
+#include "ubc/stations/spirit/spirit_result.hpp"
+#include "ubc/stations/spirit/spirit_item_restore.hpp"
 #include <cstdio>
 #include <climits>
 

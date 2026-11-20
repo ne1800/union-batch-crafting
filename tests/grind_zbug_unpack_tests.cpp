@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/grind_zbug_unpack.hpp"
+#include "ubc/stations/grind/grind_zbug_unpack.hpp"
 #include "bow_item_test_values.hpp"
 
 namespace {

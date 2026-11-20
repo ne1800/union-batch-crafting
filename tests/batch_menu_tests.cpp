@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/batch_menu.hpp"
+#include "ubc/ui/batch_menu.hpp"
 
 #include <cstdio>
 

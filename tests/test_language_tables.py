@@ -29,14 +29,13 @@ class LanguageTables(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             shutil.copytree(TEXT, root / "include/ubc/text")
-            shutil.copy(ROOT / "include/ubc/ui_language.hpp", root / "include/ubc")
             (root / "cmake").symlink_to(ROOT / "cmake", target_is_directory=True)
             (root / "CMakeLists.txt").write_text(
                 "cmake_minimum_required(VERSION 3.21)\nproject(language_test LANGUAGES CXX)\n"
                 "include(cmake/ui_languages.cmake)\nadd_executable(probe probe.cpp)\n"
                 "target_include_directories(probe PRIVATE include)\ntarget_compile_features(probe PRIVATE cxx_std_17)\n")
             (root / "probe.cpp").write_text(
-                '#include "ubc/ui_language.hpp"\n#include <string_view>\nint main() {\n'
+                '#include "ubc/text/ui_language.hpp"\n#include <string_view>\nint main() {\n'
                 '  using namespace ubc::ui_text;\n  auto language = choose(L" QZ ", []{return true;});\n'
                 '  return std::string_view(table(language)[Label::title]) == "Test translation" ? 0 : 1;\n}\n')
             build = root / "build"

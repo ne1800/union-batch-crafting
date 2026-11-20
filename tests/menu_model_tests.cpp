@@ -1,4 +1,4 @@
-#include "ubc/menu_model.hpp"
+#include "ubc/ui/menu_model.hpp"
 #include <cstdio>
 
 namespace {

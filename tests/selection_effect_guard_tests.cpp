@@ -12,8 +12,8 @@
 #include <intrin.h>
 #include <cstdint>
 #include <new>
-#include "ubc/selection_abi.hpp"
-#include "ubc/windows_probe.hpp"
+#include "ubc/engine/selection_abi.hpp"
+#include "ubc/engine/windows_probe.hpp"
 namespace effect_guard_test {
 std::uintptr_t synthetic_caller = 0;
 std::uint8_t* global_slots = nullptr;
@@ -35,7 +35,7 @@ bool effect_guard_copy_memory(void* context, std::uint32_t value, void* out, std
 }
 #define _ReturnAddress() effect_guard_test::synthetic_return_address()
 #define copy_memory effect_guard_copy_memory
-#include "../src/native_selection_probe.cpp"
+#include "../src/probes/native_selection_probe.cpp"
 #undef copy_memory
 #undef _ReturnAddress
 

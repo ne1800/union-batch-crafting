@@ -3,12 +3,12 @@
 #if !defined(UBC_COOL_PREDEBIT_HOST_TEST)
 #error Nur fuer den privaten x86-Host.
 #endif
-#include "cool_predebit_bridge.hpp"
-#include "ubc/crafting_handoff.hpp"
-#include "ubc/crafting_info_effect.hpp"
-#include "ubc/cool_native_path.hpp"
-#include "ubc/cool_destroy_observation.hpp"
-#include "ubc/selection_abi.hpp"
+#include "bridges/cool_predebit_bridge.hpp"
+#include "ubc/core/crafting_handoff.hpp"
+#include "ubc/core/crafting_info_effect.hpp"
+#include "ubc/stations/cool/cool_native_path.hpp"
+#include "ubc/stations/cool/cool_destroy_observation.hpp"
+#include "ubc/engine/selection_abi.hpp"
 
 namespace cool_host {
 namespace debit=ubc::cool_predebit;

@@ -5,7 +5,7 @@
 #undef main
 #define UBC_COOL_RUNTIME_FIXTURE_ONLY
 #include "cool_recipe_runtime_tests.cpp"
-#include "ubc/cool_recipe_plan.hpp"
+#include "ubc/stations/cool/cool_recipe_plan.hpp"
 namespace cool_facts {
 namespace catalog=ubc::cool_recipe_catalog;namespace runtime=ubc::cool_recipe_runtime;
 struct PatchFixture {

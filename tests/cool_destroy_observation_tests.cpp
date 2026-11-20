@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Only synthetic value copies. No claim of native evidence.
-#include "ubc/cool_destroy_observation.hpp"
-#include "ubc/cool_destroy_hand_diagnostic.hpp"
-#include "ubc/generated_blade_hand_shape.hpp"
-#include "ubc/cool_hotblade_debit.hpp"
+#include "ubc/stations/cool/cool_destroy_observation.hpp"
+#include "ubc/stations/cool/cool_destroy_hand_diagnostic.hpp"
+#include "ubc/stations/cool/generated_blade_hand_shape.hpp"
+#include "ubc/stations/cool/cool_hotblade_debit.hpp"
 #include <cstdio>
 #include <type_traits>
 namespace d=ubc::cool_destroy_observation;

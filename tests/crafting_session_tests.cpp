@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/crafting_session.hpp"
+#include "ubc/core/crafting_session.hpp"
 #define UBC_CRAFTING_FIXTURE_ONLY
 #include "crafting_catalog_tests.cpp"
 int main() {

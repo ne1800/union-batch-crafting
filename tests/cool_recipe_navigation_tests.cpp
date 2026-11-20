@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/cool_recipe_navigation.hpp"
+#include "ubc/stations/cool/cool_recipe_navigation.hpp"
 #include <cstdio>
 namespace {unsigned checks=0,failures=0;void check(bool x,const char* n){++checks;if(!x){++failures;std::fprintf(stderr,"FAIL: %s\n",n);}}
 namespace nav=ubc::cool_recipe_navigation;namespace cat=ubc::cool_recipe_catalog;

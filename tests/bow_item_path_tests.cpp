@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/bow_item_path.hpp"
+#include "ubc/stations/bow/bow_item_path.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <string>

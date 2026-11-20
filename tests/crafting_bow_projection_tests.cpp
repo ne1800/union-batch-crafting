@@ -5,7 +5,7 @@
 #define main ubc_bow_snapshot_fixture_cases
 #include "bow_recipe_snapshot_tests.cpp"
 #undef main
-#include "ubc/crafting_bow_projection.hpp"
+#include "ubc/stations/bow/crafting_bow_projection.hpp"
 
 namespace {
 void synthetic_profiles(ubc::BowRecipeCatalogueCapture& value){

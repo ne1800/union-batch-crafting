@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/alchemy_extra_dependencies.hpp"
+#include "ubc/stations/alchemy/alchemy_extra_dependencies.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>

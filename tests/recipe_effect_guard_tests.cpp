@@ -13,11 +13,11 @@
 #include <intrin.h>
 #include <cstdint>
 #include <new>
-#include "ubc/selection_abi.hpp"
-#include "ubc/windows_probe.hpp"
-#include "ubc/recipe_snapshot.hpp"
-#include "ubc/recipe_handoff.hpp"
-#include "ubc/native_recipe_ui.hpp"
+#include "ubc/engine/selection_abi.hpp"
+#include "ubc/engine/windows_probe.hpp"
+#include "ubc/core/recipe_snapshot.hpp"
+#include "ubc/core/recipe_handoff.hpp"
+#include "ubc/ui/native_recipe_ui.hpp"
 
 namespace recipe_guard_test {
 std::uintptr_t caller = 0;
@@ -80,7 +80,7 @@ bool recipe_guard_copy_memory(void* context, std::uint32_t value, void* out, std
 #define NativeRecipeUi RecipeGuardUi
 #define verify_local_contract recipe_guard_verify_local_contract
 #define callback_for_quantity recipe_guard_callback_for_quantity
-#include "../src/native_recipe_probe.cpp"
+#include "../src/probes/native_recipe_probe.cpp"
 #undef callback_for_quantity
 #undef verify_local_contract
 #undef NativeRecipeUi

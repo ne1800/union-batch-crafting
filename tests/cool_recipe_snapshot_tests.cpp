@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/cool_recipe_snapshot.hpp"
-#include "ubc/cool_listed_input.hpp"
+#include "ubc/stations/cool/cool_recipe_snapshot.hpp"
+#include "ubc/stations/cool/cool_listed_input.hpp"
 #define UBC_COOL_RUNTIME_FIXTURE_ONLY
 #include "cool_recipe_runtime_tests.cpp"
 namespace allocation_probe {bool watching=false;std::size_t count=0;}

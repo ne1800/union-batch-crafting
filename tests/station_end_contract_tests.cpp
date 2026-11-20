@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/station_end_contract.hpp"
+#include "ubc/stations/station_end_contract.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>

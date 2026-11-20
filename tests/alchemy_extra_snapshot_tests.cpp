@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/alchemy_extra_snapshot.hpp"
+#include "ubc/stations/alchemy/alchemy_extra_snapshot.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <map>

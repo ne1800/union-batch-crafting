@@ -4,10 +4,10 @@
 #define main ubc_cool_snapshot_fixture_cases
 #include "cool_recipe_snapshot_tests.cpp"
 #undef main
-#include "ubc/crafting_cool_projection.hpp"
-#include "ubc/crafting_handoff.hpp"
-#include "ubc/crafting_result.hpp"
-#include "ubc/native_crafting_ui.hpp"
+#include "ubc/stations/cool/crafting_cool_projection.hpp"
+#include "ubc/core/crafting_handoff.hpp"
+#include "ubc/core/crafting_result.hpp"
+#include "ubc/ui/native_crafting_ui.hpp"
 
 namespace shared_cool_test {
 namespace cat=ubc::crafting_catalog;

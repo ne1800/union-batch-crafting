@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/spirit_recipe_navigation.hpp"
+#include "ubc/stations/spirit/spirit_recipe_navigation.hpp"
 #include <cstdio>
 namespace n=ubc::spirit_recipe_navigation;
 namespace c=ubc::spirit_recipe_catalog;

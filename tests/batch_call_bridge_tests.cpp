@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include "ubc/batch_call_bridge.hpp"
+#include "ubc/engine/batch_call_bridge.hpp"
 
 namespace b = ubc::batch_call;
 namespace {

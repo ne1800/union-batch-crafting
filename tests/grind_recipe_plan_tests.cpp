@@ -3,7 +3,7 @@
 #define main grind_fixture_main
 #include "alchemy_flask_runtime_tests.cpp"
 #undef main
-#include "ubc/grind_recipe_plan.hpp"
+#include "ubc/stations/grind/grind_recipe_plan.hpp"
 
 namespace grind_test {
 namespace g=ubc::grind_recipe;

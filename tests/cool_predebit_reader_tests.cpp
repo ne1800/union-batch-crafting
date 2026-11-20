@@ -2,8 +2,8 @@
 // Original file and DAT bodies in private RAM. Never execute the game.
 #define UBC_BOW_ITEM_RUNTIME_FIXTURE_MAIN pre_bow_fixture_main
 #include "bow_item_runtime_tests.cpp"
-#include "ubc/cool_predebit_reader.hpp"
-#include "ubc/cool_predebit_admission.hpp"
+#include "ubc/stations/cool/cool_predebit_reader.hpp"
+#include "ubc/stations/cool/cool_predebit_admission.hpp"
 #include <memory>
 namespace {
 namespace pre=ubc::cool_predebit;namespace pr=pre::reader;

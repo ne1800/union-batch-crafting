@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/pe_guard.hpp"
-#include "ubc/quantity.hpp"
+#include "ubc/engine/pe_guard.hpp"
+#include "ubc/core/quantity.hpp"
 
 #include <algorithm>
 #include <cstddef>

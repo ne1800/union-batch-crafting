@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/grind_recipe_snapshot.hpp"
+#include "ubc/stations/grind/grind_recipe_snapshot.hpp"
 #include "grind_runtime_fixture.hpp"
 
 namespace allocation_probe { bool watching = false; std::size_t count = 0; }

@@ -4,7 +4,7 @@
 #endif
 #define UBC_ALCHEMY_EXTRA_EXECUTION_TEST_EMBEDDED
 #include "alchemy_extra_execution_tests.cpp"
-#include "alchemy_extra_writer.hpp"
+#include "writers/alchemy_extra_writer.hpp"
 #include <intrin.h>
 #include <memory>
 

@@ -3,7 +3,7 @@
 #define main dependencies_fixture_main
 #include "alchemy_extra_dependencies_tests.cpp"
 #undef main
-#include "ubc/alchemy_extra_dependency_reader.hpp"
+#include "ubc/stations/alchemy/alchemy_extra_dependency_reader.hpp"
 
 namespace dependency_reader_test {
 namespace r=ubc::alchemy_extra_dependency_reader;

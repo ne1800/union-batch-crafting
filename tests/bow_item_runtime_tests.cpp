@@ -4,8 +4,8 @@
 #define main bow_item_native_fixture_main
 #include "bow_item_native_tests.cpp"
 #undef main
-#include "ubc/bow_item_runtime.hpp"
-#include "ubc/crafting_bow_execution.hpp"
+#include "ubc/stations/bow/bow_item_runtime.hpp"
+#include "ubc/stations/bow/crafting_bow_execution.hpp"
 
 namespace {
 namespace runtime=ubc::bow_item_runtime;namespace renderer_code=ubc::bow_item_renderer;

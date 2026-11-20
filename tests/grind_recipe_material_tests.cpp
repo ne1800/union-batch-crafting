@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/grind_recipe_material.hpp"
+#include "ubc/stations/grind/grind_recipe_material.hpp"
 
 #include <algorithm>
 #include <array>

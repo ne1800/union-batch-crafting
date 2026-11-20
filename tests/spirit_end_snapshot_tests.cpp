@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 #define UBC_SPIRIT_RESULT_TEST_EMBEDDED
 #include "spirit_result_tests.cpp"
-#include "ubc/spirit_end_snapshot.hpp"
+#include "ubc/stations/spirit/spirit_end_snapshot.hpp"
 
 namespace spirit_end_test {
 using namespace spirit_result_test;

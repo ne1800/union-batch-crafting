@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/alchemy_recipe_catalog.hpp"
-#include "ubc/alchemy_flask_debit.hpp"
+#include "ubc/catalogs/alchemy_recipe_catalog.hpp"
+#include "ubc/stations/alchemy/alchemy_flask_debit.hpp"
 #include <cstdio>
 #include <cstring>
 #include <vector>

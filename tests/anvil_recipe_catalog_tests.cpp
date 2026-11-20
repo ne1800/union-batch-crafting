@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/anvil_recipe_catalog.hpp"
+#include "ubc/catalogs/anvil_recipe_catalog.hpp"
 #include <array>
 #include <cstdio>
 #include <cstring>

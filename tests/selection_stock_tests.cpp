@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/selection_stock.hpp"
+#include "ubc/core/selection_stock.hpp"
 #include <cstdio>
 
 namespace {

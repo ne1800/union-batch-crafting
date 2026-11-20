@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/crafting_handoff.hpp"
-#include "ubc/crafting_result.hpp"
-#include "ubc/native_crafting_ui.hpp"
+#include "ubc/core/crafting_handoff.hpp"
+#include "ubc/core/crafting_result.hpp"
+#include "ubc/ui/native_crafting_ui.hpp"
 #include <cstdio>
 #include <cstring>
 using namespace ubc;

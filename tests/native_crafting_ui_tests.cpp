@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Our own layout regressions. No game bytes or engine calls.
-#include "ubc/native_crafting_ui.hpp"
+#include "ubc/ui/native_crafting_ui.hpp"
 #ifdef _WIN32
-#include "../src/native_ui_language.hpp"
+#include "../src/ui/native_ui_language.hpp"
 #endif
 #include <string>
 #include <vector>

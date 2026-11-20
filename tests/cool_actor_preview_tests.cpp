@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/cool_actor_preview.hpp"
-#include "ubc/cool_direct_contract.hpp"
+#include "ubc/stations/cool/cool_actor_preview.hpp"
+#include "ubc/stations/cool/cool_direct_contract.hpp"
 #define UBC_COOL_SNAPSHOT_FIXTURE_ONLY
 #include "cool_recipe_snapshot_tests.cpp"
 

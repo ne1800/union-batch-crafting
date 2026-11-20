@@ -2,8 +2,8 @@
 // Existing optional file facts remain in RAM only. No original bytes in the repository.
 #define UBC_ALCHEMY_EXTRA_EXECUTION_TEST_EMBEDDED
 #include "alchemy_extra_execution_tests.cpp"
-#include "ubc/spirit_execution.hpp"
-#include "ubc/spirit_flask_runtime.hpp"
+#include "ubc/stations/spirit/spirit_execution.hpp"
+#include "ubc/stations/spirit/spirit_flask_runtime.hpp"
 [[maybe_unused]] auto* const spirit_fixture_keep_local=&execution_test::local;
 
 namespace spirit_execution_test {

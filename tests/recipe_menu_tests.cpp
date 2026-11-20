@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/recipe_menu.hpp"
+#include "ubc/ui/recipe_menu.hpp"
 
 #include <cstdio>
 

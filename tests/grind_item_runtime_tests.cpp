@@ -3,7 +3,7 @@
 // the existing bow check, then only our specific grind values.
 #define UBC_BOW_ITEM_RUNTIME_FIXTURE_MAIN bow_runtime_fixture_main
 #include "bow_item_runtime_tests.cpp"
-#include "ubc/grind_item_runtime.hpp"
+#include "ubc/stations/grind/grind_item_runtime.hpp"
 
 namespace grind_runtime_test {
 namespace g=ubc::grind_recipe;

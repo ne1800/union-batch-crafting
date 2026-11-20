@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Same bounded readers and RAM fixtures as capture and facts. Original
 // data can arrive only through an explicit private stdin pipe.
-#include "ubc/grind_item_binding.hpp"
+#include "ubc/stations/grind/grind_item_binding.hpp"
 #define UBC_GRIND_SNAPSHOT_FIXTURE_ONLY
 #include "grind_recipe_snapshot_tests.cpp"
 #define UBC_GRIND_FACTS_FIXTURE_ONLY

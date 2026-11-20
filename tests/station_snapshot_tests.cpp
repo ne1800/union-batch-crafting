@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/read_only_memory.hpp"
-#include "ubc/station_snapshot.hpp"
-#include "ubc/station_abi.hpp"
+#include "ubc/engine/read_only_memory.hpp"
+#include "ubc/stations/station_snapshot.hpp"
+#include "ubc/stations/station_abi.hpp"
 
 #include <algorithm>
 #include <array>

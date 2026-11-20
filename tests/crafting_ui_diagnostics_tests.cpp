@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Our actual session and menu models with synthetic material and quantity
 // evidence. No engine, key delivery, game world or crafting authorization.
-#include "ubc/crafting_ui_diagnostics.hpp"
+#include "ubc/ui/crafting_ui_diagnostics.hpp"
 #define UBC_CRAFTING_FIXTURE_ONLY
 #include "crafting_catalog_tests.cpp"
 #include <limits>

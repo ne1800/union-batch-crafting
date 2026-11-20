@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/anvil_recipe_snapshot.hpp"
+#include "ubc/stations/anvil/anvil_recipe_snapshot.hpp"
 #define UBC_ANVIL_RUNTIME_FIXTURE_ONLY
 #include "anvil_recipe_runtime_tests.cpp"
 #include <type_traits>

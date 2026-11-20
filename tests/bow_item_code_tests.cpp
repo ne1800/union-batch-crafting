@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/bow_item_code.hpp"
+#include "ubc/stations/bow/bow_item_code.hpp"
 #define UBC_BOW_RUNTIME_FIXTURE_ONLY
 #include "bow_recipe_runtime_tests.cpp"
 #include <fstream>

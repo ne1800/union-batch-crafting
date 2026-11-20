@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/cool_direct_contract.hpp"
+#include "ubc/stations/cool/cool_direct_contract.hpp"
 #include <array>
 #include <cstdio>
 #include <cstring>

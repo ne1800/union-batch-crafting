@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/tobacco_runtime.hpp"
-#include "ubc/crafting_session.hpp"
+#include "ubc/stations/tobacco/tobacco_runtime.hpp"
+#include "ubc/core/crafting_session.hpp"
 #include "bow_item_test_values.hpp"
 #include <cstdio>
 #include <cstdlib>

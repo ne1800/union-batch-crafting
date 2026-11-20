@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "alchemy_flask_debit_bridge.hpp"
+#include "bridges/alchemy_flask_debit_bridge.hpp"
 #include <intrin.h>
 #include <cstdio>
 #include <cstring>

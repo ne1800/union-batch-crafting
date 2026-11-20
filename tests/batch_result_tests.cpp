@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/batch_result.hpp"
+#include "ubc/core/batch_result.hpp"
 #include <cstdio>
 namespace {
 unsigned checks=0,failures=0;

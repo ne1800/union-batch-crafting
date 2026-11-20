@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/cool_destroy_dispatch.hpp"
-#include "ubc/cool_native_path.hpp"
+#include "ubc/stations/cool/cool_destroy_dispatch.hpp"
+#include "ubc/stations/cool/cool_native_path.hpp"
 #include <cstdio>
 #include <map>
 #include <utility>

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "ubc/cool_message_malloc_reader.hpp"
+#include "ubc/stations/cool/cool_message_malloc_reader.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
