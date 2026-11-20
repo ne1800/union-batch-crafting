@@ -1,0 +1,6 @@
+[settings]
+disable_tools = ["python", "cmake", "ninja"]
+
+[env]
+CC = "clang"
+CXX = "clang++"

@@ -1,0 +1,4 @@
+LIBRARY UnionBatchCrafting
+EXPORTS
+  UbcSelectionProbeVersion
+  UbcSelectionProbeHooksInstalled

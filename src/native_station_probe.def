@@ -1,0 +1,4 @@
+LIBRARY UnionBatchCraftingStationProbe
+EXPORTS
+    UbcStationProbeVersion
+    UbcStationProbeHooksInstalled

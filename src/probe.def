@@ -1,0 +1,4 @@
+LIBRARY UnionBatchCraftingProbe
+EXPORTS
+  UbcProbeVersion
+  UbcProbeTargetMatched

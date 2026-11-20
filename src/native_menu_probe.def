@@ -1,0 +1,4 @@
+LIBRARY UnionBatchCraftingMenuProbe
+EXPORTS
+    UbcMenuProbeVersion
+    UbcMenuProbeHooksInstalled

@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: MIT
+#pragma once
+@language_headers@
+namespace ubc::ui_text {
+using Language = const Table*;
+struct Locale {
+  std::wstring_view option;
+  const char* code;
+  Language texts;
+};
+inline constexpr Locale locales[] = {
+@language_entries@};
+}

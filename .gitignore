@@ -1,0 +1,10 @@
+/build/
+/.tools/
+/dist/
+/local/
+__pycache__/
+*.pyc
+.cache/
+.vscode/
+.idea/
+*.swp
