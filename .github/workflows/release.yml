@@ -10,6 +10,7 @@ jobs:
     uses: ./.github/workflows/ci.yml
   draft:
     needs: build
+    concurrency: draft-${{ github.ref }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -24,12 +25,22 @@ jobs:
           script: |
             const fs = require('node:fs')
             const tag = context.ref.slice('refs/tags/'.length)
-            if (!/^v[0-9]+\.[0-9]+\.[0-9]+$/.test(tag)) throw Error('Expected vX.Y.Z')
-            const name = 'union-batch-crafting-player-' + tag.slice(1) + '.zip'
+            const packages = fs.readdirSync('dist').filter(f => /^union-batch-crafting-player-.*\.zip$/.test(f))
+            if (packages.length !== 1) throw Error('Expected one player ZIP')
+            const [name] = packages
             const data = fs.readFileSync('dist/' + name)
-            const {data: draft} = await github.rest.repos.createRelease({
-              ...context.repo, tag_name: tag, name: tag, draft: true
-            })
-            await github.rest.repos.uploadReleaseAsset({
-              ...context.repo, release_id: draft.id, name, data
-            })
+            const api = github.rest.repos
+            const releases = await github.paginate(api.listReleases, {...context.repo, per_page: 100})
+            let draft = releases.find(r => r.tag_name === tag)
+            if (draft && !draft.draft) throw Error('Tag already has a published release')
+            if (!draft) {
+              const response = await api.createRelease({...context.repo, tag_name: tag, name: tag, draft: true})
+              draft = response.data
+            }
+            const asset = draft.assets.find(a => a.name === name)
+            if (asset) {
+              const digest = require('node:crypto').createHash('sha256').update(data).digest('hex')
+              if (asset.digest !== 'sha256:' + digest) throw Error('Existing draft asset differs')
+            } else {
+              await api.uploadReleaseAsset({...context.repo, release_id: draft.id, name, data})
+            }

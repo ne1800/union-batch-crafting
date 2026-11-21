@@ -11,7 +11,7 @@ if [[ ! -f "$cache" ]]; then
   tar -czf "$cache.tmp" -C .tools xwin toolchain-lock.json xwin-0.10.0-x86_64-unknown-linux-musl.tar.gz
   mv "$cache.tmp" "$cache"
 fi
-mise run build:windows
+mise run build:windows -- --target UnionBatchCraftingExtended UnionBatchCraftingPlayer
 mkdir -p reports
 (
   clang-cl --version

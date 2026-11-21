@@ -6,12 +6,14 @@ set -euo pipefail
 printf '%s\n' 'Server = https://archive.archlinux.org/repos/2026/11/20/$repo/os/$arch' >/etc/pacman.d/mirrorlist
 packages=(git mise python)
 case "${1:?expected job name}" in
-  lint) packages+=(gcc go nodejs npm uv) ;;
+  lint) packages+=(clang gcc go nodejs npm uv) ;;
   portable | sanitizers) packages+=(clang cmake ninja gcc compiler-rt) ;;
   windows) packages+=(clang cmake ninja lld llvm) ;;
   export | commits) ;;
   *) exit 2 ;;
 esac
-pacman -Syu --needed --noconfirm "${packages[@]}"
+# The runner supplies the outer Docker sandbox. Its kernel rejects nested
+# seccomp filters during signed package downloads.
+pacman -Syu --disable-sandbox --needed --noconfirm "${packages[@]}"
 git config --global --add safe.directory "$PWD"
 mise trust
