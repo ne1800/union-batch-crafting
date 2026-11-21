@@ -1,6 +1,6 @@
 <a id="guide"></a>
 
-# Union Batch Crafting 0.0.57
+# Union Batch Crafting 0.0.59
 
 [English](STATIONS.md) · [Deutsch](STATIONEN.md)
 
@@ -10,7 +10,7 @@ Die lokale Testfassung für Marcello L’Hiver DE 2.0.4 verbindet 98 Rezeptprofi
 
 ## Installation für Spieler
 
-Das Spieler-ZIP **0.0.58** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](../INSTALL.de.md)
+Das Spieler-ZIP **0.0.59** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](../INSTALL.de.md)
 
 <a id="compatibility"></a>
 
@@ -49,7 +49,7 @@ Bei `auto`, einem leeren Wert oder einem fehlenden Eintrag erkennt das Plugin de
 ## Eine Spielsprache hinzufügen
 
 1. Kopiere im Quellrepository `include/ubc/text/locales/en.hpp` im selben Verzeichnis nach beispielsweise `fr.hpp`. Verwende einen zweibuchstabigen Kleinbuchstabencode und ändere in dieser Kopie den Namensraum zu `locale_fr`.
-2. Übersetze die Texte in `messages`, `items` und `recipes`. Behalte jeden Schlüssel, die numerisch sortierten IDs und die Reihenfolge und Typen der printf-Platzhalter bei. Verwende für die Gothic-Anzeige geeignete Zeichen. Die vorhandenen Tabellen verwenden ASCII.
+2. Übersetze die Texte in `messages`, `items` und `recipes`. Behalte jeden Schlüssel, die numerisch sortierten IDs und die Reihenfolge und Typen der printf-Platzhalter bei. Speichere die Datei als UTF-8 und schreibe die Zeichen direkt in die Unicode-Literale. Setze `codepage` auf die Windows-Codepage des Spiels (1252 für Deutsch und Englisch, 1250 für Polnisch, 1251 für Russisch). Der Build erzeugt pro Zeichen ein Spielbyte und meldet nicht darstellbare Zeichen als Fehler.
 3. Führe `mise run test:report-WRITES -- --apply` aus. CMake registriert die Datei beim Konfigurieren. Die Tests vergleichen alle Tabellen mit den Referenzschlüsseln. Nach einem neuen Windows-Build und Paketbau wählt `Language=fr` die Übersetzung. Die automatische Erkennung gilt weiterhin für Deutsch mit englischem Rückfall.
 
 <a id="coverage"></a>
@@ -137,4 +137,4 @@ zwei Drachenjägerarmbrüste mindestens 24 Rohstahl im Vorrat, verbrauchen aber
 
 ## Prüfstand und Grenzen
 
-0.0.55 dokumentiert den Funktionsstand von 0.0.54 und wurde offline geprüft. 0.0.53 bestätigt die automatische deutsche Mengenanzeige und den kostenfreien Abbruch. Die Spieler-DLL aus 0.0.57 lud ohne Marker. Am Alchemietisch verbrauchte die Herstellung von zwei Sumpftabaken zwei Apfeltabake und zwei Laborwasserflaschen. Das Sumpfkraut blieb erhalten. Das Paket 0.0.58 enthält diesen Nachweis und dieselbe DLL. Die Stationsvergleiche oben stammen aus früheren Läufen. Für die physische Controllerbedienung an Stationen steht die Prüfung aus. Über die Originalbedienung bleiben die ursprünglichen Rezepte erreichbar. [Projektübersicht](../README.de.md) · [Änderungen je Version](../CHANGELOG.md#deutsch)
+0.0.55 dokumentiert den Funktionsstand von 0.0.54 und wurde offline geprüft. 0.0.53 bestätigt die automatische deutsche Mengenanzeige und den kostenfreien Abbruch. Die Spieler-DLL aus 0.0.57 lud ohne Marker. Am Alchemietisch verbrauchte die Herstellung von zwei Sumpftabaken zwei Apfeltabake und zwei Laborwasserflaschen. Das Sumpfkraut blieb erhalten. Mit 0.0.59 zeigte das deutsche Mengenmenü „2 / 6 Durchgänge“ und „Zurück“. Das ä entsprach im Menüzustand dem erwarteten Windows-1252-Byte E4. Zwei Sumpftabake verbrauchten zwei Apfeltabake und zwei Laborwasserflaschen. Die Stationsvergleiche oben stammen aus früheren Läufen. Für die physische Controllerbedienung an Stationen steht die Prüfung aus. Über die Originalbedienung bleiben die ursprünglichen Rezepte erreichbar. [Projektübersicht](../README.de.md) · [Änderungen je Version](../CHANGELOG.md#deutsch)

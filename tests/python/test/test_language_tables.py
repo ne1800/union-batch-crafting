@@ -12,7 +12,7 @@ TEXT = ROOT / "include/ubc/text"
 
 
 def keys(table):
-    return re.findall(r'\{\s*(Label::\w+|0x[0-9a-fA-F]+|\d+)\s*,\s*"', table)
+    return re.findall(r'\{\s*(Label::\w+|0x[0-9a-fA-F]+|\d+)\s*,\s*U"', table)
 
 
 class LanguageTables(unittest.TestCase):
@@ -32,6 +32,25 @@ class LanguageTables(unittest.TestCase):
                     {key for key in actual if key.startswith("Label::")}, labels
                 )
                 self.assertCountEqual(actual, reference)
+
+    def test_codepage_and_german_spelling(self):
+        # Exact words with legitimate adjacent vowels or ss, including compounds.
+        exceptions = set(
+            """abgeschlossen aktuell ergebnisse essenz feuer feuerkraut
+            feuerkräuter feuernessel feuernesseln feuerpfeil feuerpfeile feuerwurzel
+            feuerwurzeln heilessenzen laborwasserflasche loslassen manaelixiere
+            manaessenzen manaextrakte neue ordensschwert verbessert wasser""".split()
+        )
+        for file in (TEXT / "locales").glob("*.hpp"):
+            source = file.read_text(encoding="utf-8")
+            page = re.search(r"codepage = (\d+);", source)[1]
+            for literal in re.findall(r'U"([^"]*)"', source):
+                with self.subTest(file=file.name, text=literal):
+                    literal.encode("cp" + page)
+                    if file.stem == "de":
+                        for word in re.findall(r"[^\W\d_]+", literal.lower()):
+                            if re.search(r"ae|oe|ue|ss", word):
+                                self.assertIn(word, exceptions)
 
     def test_one_new_file_is_discovered_and_selectable(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -55,9 +74,9 @@ class LanguageTables(unittest.TestCase):
             locale = root / "include/ubc/text/locales/qz.hpp"
             source = (TEXT / "locales/en.hpp").read_text()
             locale.write_text(
-                source.replace("locale_en", "locale_qz").replace(
-                    "Union Batch Crafting", "Test translation"
-                )
+                source.replace("locale_en", "locale_qz")
+                .replace("codepage = 1252", "codepage = 1250")
+                .replace("Union Batch Crafting", "Łódź")
             )
             subprocess.run(
                 ["cmake", "--build", build], check=True, stdout=subprocess.DEVNULL

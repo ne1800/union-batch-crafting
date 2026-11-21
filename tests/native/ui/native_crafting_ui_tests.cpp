@@ -41,11 +41,6 @@ void bounded(const ui::Frame& f) {
           "ready menus and receipts show their complete labels");
     check(!std::strchr(line.text.data(), '*'),
           "no invisible asterisk is used as availability marker");
-    bool ascii = true;
-    for (const char ch : line.text)
-      if (static_cast<unsigned char>(ch) >= 128)
-        ascii = false;
-    check(ascii, "native Gothic strings use ASCII transliteration");
     for (std::size_t j = 0; j < i; ++j) {
       const auto& earlier = f.lines[j];
       check(line.x != earlier.x || line.y != earlier.y,
@@ -95,8 +90,40 @@ std::vector<std::string> formats(std::string_view text) {
   return result;
 }
 
+// The engine contract catalogue keeps its original ASCII spellings.
+std::string catalogue_spelling(std::string_view bytes) {
+  std::string name;
+  for (char byte : bytes) {
+    const auto ch = static_cast<unsigned char>(byte);
+    switch (ch) {
+    case 0xe4:
+      name += "ae";
+      break;
+    case 0xf6:
+      name += "oe";
+      break;
+    case 0xfc:
+      name += "ue";
+      break;
+    case 0xdf:
+      name += "ss";
+      break;
+    default:
+      name += static_cast<char>(ch);
+    }
+  }
+  return name;
+}
+
 void test_translations() {
   namespace t = ubc::ui_text;
+  static_assert(static_cast<unsigned char>(t::game_byte<1252>(U'ä')) == 0xe4);
+  static_assert(static_cast<unsigned char>(t::game_byte<1252>(U'ß')) == 0xdf);
+  static_assert(static_cast<unsigned char>(t::game_byte<1252>(U'€')) == 0x80);
+  static_assert(static_cast<unsigned char>(t::game_byte<1250>(U'Ł')) == 0xa3);
+  static_assert(static_cast<unsigned char>(t::game_byte<1251>(U'Я')) == 0xdf);
+  static_assert(std::string_view(t::de::table[L::batches]) == "Durchg\xe4nge");
+  static_assert(std::string_view(t::de::table[L::batches]).size() == 10);
   for (bool german : {false, true}) {
     for (auto automatic : {L"", L"auto", L" AUTO "}) {
       check(t::choose(automatic, [=] { return german; }) ==
@@ -146,8 +173,8 @@ void test_translations() {
   check(en.recipes.count == c::recipes.size(),
         "complete recipe inventory matches the current catalogue");
   for (const auto& recipe : c::recipes) {
-    check(std::string_view(de.recipe(recipe.id)) == recipe.name &&
-              std::string_view(de[t::unit(recipe.quantity_unit)]) == recipe.quantity_unit,
+    check(catalogue_spelling(de.recipe(recipe.id)) == recipe.name &&
+              catalogue_spelling(de[t::unit(recipe.quantity_unit)]) == recipe.quantity_unit,
           "German names and units preserve the catalogue reference");
     for (const auto& target : recipe.targets) {
       const auto id = static_cast<std::uint32_t>(target.symbol);
@@ -209,6 +236,12 @@ int main(int argc, [[maybe_unused]] char** argv) {
                        d.targets.count, dimensions[0], dimensions[1]);
         check(composed, "all canonical recipes compose at narrow and wide resolutions");
         bounded(frame);
+        if (d.id == 0xb002 && language == &ubc::ui_text::de::table) {
+          char expected[64];
+          std::snprintf(expected, sizeof(expected), "Menge: %u / %u Durchg\xe4nge",
+                        session.quantity(), session.maximum());
+          check(contains(frame, expected), "swamp tobacco quantity shows CP1252 batch units");
+        }
         if (composed)
           for (const auto& target : d.targets)
             if (c::units(d.costs, target.symbol) || c::units(d.outputs, target.symbol) ||
@@ -321,7 +354,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
     saw.open(snapshot);
     neutral(saw, f);
     check(ui::compose(frame, saw, menu, true, 1280, 720, ubc::ui_text::de::table) &&
-              contains(frame, "Lose") && contains(frame, "Saege (Werkzeug") &&
+              contains(frame, "Lose") && contains(frame, "S\xe4ge (Werkzeug") &&
               contains(frame, "Lager=bereit") && contains(frame, "Pfeil - Ausgabe"),
           "ammunition UI separates lots output and retained saw");
   }
@@ -336,7 +369,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
     neutral(session, f);
     check(
         ui::compose(frame, session, menu, true, 1280, 720, ubc::ui_text::de::table) &&
-            contains(frame, "Vorrat fuer 7") && contains(frame, "Minimum 24") &&
+            contains(frame, "Vorrat f\xfcr 7") && contains(frame, "Minimum 24") &&
             contains(frame, " - 20 = ") && contains(frame, " - 24 = "),
         "Bow UI separates stock bound, original steel minimum and actual steel/leather consumption");
     check(session.preset(7) &&
@@ -346,7 +379,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
   }
   for (const auto width : {640u, 720u, 1280u, 1920u})
     check(ui::compose_failure(frame, width, 720, ubc::ui_text::de::table) &&
-              contains(frame, "nicht bestaetigt"),
+              contains(frame, "nicht best\xe4tigt"),
           "failure notice remains separate from confirmed result at all supported widths");
   std::printf("native_crafting_ui portable layout: %u checks, %u failures\n", checks, failures);
   return failures ? EXIT_FAILURE : EXIT_SUCCESS;

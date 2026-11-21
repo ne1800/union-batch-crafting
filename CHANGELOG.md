@@ -4,6 +4,8 @@
 
 ## English
 
+- **0.0.59** German menus, recipe names and item names now use umlauts and ß. The German quantity menu displayed “2 / 6 Durchgänge” with the expected Windows-1252 bytes while crafting two swamp tobaccos.
+
 - **0.0.58** packages the in-game results with the byte-identical 0.0.57 player DLL.
 
 - **0.0.57** splits the native crafting code into separate modules. The player and one-run test packages have been rebuilt. The player installation and an order of two swamp tobaccos passed the combined in-game test.
@@ -19,6 +21,8 @@
 - **0.0.30–0.0.35** measured and bounded the grinding preview. Rough swords passed the in-game comparison at 1, 2, 5 and maximum 3 in 0.0.35.
 
 ## Deutsch
+
+- **0.0.59** Deutsche Menüs, Rezept- und Gegenstandsnamen verwenden jetzt Umlaute und ß. Bei der Herstellung von zwei Sumpftabaken zeigte das Mengenmenü „2 / 6 Durchgänge“ mit den erwarteten Windows-1252-Bytes.
 
 - **0.0.58** enthält den Spielnachweis und die bytegleiche Spieler-DLL aus 0.0.57.
 

@@ -131,7 +131,7 @@ int main() {
       bool named = false;
       for (std::size_t line = 0; line < frame.count; ++line)
         named =
-            named || std::strstr(frame.lines[line].text.data(), "Trank der Geistesveraenderung");
+            named || std::strstr(frame.lines[line].text.data(), "Trank der Geistesver\xe4nderung");
       CHECK(named);
       ui.branch_known = false;
       CHECK(!crafting_ui::valid_success(ui));

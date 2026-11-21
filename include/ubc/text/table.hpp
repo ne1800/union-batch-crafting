@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 #pragma once
+#include "ubc/text/codepage.hpp"
+#include <iterator>
+#include <type_traits>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -154,6 +157,18 @@ struct Name {
   const char* text;
 };
 
+template <unsigned Page, auto& Rows>
+inline constexpr auto encoded_rows = [] {
+  using Entry = std::conditional_t<std::is_same_v<decltype(Rows[0].key), Label>, Message, Name>;
+  std::array<Entry, std::size(Rows)> result{};
+  std::size_t index = 0, offset = 0;
+  for (const auto& row : Rows) {
+    result[index++] = {row.key, encoded_storage<Page, Rows>.data() + offset};
+    offset += row.text.size() + 1;
+  }
+  return result;
+}();
+
 struct Names {
   const Name* entries;
   std::size_t count;
@@ -175,8 +190,9 @@ struct Table {
   Names items, recipes;
 
   template <std::size_t M, std::size_t I, std::size_t R>
-  constexpr Table(const Message (&values)[M], const Name (&materials)[I], const Name (&names)[R])
-      : items{materials, I}, recipes{names, R} {
+  constexpr Table(const std::array<Message, M>& values, const std::array<Name, I>& materials,
+                  const std::array<Name, R>& names)
+      : items{materials.data(), I}, recipes{names.data(), R} {
     static_assert(M == static_cast<std::size_t>(Label::count));
     for (const auto& entry : values)
       labels[static_cast<std::size_t>(entry.key)] = entry.text;

@@ -56,6 +56,19 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_include_directories(ubc_cool_measurement PRIVATE include)
 endif()
 enable_testing()
+add_library(
+    ubc_unrepresentable_game_text_tests
+    OBJECT
+    EXCLUDE_FROM_ALL
+    tests/native/text/unrepresentable.cpp
+)
+target_include_directories(ubc_unrepresentable_game_text_tests PRIVATE include)
+add_test(
+    NAME unrepresentable_game_text
+    COMMAND
+        "${CMAKE_COMMAND}" "-DBUILD=${CMAKE_CURRENT_BINARY_DIR}" -P
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_unrepresentable.cmake"
+)
 add_test(NAME core COMMAND ubc_core_tests)
 add_test(NAME sha256 COMMAND ubc_sha256_tests)
 add_test(NAME menu_model COMMAND ubc_menu_model_tests)

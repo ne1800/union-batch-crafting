@@ -4,7 +4,7 @@
 
 [English](README.md) · [Deutsch](README.de.md)
 
-Das Spieler-ZIP **0.0.58** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](INSTALL.de.md)
+Die deutschen Menüs zeigen Umlaute und ß. Das Spieler-ZIP **0.0.59** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](INSTALL.de.md)
 
 Wähle in Gothic II: Die Nacht des Raben mit Marcello L’Hiver DE 2.0.4 und Union ein Rezept und stelle mehrere Portionen auf einmal her. Version 0.0.57 deckt 98 Profile an neun Stationen ab. Die Anleitung nennt die im Spiel geprüften Mengen und erklärt freie Mengenwahl, Abbruch und den Prüfstand zur Controllerbedienung. [Stationsanleitung](docs/STATIONEN.md) · [Changelog](CHANGELOG.md#deutsch)
 
@@ -32,7 +32,7 @@ mise run build:windows
 
 Das Plugin liegt unter `build/windows/player/UnionBatchCraftingExtended.dll`. Der Bau benötigt keine Spieldateien. Der eigene Code steht unter der [MIT-Lizenz](LICENSE). Für xwin gilt MIT/Apache-2.0. Für das SDK und die statisch in die Windows-DLL eingebundene Release-CRT gelten Microsofts Bedingungen.
 
-Das Spieler-ZIP entsteht mit `mise run package:player-WRITES -- --apply`.
+Die deutschen Menüs zeigen Umlaute und ß. Das Spieler-ZIP entsteht mit `mise run package:player-WRITES -- --apply`.
 
 <a id="development"></a>
 

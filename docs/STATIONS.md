@@ -1,6 +1,6 @@
 <a id="guide"></a>
 
-# Union Batch Crafting 0.0.57
+# Union Batch Crafting 0.0.59
 
 [English](STATIONS.md) · [Deutsch](STATIONEN.md)
 
@@ -10,7 +10,7 @@ This local build for Marcello L’Hiver DE 2.0.4 covers 98 recipe profiles at th
 
 ## Player installation
 
-The **0.0.58 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](../INSTALL.md)
+The **0.0.59 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](../INSTALL.md)
 
 <a id="compatibility"></a>
 
@@ -49,7 +49,7 @@ With `auto`, a blank value or a missing entry, the plugin detects German game te
 ## Adding a language
 
 1. In the source repository, copy `include/ubc/text/locales/en.hpp` to a sibling file such as `fr.hpp`. Use a lowercase two-letter code and change the namespace in that copy to `locale_fr`.
-2. Translate the text in `messages`, `items` and `recipes`. Preserve every key, the numerically sorted IDs, and the order and types of printf arguments. Use characters supported by the Gothic UI. The existing tables use ASCII.
+2. Translate the text in `messages`, `items` and `recipes`. Preserve every key, the numerically sorted IDs, and the order and types of printf arguments. Save the source as UTF-8 and write the actual characters in the Unicode literals. Set `codepage` to the Windows codepage used by the game (1252 for German and English, 1250 for Polish, 1251 for Russian). The build converts each character to one game byte and rejects unrepresentable characters.
 3. Run `mise run test:report-WRITES -- --apply`. CMake registers the file at configure time. The tests compare every table against the reference keys. After rebuilding for Windows and packaging the DLL, select the translation with `Language=fr`. Automatic detection still selects German with English fallback.
 
 <a id="coverage"></a>
@@ -106,4 +106,4 @@ The bow bench supports 20 upgrades. “Stock for” is the material limit. The m
 
 ## Test coverage and limits
 
-0.0.55 documents the 0.0.54 feature set and was tested offline. The 0.0.53 world run confirms automatic German quantity text and cost-free cancellation. The player DLL from 0.0.57 loaded without a marker. At the alchemy table, selecting two swamp tobaccos used two apple tobaccos and two laboratory flasks. Swampweed was unchanged. Package 0.0.58 includes this result and the same DLL. The station comparisons above come from earlier runs. Physical controller input at stations still awaits testing. The original controls remain available for the game's recipes. [Project overview](../README.md) · [Changes by version](../CHANGELOG.md#english)
+0.0.55 documents the 0.0.54 feature set and was tested offline. The 0.0.53 world run confirms automatic German quantity text and cost-free cancellation. The player DLL from 0.0.57 loaded without a marker. At the alchemy table, selecting two swamp tobaccos used two apple tobaccos and two laboratory flasks. Swampweed was unchanged. In 0.0.59, the German quantity menu displayed “2 / 6 Durchgänge” and “Zurück”. The game used the expected Windows-1252 byte E4 for ä. Crafting two swamp tobaccos consumed two apple tobaccos and two laboratory flasks. The station comparisons above come from earlier runs. Physical controller input at stations still awaits testing. The original controls remain available for the game's recipes. [Project overview](../README.md) · [Changes by version](../CHANGELOG.md#english)
