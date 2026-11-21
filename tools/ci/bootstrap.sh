@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # Provision a disposable Arch CI container from a dated, signed package snapshot.
 set -euo pipefail
-# Both hosts serve the same dated snapshot: the Arch Linux Archive and its
-# official mirror. Pacman moves to the mirror when the archive fails, so the
-# packages never mix with a newer repository state.
+# Both hosts serve the dated databases: the Arch Linux Archive and its official
+# mirror. Pacman moves to the mirror when the archive fails, so the packages
+# never mix with a newer repository state.
 snapshot=2026/11/20
-for host in archive.archlinux.org umea.archive.pkgbuild.com; do
+mirror=https://umea.archive.pkgbuild.com
+for host in https://archive.archlinux.org "$mirror"; do
   # Pacman expands its own repository and architecture placeholders.
   # shellcheck disable=SC2016
-  printf 'Server = https://%s/repos/%s/$repo/os/$arch\n' "$host" "$snapshot"
+  printf 'Server = %s/repos/%s/$repo/os/$arch\n' "$host" "$snapshot"
 done >/etc/pacman.d/mirrorlist
 packages=(git mise python)
 case "${1:?expected job name}" in
@@ -20,6 +21,20 @@ case "${1:?expected job name}" in
 esac
 # The runner supplies the outer Docker sandbox. Its kernel rejects nested
 # seccomp filters during signed package downloads.
+# The mirror keeps its packages only in a per-package pool, which pacman cannot
+# address. Fetch the missing ones from there into pacman's cache. Pacman still
+# verifies every signature before it installs a package.
+fetch_from_pool() {
+  local name file cache=/var/cache/pacman/pkg
+  pacman -Sup --needed --print-format '%n %f' "${packages[@]}" |
+    while read -r name file; do
+      [[ -s "$cache/$file" ]] && continue
+      for part in "$file.sig" "$file"; do
+        curl -fsS --retry 3 --remove-on-error -o "$cache/$part" \
+          "$mirror/packages/${name:0:1}/$name/$part"
+      done
+    done
+}
 # The dated snapshot hosts sometimes stall. Pacman keeps finished downloads
 # in its cache, so a retry only fetches what is still missing.
 for attempt in 1 2 3; do
@@ -27,6 +42,7 @@ for attempt in 1 2 3; do
   if ((attempt == 3)); then
     exit 1
   fi
+  fetch_from_pool || echo "Fetching from the mirror pool failed" >&2
   sleep $((attempt * 20))
 done
 git config --global --add safe.directory "$PWD"
