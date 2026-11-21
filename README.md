@@ -4,13 +4,33 @@
 
 [English](README.md) · [Deutsch](README.de.md)
 
-German menus display umlauts and ß. The **0.0.61 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](INSTALL.md)
+A Union plugin for Gothic II: Night of the Raven with the Marcello L’Hiver DE 2.0.4 mod. At a crafting station, pick a learned recipe and a quantity, check the materials and the preview, and craft the whole batch at once instead of repeating the original dialogue for every piece.
 
-Blocked recipes show the reason in brackets, such as “[missing ingredients]” or “[no space]”. The craft action shows the reason for the selected amount when known. While its availability is being checked, it shows “[locked]”.
+<a id="features"></a>
 
-Wrapped lines start in the recipe-name column. A larger gap separates adjacent recipes.
+## Features
 
-Choose a recipe and craft several portions at once in Gothic II: Night of the Raven with Marcello L’Hiver DE 2.0.4 and Union. Version 0.0.57 covers 98 profiles across nine stations. The guide lists the quantities tested in the game and explains custom quantities, cancellation, and the limits of controller testing. [Station guide](docs/STATIONS.md) · [Changelog](CHANGELOG.md#english)
+- One quantity menu for 98 recipe profiles at nine stations: stove, alchemy table, leather bench, saw, forge, anvil, bow bench, cooling tub and grindstone.
+- Presets for 1, 5, 10 and maximum, plus any custom amount up to the material limit.
+- Required materials, current stock and a preview of the result for the selected amount.
+- Blocked recipes name the reason, such as “[missing ingredients]” or “[no space]”.
+- An order only runs when the materials and station conditions match the verified recipe. Otherwise the game’s original selection stays available.
+- German and English menus, detected from the game text or set in `Gothic.INI`. Further languages can be added to the source as text tables.
+- Keyboard controls and the game’s existing controller mapping.
+
+[Station guide](docs/STATIONS.md) · [Controls](docs/STATIONS.md#controls) · [Add a language](docs/STATIONS.md#adding-a-language)
+
+<a id="status"></a>
+
+## Status
+
+This is an early release. In-game tests covered selected recipes and amounts at every station, listed in the [station guide](docs/STATIONS.md#coverage). The other profiles still await an in-game order. Station controls have not yet been tested with a physical controller. The plugin checks the engine and the script functions each recipe needs. On a mismatch the original selection stays available, and an engine mismatch can disable the whole plugin. [Tested with](TESTED-WITH.md) · [Changelog](CHANGELOG.md#english)
+
+<a id="install"></a>
+
+## Installation
+
+Download `union-batch-crafting-player-<version>.zip` from the [releases](https://github.com/ne1800/union-batch-crafting/releases) and copy `system/autorun/UnionBatchCraftingExtended.dll` into the game folder. The plugin stays enabled until you remove the DLL or set `Enabled=0` in `system/Gothic.INI`. [Installation, settings and removal](INSTALL.md)
 
 <a id="build"></a>
 
@@ -61,3 +81,9 @@ GitHub checks the exported sources on pushes and pull requests. Both systems cac
 Renovate opens update notifications on GitHub. Actions checks each PR. A maintainer imports it into the private development branch, runs the tests and exports the accepted update. Leave the GitHub PR open for Renovate to close after the export arrives.
 
 The update window opens on Mondays before 06:00 (Europe/Berlin). Updates mature for 14 days. Approve entries labelled `dll-impact` in the dashboard and run level 2 checks with both DLL hashes. Changed binaries may require an approved world test. For xwin, independently verify the archive and update its SHA-256 manually. Until then Windows CI fails the checksum check. Maintain the Arch archive date in `tools/ci/bootstrap.sh` and the Windows SDK manifest manually.
+
+<a id="license"></a>
+
+## License
+
+The project’s own code uses the [MIT licence](LICENSE). The [third-party notices](THIRD-PARTY-NOTICES) cover the Microsoft runtime linked into the DLL. The repository contains no game files, original scripts or saves.

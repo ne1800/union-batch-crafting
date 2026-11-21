@@ -4,13 +4,33 @@
 
 [English](README.md) · [Deutsch](README.de.md)
 
-Die deutschen Menüs zeigen Umlaute und ß. Das Spieler-ZIP **0.0.61** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](INSTALL.de.md)
+Ein Union-Plugin für Gothic II: Die Nacht des Raben mit der Mod Marcello L’Hiver DE 2.0.4. Wähle an einer Werkstation ein gelerntes Rezept und eine Menge, prüfe Material und Vorschau und stelle alles auf einmal her, statt den Originaldialog für jedes Stück zu wiederholen.
 
-Bei gesperrten Rezepten steht der Grund in eckigen Klammern, etwa „[Zutaten fehlen]“ oder „[Platz fehlt]“. Auch bei „Herstellen“ erscheint der Grund für die gewählte Menge, sobald er bekannt ist. Während der Prüfung steht dort „[gesperrt]“.
+<a id="features"></a>
 
-Folgezeilen beginnen in der Spalte der Rezeptnamen. Ein größerer Abstand trennt die einzelnen Rezepte.
+## Funktionen
 
-Wähle in Gothic II: Die Nacht des Raben mit Marcello L’Hiver DE 2.0.4 und Union ein Rezept und stelle mehrere Portionen auf einmal her. Version 0.0.57 deckt 98 Profile an neun Stationen ab. Die Anleitung nennt die im Spiel geprüften Mengen und erklärt freie Mengenwahl, Abbruch und den Prüfstand zur Controllerbedienung. [Stationsanleitung](docs/STATIONEN.md) · [Changelog](CHANGELOG.md#deutsch)
+- Ein Mengenmenü für 98 Rezeptprofile an neun Stationen: Herd, Alchemietisch, Lederbank, Säge, Esse, Amboss, Bogenbank, Kühlbecken und Schleifstein.
+- Vorgaben für 1, 5, 10 und Maximum sowie jede freie Menge bis zur Materialgrenze.
+- Benötigtes Material, aktueller Vorrat und eine Vorschau des Ergebnisses für die gewählte Menge.
+- Gesperrte Rezepte nennen den Grund, etwa „[Zutaten fehlen]“ oder „[Platz fehlt]“.
+- Ein Auftrag läuft nur, wenn Material und Stationsbedingungen zum geprüften Rezept passen. Sonst bleibt die Originalauswahl des Spiels verfügbar.
+- Deutsche und englische Menüs, erkannt am Spieltext oder in `Gothic.INI` festgelegt. Weitere Sprachen lassen sich im Quellcode als Texttabelle ergänzen.
+- Bedienung per Tastatur und mit der vorhandenen Controllerbelegung des Spiels.
+
+[Stationsanleitung](docs/STATIONEN.md) · [Bedienung](docs/STATIONEN.md#controls) · [Sprache ergänzen](docs/STATIONEN.md#adding-a-language)
+
+<a id="status"></a>
+
+## Stand
+
+Dies ist eine frühe Version. Im Spiel geprüft sind ausgewählte Rezepte und Mengen an jeder Station, aufgeführt in der [Stationsanleitung](docs/STATIONEN.md#coverage). Die übrigen Profile warten noch auf einen Auftrag im Spiel. Mit einem echten Controller ist die Bedienung an den Stationen noch nicht getestet. Das Plugin prüft die Engine und die Skriptfunktionen, die jedes Rezept braucht. Passt etwas nicht, bleibt die Originalauswahl verfügbar. Eine abweichende Engine kann das ganze Plugin abschalten. [Getestet mit](TESTED-WITH.md) · [Changelog](CHANGELOG.md#deutsch)
+
+<a id="install"></a>
+
+## Installation
+
+Lade `union-batch-crafting-player-<Version>.zip` unter [Releases](https://github.com/ne1800/union-batch-crafting/releases) herunter und kopiere `system/autorun/UnionBatchCraftingExtended.dll` in den Spielordner. Das Plugin bleibt aktiv, bis du die DLL entfernst oder in `system/Gothic.INI` `Enabled=0` setzt. [Installation, Einstellungen und Deinstallation](INSTALL.de.md)
 
 <a id="build"></a>
 
@@ -61,3 +81,9 @@ GitHub prüft die exportierten Quellen bei Pushes und Pull Requests. Beide Syste
 Renovate meldet Updates per PR auf GitHub. Actions prüft jeden PR. Ein Maintainer übernimmt ihn in den privaten Entwicklungsbranch, führt die Tests aus und exportiert das geprüfte Update. Der GitHub-PR bleibt offen, bis Renovate ihn nach dem Export schließt.
 
 Das Dependency Dashboard bündelt die Updates. Das Zeitfenster liegt montags vor 06:00 Uhr (Europe/Berlin), die Mindestreife beträgt 14 Tage. Einträge mit `dll-impact` im Dashboard freigeben und mit Prüfstufe 2 und beiden DLL-Hashes prüfen. Geänderte Binärdateien können einen freigegebenen Weltlauf erfordern. Bei xwin das Archiv unabhängig verifizieren und seinen SHA-256-Wert manuell nachziehen. Bis dahin schlägt die Windows-CI beim Hashvergleich fehl. Das Arch-Archivdatum in `tools/ci/bootstrap.sh` und das Windows-SDK-Manifest werden manuell gepflegt.
+
+<a id="license"></a>
+
+## Lizenz
+
+Der eigene Code steht unter der [MIT-Lizenz](LICENSE). Die [Hinweise zu Drittkomponenten](THIRD-PARTY-NOTICES) betreffen die in die DLL gelinkte Microsoft-Laufzeit. Das Repository enthält keine Spieldateien, Originalskripte oder Spielstände.
