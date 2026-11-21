@@ -46,36 +46,40 @@ bool wrapped(Frame& frame, int x, int y, const char* text, std::size_t limit,
     ++split;
   return append(frame, x, y + step, text + split, limit);
 }
-const char* blocked(CraftingBlockReason reason, const Table& text) noexcept {
+struct BlockText {
+  const char* detail;
+  const char* hint;
+};
+BlockText blocked(CraftingBlockReason reason, const Table& text) noexcept {
   switch (reason) {
   case CraftingBlockReason::none:
-    return "";
+    return {"", ""};
   case CraftingBlockReason::no_known_recipes:
-    return text[L::no_recipes];
+    return {text[L::no_recipes], text[L::hint_no_known_recipes]};
   case CraftingBlockReason::contract_unverified:
-    return text[L::unverified];
+    return {text[L::unverified], text[L::hint_contract_unverified]};
   case CraftingBlockReason::actor_unknown:
-    return text[L::no_actor];
+    return {text[L::no_actor], text[L::hint_actor_unknown]};
   case CraftingBlockReason::actor_changed:
-    return text[L::wrong_actor];
+    return {text[L::wrong_actor], text[L::hint_actor_changed]};
   case CraftingBlockReason::hand_unknown:
-    return text[L::hand_not_ready];
+    return {text[L::hand_not_ready], text[L::hint_hand_unknown]};
   case CraftingBlockReason::material_unknown:
-    return text[L::stock_unreadable];
+    return {text[L::stock_unreadable], text[L::hint_material_unknown]};
   case CraftingBlockReason::material_unverified:
-    return text[L::stock_unverified];
+    return {text[L::stock_unverified], text[L::hint_material_unknown]};
   case CraftingBlockReason::missing_material:
-    return text[L::missing_material];
+    return {text[L::missing_material], text[L::hint_missing_material]};
   case CraftingBlockReason::output_capacity:
-    return text[L::output_full];
+    return {text[L::output_full], text[L::hint_output_capacity]};
   case CraftingBlockReason::tool_return_capacity:
-    return text[L::tool_full];
+    return {text[L::tool_full], text[L::hint_output_capacity]};
   case CraftingBlockReason::unavailable:
-    return text[L::unavailable];
+    return {text[L::unavailable], text[L::hint_unavailable]};
   case CraftingBlockReason::quantity_unsupported:
-    return text[L::unsupported_amount];
+    return {text[L::unsupported_amount], text[L::hint_quantity_unsupported]};
   }
-  return text[L::unavailable];
+  return {text[L::unavailable], text[L::hint_unavailable]};
 }
 bool relevant(const CraftingMaterialValue& row, const crafting_catalog::Descriptor& d) noexcept {
   return row.fixed_minimum || row.unit_cost || row.unit_output ||
@@ -171,30 +175,53 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
   char line[192]{};
   if (!append(frame, 300, 280, text[L::title], full))
     return false;
-  const auto view = menu.viewport(session, narrow ? 4u : 6u);
+  const unsigned page_size = narrow ? 4 : 6;
+  auto view = menu.viewport(session, page_size);
   const auto* selected = session.selected();
   if (!append(frame, 300, narrow ? 650 : 800,
               menu.row() == CraftingMenuRow::recipe ? text[L::selected_recipes]
                                                     : text[L::known_recipes],
               list_limit))
     return false;
-  for (std::size_t i = 0; i < view.count; ++i) {
-    const auto* entry = session.visible(view.first + i);
-    if (!entry)
-      return false;
-    const auto* d = crafting_catalog::find(entry->id);
-    if (!d)
-      return false;
-    std::snprintf(
-        line, sizeof(line), "%s%s%s", selected && selected->id == entry->id ? "> " : "  ",
-        crafting_block_reason(*entry) == CraftingBlockReason::none ? "" : text[L::locked_prefix],
-        text.recipe(d->id));
-    const int y = (narrow ? 1000 : 1250) + static_cast<int>(i) * (narrow ? 300 : 500);
-    if (narrow) {
-      if (!append(frame, 300, y, line, list_limit))
+  // Keep the selected recipe on screen even when a translated hint needs another line.
+  const auto header_lines = frame.count;
+  const int footer_y = narrow ? 2200 : 4550;
+  for (auto capacity = page_size; view.count;) {
+    frame.count = header_lines;
+    int y = narrow ? 1000 : 1250;
+    std::size_t i = 0;
+    for (; i < view.count; ++i) {
+      const auto* entry = session.visible(view.first + i);
+      if (!entry)
         return false;
-    } else if (!wrapped(frame, 300, y, line, list_limit, 230))
+      const char* marker = blocked(crafting_block_reason(*entry), text).hint;
+      std::snprintf(line, sizeof(line), "%s%s%s%s", entry == selected ? "> " : "  ", marker,
+                    *marker ? " " : "", text.recipe(entry->id));
+      const int start = y;
+      auto* rest = line;
+      while (std::strlen(rest) > list_limit) {
+        auto* split = rest + list_limit;
+        while (split > rest && *split != ' ')
+          --split;
+        if (split == rest || y + 220 > footer_y)
+          break;
+        *split = 0;
+        if (!append(frame, 300, y, rest, list_limit))
+          return false;
+        rest = split + 1;
+        y += 230;
+      }
+      if (y + 220 > footer_y)
+        break;
+      if (!append(frame, 300, y, rest, list_limit))
+        return false;
+      y = std::max(start + (narrow ? 300 : 500), y + 230);
+    }
+    if (i == view.count)
+      break;
+    if (capacity <= 1)
       return false;
+    view = menu.viewport(session, --capacity);
   }
   if (!view.count && !append(frame, 300, narrow ? 1000 : 1250, text[L::no_recipes], list_limit))
     return false;
@@ -315,22 +342,28 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
         return false;
       y += material_step + extra_name_line;
     }
-  const char* reason = blocked(session.reason(), text);
-  if (!session.quantity() && session.selected() && session.reason() == CraftingBlockReason::none)
+  const auto action_reason = session.reason();
+  const auto action_text = blocked(action_reason, text);
+  const char* reason = action_text.detail;
+  if (!session.quantity() && session.selected() && action_reason == CraftingBlockReason::none)
     reason = text[L::one_batch];
-  if (!wrapped(frame, right, narrow ? 6990 : 6160, reason, detail_limit, 240))
+  if (!wrapped(frame, right, narrow ? 6950 : 6160, reason, detail_limit, 240))
     return false;
+  const bool specific = action_reason != CraftingBlockReason::none &&
+                        action_reason != CraftingBlockReason::unavailable;
+  const char* suffix = session.can_confirm() ? ""
+                       : specific            ? action_text.hint
+                                             : text[L::locked_suffix];
+  char action[96]{};
+  std::snprintf(action, sizeof(action), "%s%s%s", execution ? text[L::craft] : text[L::test_amount],
+                specific ? " " : "", suffix);
   if (narrow) {
-    std::snprintf(line, sizeof(line), text[L::actions], mark(CraftingMenuRow::manufacture),
-                  execution ? text[L::craft] : text[L::test_amount],
-                  session.can_confirm() ? "" : text[L::locked_suffix],
+    std::snprintf(line, sizeof(line), text[L::actions], mark(CraftingMenuRow::manufacture), action,
                   mark(CraftingMenuRow::original));
-    if (!append(frame, 300, 7470, line, full))
+    if (!wrapped(frame, 300, 7410, line, full, 230))
       return false;
   } else {
-    std::snprintf(line, sizeof(line), "%s %s%s", mark(CraftingMenuRow::manufacture),
-                  execution ? text[L::craft] : text[L::test_amount],
-                  session.can_confirm() ? "" : text[L::locked_suffix]);
+    std::snprintf(line, sizeof(line), "%s %s", mark(CraftingMenuRow::manufacture), action);
     if (!append(frame, right, 6980, line, detail_limit))
       return false;
     std::snprintf(line, sizeof(line), text[L::original_action], mark(CraftingMenuRow::original));

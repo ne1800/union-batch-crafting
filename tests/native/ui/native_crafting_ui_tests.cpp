@@ -254,11 +254,41 @@ int main(int argc, [[maybe_unused]] char** argv) {
         state(snapshot, d.id).contract = false;
         session.refresh(snapshot);
         neutral(session, f);
-        check(
-            ui::compose(frame, session, menu, false, dimensions[0], dimensions[1], text) &&
-                contains(frame, language == &ubc::ui_text::en::table ? "[locked]" : "[gesperrt]") &&
-                contains(frame, text[L::test_amount]),
-            "known blocked entry uses readable marker and explicit UI-only action");
+        check(ui::compose(frame, session, menu, false, dimensions[0], dimensions[1], text) &&
+                  contains(frame, text[L::hint_contract_unverified]) &&
+                  contains(frame, text[L::test_amount]),
+              "known blocked entry uses readable marker and explicit UI-only action");
+        // Stress every name with the longest encoded hint in this language.
+        auto worst = text;
+        const char* longest = text[L::hint_contract_unverified];
+        for (auto label = static_cast<unsigned>(L::hint_no_known_recipes);
+             label <= static_cast<unsigned>(L::hint_quantity_unsupported); ++label) {
+          const auto* candidate = text[static_cast<L>(label)];
+          if (std::strlen(candidate) > std::strlen(longest))
+            longest = candidate;
+        }
+        worst.labels[static_cast<unsigned>(L::hint_contract_unverified)] = longest;
+        check(ui::compose(frame, session, menu, false, dimensions[0], dimensions[1], worst),
+              "longest hint composes with every recipe");
+        bounded(frame);
+        std::string row;
+        for (std::size_t i = 2; i < frame.count; ++i) {
+          const auto& line = frame.lines[i];
+          if (line.x != 300 || line.y >= (dimensions[0] >= 1600 ? 4550 : 2200))
+            break;
+          const std::string part = line.text.data();
+          if (part.compare(0, 2, "> ") == 0)
+            row = part;
+          else if (!row.empty()) {
+            if (part.compare(0, 2, "  ") == 0)
+              break;
+            row += " " + part;
+          }
+        }
+        check(row == std::string("> ") + longest + " " + text.recipe(d.id),
+              "selected list entry retains every encoded byte across line breaks");
+        check(contains(frame, (std::string(text[L::test_amount]) + " " + longest).c_str()),
+              "confirmation includes the specific reason");
         const auto notice = success(d);
         check(ui::valid_success(notice) &&
                   ui::compose_success(frame, notice, dimensions[0], dimensions[1], text),

@@ -4,6 +4,8 @@
 
 ## English
 
+- **0.0.60** Blocked recipes show the reason in the list. The craft action also shows a specific reason for the selected amount. An unknown sharpening recipe now fails the diagnostic check safely.
+
 - **0.0.59** German menus, recipe names and item names now use umlauts and ß. The German quantity menu displayed “2 / 6 Durchgänge” with the expected Windows-1252 bytes while crafting two swamp tobaccos.
 
 - **0.0.58** packages the in-game results with the byte-identical 0.0.57 player DLL.
@@ -21,6 +23,8 @@
 - **0.0.30–0.0.35** measured and bounded the grinding preview. Rough swords passed the in-game comparison at 1, 2, 5 and maximum 3 in 0.0.35.
 
 ## Deutsch
+
+- **0.0.60** Gesperrte Rezepte zeigen den Grund in der Liste. Bei der Herstellung erscheint auch der konkrete Grund für die gewählte Menge. Die Diagnose behandelt unbekannte Schleifrezepte sicher.
 
 - **0.0.59** Deutsche Menüs, Rezept- und Gegenstandsnamen verwenden jetzt Umlaute und ß. Bei der Herstellung von zwei Sumpftabaken zeigte das Mengenmenü „2 / 6 Durchgänge“ mit den erwarteten Windows-1252-Bytes.
 

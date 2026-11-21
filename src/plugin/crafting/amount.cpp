@@ -208,19 +208,13 @@ bool late_gate(ubc::GrindCheck* diagnostic, tobacco::Checks* trace) noexcept {
       return false;
   }
   if (c.kind == cat::Station::grind) {
-    const auto* recipe = cat::find(handoff.request().id);
-    if (!matches("gate.context", true, c.valid) ||
-        !matches("gate.recipe", true, recipe != nullptr) ||
-        !matches("gate.descriptor", true, recipe->grind != nullptr) ||
-        !matches("gate.choice", true, current_grind_choice(c)) ||
-        !matches("gate.destroy_path", true, cool_runtime_path().valid))
-      return false;
-    if (!recipe || !recipe->grind)
-      return false;
-    const auto actor = shrt::actor(memory, s::game_parser, shrt::assemble(*recipe->grind), c.hero);
-    if (!matches("gate.actor_read", true, actor.read_valid) ||
-        !matches("gate.requires_self", true, actor.requires_self) ||
-        !matches("gate.actor_matches", true, actor.matches))
+    if (!ubc::grind_recipe_gate(
+            handoff.request().id, c.valid, matches, [&] { return current_grind_choice(c); },
+            [&] { return cool_runtime_path().valid; },
+            [&](const auto& descriptor) {
+              return shrt::actor(memory, s::game_parser, shrt::assemble(descriptor), c.hero);
+            }) &&
+        !(trace && trace->collecting()))
       return false;
   }
   if (c.kind == cat::Station::anvil) {

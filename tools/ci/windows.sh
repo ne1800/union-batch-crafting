@@ -19,6 +19,6 @@ mkdir -p reports
   lld-link --version
   cd build/windows
   sha256sum {player/,}UnionBatchCraftingExtended.dll
-  sha256sum --check ../../tools/ci/dll-0.0.59.sha256
+  sha256sum --check ../../tools/ci/dll-0.0.60.sha256
 ) | tee reports/windows-hashes.txt
 mise run package:player-WRITES -- --apply

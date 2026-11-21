@@ -5,6 +5,23 @@
 #include "ubc/stations/grind/grind_recipe_navigation.hpp"
 
 namespace ubc {
+// The collecting matcher continues after a mismatch. Only read an actor for a bound recipe.
+template <class Match, class Choice, class Destroy, class Actor>
+bool grind_recipe_gate(crafting_catalog::RecipeId id, bool context_valid, Match matches,
+                       Choice choice, Destroy destroy, Actor read_actor) noexcept {
+  const auto* recipe = crafting_catalog::find(id);
+  const auto* descriptor = recipe ? recipe->grind : nullptr;
+  if (!matches("gate.context", true, context_valid) ||
+      !matches("gate.recipe", true, recipe != nullptr) ||
+      !matches("gate.descriptor", true, descriptor != nullptr) ||
+      !matches("gate.choice", true, choice()) || !matches("gate.destroy_path", true, destroy()))
+    return false;
+  const auto actor = descriptor ? read_actor(*descriptor) : grind_recipe_runtime::ActorEvidence{};
+  return matches("gate.actor_read", true, actor.read_valid) &&
+         matches("gate.requires_self", true, actor.requires_self) &&
+         matches("gate.actor_matches", true, actor.matches) && descriptor;
+}
+
 struct GrindSharedMaterial {
   bool valid = false;
   GrindRecipeKey key{};

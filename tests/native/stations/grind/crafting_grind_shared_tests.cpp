@@ -3,6 +3,7 @@
 #include "ubc/core/crafting_handoff.hpp"
 #include "ubc/core/crafting_result.hpp"
 #include "ubc/ui/native_crafting_ui.hpp"
+#include "ubc/stations/cool/cool_predebit_checks.hpp"
 #include <cstdio>
 #include <cstring>
 #include <limits>
@@ -642,6 +643,31 @@ void result_contract() {
 }
 }
 int main() {
+  {
+    ubc::cool_predebit::check::Report report;
+    ubc::cool_predebit::check::Checks collector(&report);
+    bool read = false;
+    check(!ubc::grind_recipe_gate(
+              UINT32_MAX, true,
+              [&](const char* field, bool want, bool actual) {
+                return collector.equal(field, want, actual);
+              },
+              [] { return false; }, [] { return false; },
+              [&](const auto&) {
+                read = true;
+                return ubc::grind_recipe_runtime::ActorEvidence{};
+              }) &&
+              !read,
+          "unknown recipe cannot authorize an actor read");
+    const char* fields[] = {"gate.context",       "gate.recipe",       "gate.descriptor",
+                            "gate.choice",        "gate.destroy_path", "gate.actor_read",
+                            "gate.requires_self", "gate.actor_matches"};
+    check(report.count == std::size(fields), "collect every grind checkpoint");
+    for (std::size_t i = 0; i < std::size(fields); ++i)
+      check(!std::strcmp(report.rows[i].field ? report.rows[i].field : "", fields[i]) &&
+                report.rows[i].matches == (i == 0),
+            "record each independent comparison");
+  }
   catalogue_and_projection();
   navigation_and_session();
   result_contract();
