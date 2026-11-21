@@ -10,7 +10,9 @@
   "prCreation": "not-pending",
   "timezone": "Europe/Berlin",
   "schedule": ["before 6am on Monday"],
-  "dependencyDashboard": true,
+  "dependencyDashboard": {
+    "enabled": true
+  },
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5,
   "ignorePaths": ["**/fixtures/**", "**/testdata/**", "**/tests/**", "**/data/**", "**/reports/**", "**/validation/**"],
