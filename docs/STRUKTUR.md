@@ -29,9 +29,9 @@
 | `include/ubc/text/` | Hier liegen Sprachwahl, Textschlüssel und Tabellenformat. |
 | `include/ubc/text/locales/` | Jede unterstützte Sprache definiert hier ihre vollständige Übersetzungstabelle. |
 
-Die nativen Tests folgen unter `tests/native/` den Headerbereichen. Gemeinsame C++-Testhelfer stehen in `tests/native/helpers/`. Die Python-Tests unter `tests/python/` folgen den Werkzeugordnern. Build, Paketerstellung, Testläufe und Belegauswertung liegen in `tools/build/`, `tools/package/`, `tools/test/` und `tools/evidence/`. Der Entwicklungsstand bündelt Projektberichte, Überwachung und Exportvorbereitung in `tools/report/`, `tools/watch/` und `tools/publish/`. Die Hook-Skripte liegen in `tools/lint/`.
+Die nativen Tests folgen unter `tests/native/` den Headerbereichen. Gemeinsame C++-Testhelfer stehen in `tests/native/helpers/`. Die Python-Tests unter `tests/python/` folgen den Werkzeugordnern. Werkzeuge für Build, Paketerstellung und Tests liegen in `tools/build/`, `tools/package/` und `tools/test/`. Die Hook-Skripte liegen in `tools/lint/`.
 
-Die mise-Aufgaben folgen denselben Zuständigkeiten. `package:probe-WRITES` baut das Diagnosepaket, `package:player-WRITES` das Spielerpaket. `lint:all` prüft die versionierten Dateien. Im Entwicklungsrepo zeigt `report:state` den lokalen Zustand und `publish:export-WRITES` bereitet den Quell-Export vor.
+Die mise-Aufgaben folgen denselben Zuständigkeiten. `package:probe-WRITES` baut das Diagnosepaket, `package:player-WRITES` das Spielerpaket. `lint:all` prüft die versionierten Dateien.
 
 <a id="tables"></a>
 

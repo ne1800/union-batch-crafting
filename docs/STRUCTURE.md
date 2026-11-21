@@ -29,9 +29,9 @@
 | `include/ubc/text/` | This directory defines language selection, text keys and the table format. |
 | `include/ubc/text/locales/` | Each supported language supplies its complete translation table here. |
 
-Native tests follow the header areas under `tests/native/`. Shared C++ fixtures are in `tests/native/helpers/`. Python tests under `tests/python/` follow the tool directories. Tools for builds, packages, test runs and evidence live in `tools/build/`, `tools/package/`, `tools/test/` and `tools/evidence/`. The private checkout also groups project reports, monitoring and export preparation in `tools/report/`, `tools/watch/` and `tools/publish/`. Hook scripts live in `tools/lint/`.
+Native tests follow the header areas under `tests/native/`. Shared C++ fixtures are in `tests/native/helpers/`. Python tests under `tests/python/` follow the tool directories. Build, packaging and test tools live in `tools/build/`, `tools/package/` and `tools/test/`. Hook scripts live in `tools/lint/`.
 
-The mise tasks use the same areas. `package:probe-WRITES` builds the diagnostic package, `package:player-WRITES` the player package. `lint:all` checks tracked files. In the development checkout, `report:state` shows local state and `publish:export-WRITES` prepares the source export.
+The mise tasks use the same areas. `package:probe-WRITES` builds the diagnostic package, `package:player-WRITES` the player package. `lint:all` checks tracked files.
 
 <a id="tables"></a>
 

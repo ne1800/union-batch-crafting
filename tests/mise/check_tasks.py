@@ -20,16 +20,25 @@ RETIRED = re.compile(
 
 def main(extra_guides):
     expected = json.loads(EXPECTED.read_text())
+    for extension in sorted(EXPECTED.parent.glob("tasks.*.json")):
+        expected.extend(json.loads(extension.read_text()))
+    expected.sort()
     actual = sorted(
         subprocess.check_output(
             ["mise", "tasks", "--no-global", "--name-only"], cwd=ROOT, text=True
         ).splitlines()
     )
     errors = list(unified_diff(expected, actual, "expected", "mise tasks", lineterm=""))
-    guides = set(ROOT.glob("*.md"))
-    for folder in ("docs", "publication", "publication/docs", "tools/world"):
-        guides.update((ROOT / folder).glob("*.md"))
-    guides.update((ROOT / ".agents/skills").glob("*/SKILL.md"))
+    guides = {
+        path
+        for pattern in (
+            "*.md",
+            "docs/*.md",
+            "tools/*/README.md",
+            ".*/skills/*/SKILL.md",
+        )
+        for path in ROOT.glob(pattern)
+    }
     guides.update(map(Path, extra_guides))
     for path in sorted(guides):
         for number, line in enumerate(path.read_text().splitlines(), 1):

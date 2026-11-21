@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Generated with: python3 tools/player-profile/generate.py GAME_EXE SOURCES FUNCTIONS > include/ubc/engine/player_engine_sites.hpp
+// Generated from the executable, source locations and function ranges.
 #pragma once
 
 namespace ubc::player_engine {
