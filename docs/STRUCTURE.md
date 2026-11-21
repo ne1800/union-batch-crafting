@@ -33,6 +33,8 @@ Native tests follow the header areas under `tests/native/`. Shared C++ fixtures 
 
 The mise tasks use the same areas. `package:probe-WRITES` builds the diagnostic package, `package:player-WRITES` the player package. `lint:all` checks tracked files.
 
+The pre-push hook runs `tools/lint/leak-scan.py` over tracked files and all local Git objects, including unreachable objects. To add local rules, set the repository’s `ubc.leakPatterns` Git setting to a JSON file containing an array of regular expressions. The `UBC_LEAK_PATTERNS` environment variable takes precedence. An unreadable file or invalid expression fails the scan.
+
 <a id="tables"></a>
 
 ## Maintaining recipe tables

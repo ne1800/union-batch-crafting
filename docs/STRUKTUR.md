@@ -33,6 +33,8 @@ Die nativen Tests folgen unter `tests/native/` den Headerbereichen. Gemeinsame C
 
 Die mise-Aufgaben folgen denselben Zuständigkeiten. `package:probe-WRITES` baut das Diagnosepaket, `package:player-WRITES` das Spielerpaket. `lint:all` prüft die versionierten Dateien.
 
+Der Pre-Push-Hook prüft mit `tools/lint/leak-scan.py` die versionierten Dateien und alle lokalen Git-Objekte, auch unerreichbare Objekte. Zusätzliche Regeln liest er aus einer JSON-Datei mit einer Liste regulärer Ausdrücke. Ihren Pfad setzt du in der lokalen Git-Einstellung `ubc.leakPatterns`. Die Umgebungsvariable `UBC_LEAK_PATTERNS` hat Vorrang. Eine unlesbare Datei oder ein ungültiger Ausdruck lässt die Prüfung fehlschlagen.
+
 <a id="tables"></a>
 
 ## Pflege der Rezepttabellen
