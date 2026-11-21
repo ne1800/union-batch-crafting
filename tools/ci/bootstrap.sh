@@ -14,6 +14,14 @@ case "${1:?expected job name}" in
 esac
 # The runner supplies the outer Docker sandbox. Its kernel rejects nested
 # seccomp filters during signed package downloads.
-pacman -Syu --disable-sandbox --needed --noconfirm "${packages[@]}"
+# The dated archive mirror sometimes stalls. Pacman keeps finished downloads
+# in its cache, so a retry only fetches what is still missing.
+for attempt in 1 2 3; do
+  pacman -Syu --disable-sandbox --needed --noconfirm "${packages[@]}" && break
+  if ((attempt == 3)); then
+    exit 1
+  fi
+  sleep $((attempt * 20))
+done
 git config --global --add safe.directory "$PWD"
 mise trust

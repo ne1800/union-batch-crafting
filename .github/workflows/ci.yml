@@ -1,8 +1,9 @@
 name: CI
 on:
-  # A branch filter alone excludes tag pushes; release.yml handles v* tags.
+  # Only main: Renovate branches are checked once through their pull request.
+  # A branch filter alone also excludes tag pushes; release.yml handles v* tags.
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
   workflow_call:
 permissions:
