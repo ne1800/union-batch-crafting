@@ -1,20 +1,16 @@
 <a id="guide"></a>
 
-# Union Batch Crafting 0.0.61
+# Union Batch Crafting
 
 [English](STATIONS.md) · [Deutsch](STATIONEN.md)
 
-This local build for Marcello L’Hiver DE 2.0.4 covers 98 recipe profiles at the stove, alchemy table, leather bench, saw, forge, anvil, bow bench, cooling tub and grindstone. The menu shows learned recipes, materials, stock and a preview for the selected quantity.
+In Marcello L’Hiver DE 2.0.4, the crafting menu supports 98 recipe profiles at the stove, alchemy table, leather bench, saw, forge, anvil, bow bench, cooling tub and grindstone. The menu shows learned recipes, materials, stock and a preview for the selected quantity.
 
 <a id="install"></a>
 
 ## Player installation
 
-The **0.0.61 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](../INSTALL.md)
-
-Blocked recipes show the reason in brackets, such as “[missing ingredients]” or “[no space]”. The craft action shows the reason for the selected amount when known. While its availability is being checked, it shows “[locked]”.
-
-Wrapped lines start in the recipe-name column. A larger gap separates adjacent recipes.
+Installing the player ZIP enables the plugin. To turn it off, set `Enabled=0` in `system/Gothic.INI`. [Install and uninstall the player ZIP](../INSTALL.md)
 
 <a id="compatibility"></a>
 
@@ -33,6 +29,8 @@ The world comparisons used Gothic II: Night of the Raven, Marcello L’Hiver DE 
 ## Controls
 
 Open a supported station. Use Up/Down to select a known recipe, Tab to change focus, and Left/Right to adjust the quantity by one. Use −5/+5 or the 1/5/10/maximum presets for larger batches. Review the materials and preview, then choose Craft and confirm with A/Enter. B/Escape goes back. Choose the original controls to return to the game's selection. The menu uses the existing controller mapping. Physical controller input at a station still needs testing.
+
+Blocked recipes show the reason in brackets, such as “[missing ingredients]” or “[no space]”. The craft action shows the reason for the selected amount when known. While its availability is being checked, it shows “[locked]”.
 
 <a id="configuration"></a>
 
@@ -90,11 +88,11 @@ Choose honey, swampweed or mushroom tobacco at the alchemy table. Each portion c
 
 ## Cooling two hot blades
 
-Form both blades at the forge. At the cooling tub, select the blade recipe, choose quantity 2 and confirm Craft. Since 0.0.43 this works with exactly two hot blades in storage. The hot blade in the hand belongs to the station animation. During acceptance the hot stock fell from two to zero and the cold stock rose from six to eight. A quantity receipt appeared after normal station exit.
+Form both blades at the forge. At the cooling tub, select the blade recipe, choose quantity 2 and confirm Craft. This works with exactly two hot blades in storage. The hot blade in the hand belongs to the station animation. During acceptance the hot stock fell from two to zero and the cold stock rose from six to eight. A quantity receipt appeared after normal station exit.
 
 A stock mismatch blocks the next order. If animation control (AniCtrl) fails after the initial debit, one stored hot blade can remain consumed. The tested modules were Union/Shw32 (`78d9312f…742888`) and zBugFixes (`50c3dc66…11963`). The plugin logs new module versions.
 
-The 0.0.43 build also passed cooling at 2/1/maximum 3 and rough swords at 1/2/preset 5/maximum 3. Since 0.0.44 a rejected grinding check logs the check name and its expected and observed values.
+The 0.0.43 build also passed cooling at 2/1/maximum 3 and rough swords at 1/2/preset 5/maximum 3. If a grinding check fails, the log shows the check name and its expected and observed values.
 
 <a id="recipes"></a>
 
@@ -110,4 +108,6 @@ The bow bench supports 20 upgrades. “Stock for” is the material limit. The m
 
 ## Test coverage and limits
 
-0.0.55 documents the 0.0.54 feature set and was tested offline. The 0.0.53 world run confirms automatic German quantity text and cost-free cancellation. The player DLL from 0.0.57 loaded without a marker. At the alchemy table, selecting two swamp tobaccos used two apple tobaccos and two laboratory flasks. Swampweed was unchanged. In 0.0.59, the German quantity menu displayed “2 / 6 Durchgänge” and “Zurück”. The game used the expected Windows-1252 byte E4 for ä. Crafting two swamp tobaccos consumed two apple tobaccos and two laboratory flasks. The station comparisons above come from earlier runs. Physical controller input at stations still awaits testing. The original controls remain available for the game's recipes. [Project overview](../README.md) · [Changes by version](../CHANGELOG.md#english)
+In-game tests covered the orders in the [station table](#coverage). At the alchemy table, the tests confirmed the German recipe text and the reasons shown for blocked recipes. Crafting two portions of swamp tobacco consumed two apple tobaccos and two laboratory flasks. Some recipes and physical controller input at stations still need testing.
+
+[In-game test details](../TESTED-WITH.md) · [Changes by version](../CHANGELOG.md#english) · [Project overview](../README.md)

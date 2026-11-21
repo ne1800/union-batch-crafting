@@ -1,20 +1,16 @@
 <a id="guide"></a>
 
-# Union Batch Crafting 0.0.61
+# Union Batch Crafting
 
 [English](STATIONS.md) · [Deutsch](STATIONEN.md)
 
-Die lokale Testfassung für Marcello L’Hiver DE 2.0.4 verbindet 98 Rezeptprofile an Herd, Alchemietisch, Lederbank, Säge, Esse, Amboss, Bogenbank, Kühlbecken und Schleifstein. Das Menü zeigt gelernte Rezepte, Bedarf, Vorrat und die Vorschau für die gewählte Menge.
+In Marcello L’Hiver DE 2.0.4 unterstützt das Herstellungsmenü 98 Rezeptprofile an Herd, Alchemietisch, Lederbank, Säge, Esse, Amboss, Bogenbank, Kühlbecken und Schleifstein. Das Menü zeigt gelernte Rezepte, Bedarf, Vorrat und die Vorschau für die gewählte Menge.
 
 <a id="install"></a>
 
 ## Installation für Spieler
 
-Das Spieler-ZIP **0.0.61** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](../INSTALL.de.md)
-
-Bei gesperrten Rezepten steht der Grund in eckigen Klammern, etwa „[Zutaten fehlen]“ oder „[Platz fehlt]“. Auch bei „Herstellen“ erscheint der Grund für die gewählte Menge, sobald er bekannt ist. Während der Prüfung steht dort „[gesperrt]“.
-
-Folgezeilen beginnen in der Spalte der Rezeptnamen. Ein größerer Abstand trennt die einzelnen Rezepte.
+Die Installation des Spieler-ZIPs aktiviert das Plugin. Zum Abschalten setze `Enabled=0` in der `system/Gothic.INI`. [Spielerinstallation und Deinstallation](../INSTALL.de.md)
 
 <a id="compatibility"></a>
 
@@ -33,6 +29,8 @@ Die Weltvergleiche gelten für Gothic II DNdR, Marcello L’Hiver DE 2.0.4 und d
 ## Bedienung
 
 Öffne eine angebundene Station. Wähle mit Auf/Ab ein bekanntes Rezept. Mit Tab wechselst du den Bereich, mit Links/Rechts die Menge um eins. Für größere Mengen gibt es −5/+5 sowie 1/5/10/Maximum. Prüfe Bedarf und Vorschau, wähle „Herstellen“ und bestätige mit A/Enter. B/Escape geht zurück. Über „Originale Bedienung“ erreichst du die ursprüngliche Auswahl. Die vorhandene Controllerbelegung bleibt nutzbar. Die physische Bedienung an Stationen ist noch offen.
+
+Bei gesperrten Rezepten steht der Grund in eckigen Klammern, etwa „[Zutaten fehlen]“ oder „[Platz fehlt]“. Auch bei „Herstellen“ erscheint der Grund für die gewählte Menge, sobald er bekannt ist. Während der Prüfung steht dort „[gesperrt]“.
 
 <a id="configuration"></a>
 
@@ -91,7 +89,7 @@ Am Alchemietisch kannst du Honigtabak, Sumpftabak oder Pilztabak wählen. Jeder 
 ## Zwei heiße Klingen an der Kühlwanne
 
 Forme die beiden Klingen an der Esse. Öffne die Kühlwanne, wähle beim
-Klingenrezept Menge 2 und bestätige „Herstellen“. Seit 0.0.43 ist das auch
+Klingenrezept Menge 2 und bestätige „Herstellen“. Das ist auch
 bei genau zwei heißen Klingen im Lager möglich. Die heiße Klinge in der Hand
 gehört zur Stationsanimation. In der Weltabnahme sank der Lagerbestand von
 zwei heißen auf null, der kalte Bestand stieg von sechs auf acht.
@@ -103,10 +101,9 @@ Lagerklinge verbraucht bleiben. Getestet mit Union/Shw32
 (`78d9312f…742888`) und zBugFixes (`50c3dc66…11963`).
 Neue Dateistände werden im Log vermerkt.
 
-
 Die Auslieferung 0.0.43 ist außerdem mit Kühlung 2/1/Maximum 3 und mit
 groben Schwertern in den Mengen 1/2/Schnellmenge 5/Maximum 3 weltgeprüft.
-In 0.0.44 nennt das Protokoll bei einer abgelehnten Schleifprüfung die
+Bei einer abgelehnten Schleifprüfung nennt das Protokoll die
 Prüfstelle und den erwarteten und beobachteten Wert.
 
 <a id="recipes"></a>
@@ -141,4 +138,6 @@ zwei Drachenjägerarmbrüste mindestens 24 Rohstahl im Vorrat, verbrauchen aber
 
 ## Prüfstand und Grenzen
 
-0.0.55 dokumentiert den Funktionsstand von 0.0.54 und wurde offline geprüft. 0.0.53 bestätigt die automatische deutsche Mengenanzeige und den kostenfreien Abbruch. Die Spieler-DLL aus 0.0.57 lud ohne Marker. Am Alchemietisch verbrauchte die Herstellung von zwei Sumpftabaken zwei Apfeltabake und zwei Laborwasserflaschen. Das Sumpfkraut blieb erhalten. Mit 0.0.59 zeigte das deutsche Mengenmenü „2 / 6 Durchgänge“ und „Zurück“. Das ä entsprach im Menüzustand dem erwarteten Windows-1252-Byte E4. Zwei Sumpftabake verbrauchten zwei Apfeltabake und zwei Laborwasserflaschen. Die Stationsvergleiche oben stammen aus früheren Läufen. Für die physische Controllerbedienung an Stationen steht die Prüfung aus. Über die Originalbedienung bleiben die ursprünglichen Rezepte erreichbar. [Projektübersicht](../README.de.md) · [Änderungen je Version](../CHANGELOG.md#deutsch)
+Im Spiel wurden die Aufträge aus der [Stationstabelle](#coverage) geprüft. Am Alchemietisch bestätigten die Tests die deutschen Rezepttexte und die angezeigten Sperrgründe. Zwei Portionen Sumpftabak verbrauchten zwei Apfeltabake und zwei Laborflaschen. Für einige Rezepte und die physische Controllerbedienung an Stationen steht der Spieltest noch aus.
+
+[Spielnachweise](../TESTED-WITH.md) · [Änderungen je Version](../CHANGELOG.md#deutsch) · [Projektübersicht](../README.de.md)
