@@ -18,19 +18,24 @@ jobs:
       fail-fast: false
       matrix:
         check: [lint, portable, sanitizers, windows, history]
+    env:
+      # A title edit only needs the history check with the new title.
+      RUN: ${{ github.event.action != 'edited' || matrix.check == 'history' }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - if: env.RUN == 'true'
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
           fetch-depth: ${{ matrix.check == 'history' && '0' || '1' }}
           ref: ${{ matrix.check == 'history' && github.event.pull_request.head.sha || github.sha }}
       - name: Cache Windows SDK
-        if: matrix.check == 'windows'
+        if: env.RUN == 'true' && matrix.check == 'windows'
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: .cache/ci-sdk.tar.gz
           key: xwin-x86-v1-${{ hashFiles('tools/build/windows-sdk-manifest.json', 'tools/build/setup-toolchain-WRITES.py') }}
       - name: Run pinned build environment
+        if: env.RUN == 'true'
         env:
           CHECK: ${{ matrix.check }}
           EVENT: ${{ github.event_name }}
@@ -59,7 +64,7 @@ jobs:
                 windows) bash tools/ci/windows.sh ;;
               esac'
       - name: Save player package and hash report
-        if: matrix.check == 'windows'
+        if: env.RUN == 'true' && matrix.check == 'windows'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: windows-x86
