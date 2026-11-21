@@ -15,6 +15,10 @@ def valid(subject):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 3 and sys.argv[1] == "--title":
+        if not valid(sys.argv[2]):
+            sys.exit("Invalid Conventional Commit title")
+        sys.exit(0)
     if sys.argv[1:] == ["--stdin"]:
         for line in sys.stdin:
             if not valid(line.rstrip("\n")):

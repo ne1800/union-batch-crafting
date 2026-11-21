@@ -9,7 +9,7 @@ case "${1:?expected job name}" in
   lint) packages+=(clang gcc go nodejs npm uv) ;;
   portable | sanitizers) packages+=(clang cmake ninja gcc compiler-rt) ;;
   windows) packages+=(clang cmake ninja lld llvm) ;;
-  export | commits) ;;
+  history | export | commits) ;;
   *) exit 2 ;;
 esac
 # The runner supplies the outer Docker sandbox. Its kernel rejects nested

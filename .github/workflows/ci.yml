@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, reopened, synchronize, edited]
   workflow_call:
 permissions:
   contents: read
@@ -12,15 +13,17 @@ permissions:
 jobs:
   checks:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: ${{ matrix.check == 'sanitizers' && 60 || 40 }}
     strategy:
       fail-fast: false
       matrix:
-        check: [lint, portable, windows]
+        check: [lint, portable, sanitizers, windows, history]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
+          fetch-depth: ${{ matrix.check == 'history' && '0' || '1' }}
+          ref: ${{ matrix.check == 'history' && github.event.pull_request.head.sha || github.sha }}
       - name: Cache Windows SDK
         if: matrix.check == 'windows'
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -30,14 +33,29 @@ jobs:
       - name: Run pinned build environment
         env:
           CHECK: ${{ matrix.check }}
+          EVENT: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src -e CHECK -e CMAKE_BUILD_PARALLEL_LEVEL=2 \
+          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src -e CHECK -e EVENT -e EVENT_REF -e BASE -e HEAD_SHA -e PR_TITLE \
+            -e CMAKE_BUILD_PARALLEL_LEVEL=2 \
             archlinux:base-20261108.0.623074@sha256:fcee73ea1b96e236248f53a213f71276cc9072d9025b58bce9915e32f19963ae \
             bash -euc '
               bash tools/ci/bootstrap.sh "$CHECK"
               case "$CHECK" in
                 lint) mise run lint:all ;;
                 portable) mise run test:report-WRITES -- --apply --timeout-seconds 1200 ;;
+                sanitizers) mise run test:sanitizers ;;
+                history)
+                  python3 -B tools/lint/leak-scan.py
+                  if [[ "$EVENT" == pull_request ]]; then
+                    bash tools/ci/check-commits.sh "$BASE" "$HEAD_SHA" "$PR_TITLE"
+                  elif [[ "$EVENT" == push && "$EVENT_REF" == refs/heads/main ]]; then
+                    bash tools/ci/check-commits.sh "$BASE" "$HEAD_SHA"
+                  fi
+                  ;;
                 windows) bash tools/ci/windows.sh ;;
               esac'
       - name: Save player package and hash report
