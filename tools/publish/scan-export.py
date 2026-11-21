@@ -17,18 +17,31 @@ RULES = {
 }
 
 
-def findings(name, data, patterns):
+def findings(name, data, patterns, *, commit=False):
     try:
         body = data.decode("utf-8")
     except UnicodeError:
         return ["binary"]
     text = unquote(name + "\n" + body).replace(r"\.", ".")
+    mail_text = text.replace(IDENTITY, "")
+    if commit:
+        # A fetched Renovate onboarding ref may contain GitHub web-flow commits.
+        # Only the exact public service mailbox in a Git committer header is OK.
+        headers, separator, message = body.partition("\n\n")
+        headers = re.sub(
+            r"(?m)^committer GitHub <noreply[@]github[.]com>(?= [0-9]+ [+-][0-9]{4}$)",
+            "committer GitHub <web-flow>",
+            headers,
+        )
+        mail_text = (
+            unquote(name + "\n" + headers + separator + message)
+            .replace(r"\.", ".")
+            .replace(IDENTITY, "")
+        )
     hits = [
         label
         for label, pattern in patterns.items()
-        if pattern.search(
-            text.replace(IDENTITY, "") if label == "email address" else text
-        )
+        if pattern.search(mail_text if label == "email address" else text)
     ]
     if "\0" in text or any(ord(c) < 32 and c not in "\n\r\t" for c in body):
         hits.append("binary")
@@ -40,8 +53,8 @@ def git(root, *args):
 
 
 def scan(root, patterns):
-    def check(name, data, object_id):
-        if issues := findings(name, data, patterns):
+    def check(name, data, object_id, *, commit=False):
+        if issues := findings(name, data, patterns, commit=commit):
             raise ValueError(f"Export scan failed ({object_id}): {', '.join(issues)}")
 
     files = git(root, "ls-files", "-z").decode().split("\0")[:-1]
@@ -68,7 +81,7 @@ def scan(root, patterns):
             for raw in names.split(b"\0")[:-1]:
                 check(raw.decode(), b"", oid)
         else:
-            check("", git(root, "cat-file", kind, oid), oid)
+            check("", git(root, "cat-file", kind, oid), oid, commit=kind == "commit")
     print(f"Export scan passed: {len(files)} files, {len(objects)} Git objects")
 
 
