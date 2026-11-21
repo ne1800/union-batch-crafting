@@ -64,6 +64,11 @@ repos:
         language: system
         entry: mise x actionlint@1.7.12 -- actionlint
         files: ^\.github/workflows/[^/]+\.ya?ml$
+      - id: renovate-config
+        name: Validate Renovate configuration
+        language: system
+        entry: mise x -- npm exec --yes --ignore-scripts --package=renovate@44.222.0 -- renovate-config-validator --strict --no-global
+        files: ^renovate\.json$
       - id: bilingual-docs
         name: Check bilingual documentation
         language: system

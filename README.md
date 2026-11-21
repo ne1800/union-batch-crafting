@@ -49,3 +49,11 @@ Write Conventional Commit subjects in English, for example `fix(ui): handle empt
 Development takes place in the private GitLab repository. Push a feature branch, open a merge request with an English Conventional Commit title and merge into `main` after the pipeline passes. GitLab checks commit subjects, prek, portable tests, sanitizers, the Windows x86 build and a temporary source export with a leak scan.
 
 GitHub checks the exported sources on pushes and pull requests. Both systems cache the pinned Windows SDK and compare the player and test DLLs with the SHA-256 values for 0.0.59. A matching version tag builds the player ZIP and creates a draft for manual review and publication. Game and controller tests run locally.
+
+<a id="renovate"></a>
+
+## Renovate
+
+Renovate opens update notifications on GitHub. Actions checks each PR. A maintainer imports it into the private development branch, runs the tests and exports the accepted update. Leave the GitHub PR open for Renovate to close after the export arrives.
+
+The update window opens on Mondays before 06:00 (Europe/Berlin). Updates mature for 14 days. Approve entries labelled `dll-impact` in the dashboard and run level 2 checks with both DLL hashes. Changed binaries may require an approved world test. For xwin, independently verify the archive and update its SHA-256 manually. Until then Windows CI fails the checksum check. Maintain the Arch archive date in `tools/ci/bootstrap.sh` and the Windows SDK manifest manually.

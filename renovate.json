@@ -1,0 +1,81 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["mise", "pre-commit", "github-actions", "custom.regex"],
+  "pre-commit": { "enabled": true },
+  "automerge": false,
+  "platformAutomerge": false,
+  "semanticCommits": "enabled",
+  "minimumReleaseAge": "14 days",
+  "prCreation": "not-pending",
+  "timezone": "Europe/Berlin",
+  "schedule": ["before 6am on Monday"],
+  "dependencyDashboard": true,
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+  "ignorePaths": ["**/fixtures/**", "**/testdata/**", "**/tests/**", "**/data/**", "**/reports/**", "**/validation/**"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track the mise actionlint invocation in the local prek hook.",
+      "managerFilePatterns": ["/^\\.pre-commit-config\\.yaml$/"],
+      "matchStrings": ["mise x actionlint@(?<currentValue>[0-9.]+) --"],
+      "depNameTemplate": "rhysd/actionlint",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the pinned Renovate validator used by prek.",
+      "managerFilePatterns": ["/^\\.pre-commit-config\\.yaml$/"],
+      "matchStrings": ["--package=renovate@(?<currentValue>[0-9.]+) "],
+      "depNameTemplate": "renovate",
+      "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the dated Arch base image and its manifest digest together.",
+      "managerFilePatterns": ["/^\\.github/workflows/ci\\.yml$/"],
+      "matchStrings": ["archlinux:(?<currentValue>base-[0-9]{8}\\.[0-9]+\\.[0-9]+)@(?<currentDigest>sha256:[a-f0-9]{64})"],
+      "depNameTemplate": "archlinux",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "regex:^base-(?<major>[0-9]{8})\\.(?<minor>[0-9]+)\\.(?<patch>[0-9]+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Updating xwin leaves the archive SHA-256 unchanged. Windows CI fails until the new archive is independently verified.",
+      "managerFilePatterns": ["/^tools/build/setup-toolchain-WRITES\\.py$/"],
+      "matchStrings": ["(?:^|\\n)VERSION = \"(?<currentValue>[0-9.]+)\""],
+      "depNameTemplate": "Jake-Shadle/xwin",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Track Python as major.minor; mise follows patch releases on its own",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["python"],
+      "extractVersion": "^v?(?<version>\\d+\\.\\d+)\\.\\d+$"
+    },
+    {
+      "matchManagers": ["mise"],
+      "groupName": "mise tools"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "matchFileNames": [".pre-commit-config.yaml"],
+      "groupName": "linters and formatters"
+    },
+    {
+      "matchDepNames": ["archlinux", "Jake-Shadle/xwin", "clang", "lld", "cmake", "llvm/llvm-project", "Kitware/CMake"],
+      "groupName": "Windows build toolchain",
+      "addLabels": ["dll-impact"],
+      "dependencyDashboardApproval": true,
+      "prBodyNotes": ["Requires level 2 checks and a SHA-256 comparison of both DLLs. A changed DLL may require an approved in-game world test."]
+    }
+  ]
+}

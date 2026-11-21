@@ -49,3 +49,11 @@ Commit-Betreffzeilen sind auf Englisch und folgen Conventional Commits, etwa `fi
 Die Entwicklung erfolgt im privaten GitLab. Änderungen auf einen Feature-Branch pushen, einen Merge Request mit englischem Conventional-Commit-Titel öffnen und nach grüner Pipeline nach `main` mergen. GitLab prüft Commit-Titel, prek, portable Tests, Sanitizer, den Windows-x86-Build und einen temporären Quell-Export mit Leckscan.
 
 GitHub prüft die exportierten Quellen bei Pushes und Pull Requests. Beide Systeme cachen das gepinnte Windows-SDK und vergleichen Spieler- und Test-DLL mit den SHA-256-Werten von 0.0.59. Ein passender Versionstag baut das Spieler-ZIP und legt einen Entwurf zur manuellen Prüfung und Veröffentlichung an. Spiel- und Controllertests laufen lokal.
+
+<a id="renovate"></a>
+
+## Renovate
+
+Renovate meldet Updates per PR auf GitHub. Actions prüft jeden PR. Ein Maintainer übernimmt ihn in den privaten Entwicklungsbranch, führt die Tests aus und exportiert das geprüfte Update. Der GitHub-PR bleibt offen, bis Renovate ihn nach dem Export schließt.
+
+Das Dependency Dashboard bündelt die Updates. Das Zeitfenster liegt montags vor 06:00 Uhr (Europe/Berlin), die Mindestreife beträgt 14 Tage. Einträge mit `dll-impact` im Dashboard freigeben und mit Prüfstufe 2 und beiden DLL-Hashes prüfen. Geänderte Binärdateien können einen freigegebenen Weltlauf erfordern. Bei xwin das Archiv unabhängig verifizieren und seinen SHA-256-Wert manuell nachziehen. Bis dahin schlägt die Windows-CI beim Hashvergleich fehl. Das Arch-Archivdatum in `tools/ci/bootstrap.sh` und das Windows-SDK-Manifest werden manuell gepflegt.

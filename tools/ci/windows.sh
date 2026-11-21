@@ -8,7 +8,8 @@ if [[ -f "$cache" ]]; then
 fi
 mise run setup:windows-WRITES -- --apply
 if [[ ! -f "$cache" ]]; then
-  tar -czf "$cache.tmp" -C .tools xwin toolchain-lock.json xwin-0.10.0-x86_64-unknown-linux-musl.tar.gz
+  version=$(python3 -c 'import json; print(json.load(open(".tools/toolchain-lock.json"))["xwin_version"])')
+  tar -czf "$cache.tmp" -C .tools xwin toolchain-lock.json "xwin-${version}-x86_64-unknown-linux-musl.tar.gz"
   mv "$cache.tmp" "$cache"
 fi
 mise run build:windows -- --target UnionBatchCraftingExtended UnionBatchCraftingPlayer
