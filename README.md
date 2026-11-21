@@ -4,9 +4,11 @@
 
 [English](README.md) · [Deutsch](README.de.md)
 
-German menus display umlauts and ß. The **0.0.60 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](INSTALL.md)
+German menus display umlauts and ß. The **0.0.61 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](INSTALL.md)
 
 Blocked recipes show the reason in brackets, such as “[missing ingredients]” or “[no space]”. The craft action shows the reason for the selected amount when known. While its availability is being checked, it shows “[locked]”.
+
+Wrapped lines start in the recipe-name column. A larger gap separates adjacent recipes.
 
 Choose a recipe and craft several portions at once in Gothic II: Night of the Raven with Marcello L’Hiver DE 2.0.4 and Union. Version 0.0.57 covers 98 profiles across nine stations. The guide lists the quantities tested in the game and explains custom quantities, cancellation, and the limits of controller testing. [Station guide](docs/STATIONS.md) · [Changelog](CHANGELOG.md#english)
 
@@ -50,7 +52,7 @@ Write Conventional Commit subjects in English, for example `fix(ui): handle empt
 
 Development takes place in the private GitLab repository. Push a feature branch, open a merge request with an English Conventional Commit title and merge into `main` after the pipeline passes. GitLab checks commit subjects, prek, portable tests, sanitizers, the Windows x86 build and a temporary source export with a leak scan.
 
-GitHub checks the exported sources on pushes and pull requests. Both systems cache the pinned Windows SDK and compare the player and test DLLs with the SHA-256 values for 0.0.60. A matching version tag builds the player ZIP and creates a draft for manual review and publication. Game and controller tests run locally.
+GitHub checks the exported sources on pushes and pull requests. Both systems cache the pinned Windows SDK and compare the player and test DLLs with the SHA-256 values for 0.0.61. A matching version tag builds the player ZIP and creates a draft for manual review and publication. Game and controller tests run locally.
 
 <a id="renovate"></a>
 

@@ -4,6 +4,8 @@
 
 ## English
 
+- **0.0.61** Wrapped recipe names align with the text above them. Each recipe has the same spacing before the next entry.
+
 - **0.0.60** Blocked recipes show the reason in the list. The craft action also shows a specific reason for the selected amount. An unknown sharpening recipe now fails the diagnostic check safely.
 
 - **0.0.59** German menus, recipe names and item names now use umlauts and ß. The German quantity menu displayed “2 / 6 Durchgänge” with the expected Windows-1252 bytes while crafting two swamp tobaccos.
@@ -23,6 +25,8 @@
 - **0.0.30–0.0.35** measured and bounded the grinding preview. Rough swords passed the in-game comparison at 1, 2, 5 and maximum 3 in 0.0.35.
 
 ## Deutsch
+
+- **0.0.61** Umgebrochene Rezeptnamen stehen bündig unter dem Text der ersten Zeile. Der Abstand zum nächsten Eintrag ist bei allen Rezepten gleich.
 
 - **0.0.60** Gesperrte Rezepte zeigen den Grund in der Liste. Bei der Herstellung erscheint auch der konkrete Grund für die gewählte Menge. Die Diagnose behandelt unbekannte Schleifrezepte sicher.
 

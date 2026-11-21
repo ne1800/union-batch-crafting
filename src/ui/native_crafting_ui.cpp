@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <string_view>
 
 namespace ubc::crafting_ui {
 using L = ui_text::Label;
@@ -195,27 +196,33 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
       if (!entry)
         return false;
       const char* marker = blocked(crafting_block_reason(*entry), text).hint;
-      std::snprintf(line, sizeof(line), "%s%s%s%s", entry == selected ? "> " : "  ", marker,
-                    *marker ? " " : "", text.recipe(entry->id));
-      const int start = y;
-      auto* rest = line;
-      while (std::strlen(rest) > list_limit) {
-        auto* split = rest + list_limit;
-        while (split > rest && *split != ' ')
-          --split;
-        if (split == rest || y + 220 > footer_y)
-          break;
-        *split = 0;
-        if (!append(frame, 300, y, rest, list_limit))
+      std::snprintf(line, sizeof(line), "%s%s%s", marker, *marker ? " " : "",
+                    text.recipe(entry->id));
+      std::string_view rest(line);
+      const char* prefix = entry == selected ? "> " : "  ";
+      constexpr std::size_t indent = 2;
+      const auto available = list_limit - indent;
+      while (y + 220 <= footer_y) {
+        auto count = rest.size();
+        if (count > available) {
+          const auto space = rest.rfind(' ', available);
+          count = space == std::string_view::npos ? available : space;
+        }
+        char row[192];
+        std::snprintf(row, sizeof(row), "%s%.*s", prefix, static_cast<int>(count), rest.data());
+        if (!append(frame, 300, y, row, list_limit))
           return false;
-        rest = split + 1;
+        rest.remove_prefix(count);
+        if (rest.empty())
+          break;
+        if (rest.front() == ' ')
+          rest.remove_prefix(1);
+        prefix = "  ";
         y += 230;
       }
-      if (y + 220 > footer_y)
+      if (!rest.empty())
         break;
-      if (!append(frame, 300, y, rest, list_limit))
-        return false;
-      y = std::max(start + (narrow ? 300 : 500), y + 230);
+      y += narrow ? 300 : 400;
     }
     if (i == view.count)
       break;

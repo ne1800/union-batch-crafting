@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assemble the 0.0.60 player ZIP from the dedicated Windows x86 target."""
+"""Assemble the 0.0.61 player ZIP from the dedicated Windows x86 target."""
 
 import argparse
 from pathlib import Path
@@ -10,7 +10,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
 DLL = "UnionBatchCraftingExtended.dll"
-ARCHIVE = "union-batch-crafting-player-0.0.60.zip"
+ARCHIVE = "union-batch-crafting-player-0.0.61.zip"
 DOCUMENTS = (
     "INSTALL.md",
     "INSTALL.de.md",
@@ -20,7 +20,7 @@ DOCUMENTS = (
 )
 
 
-def validate_dll(data, version="0.0.60"):
+def validate_dll(data, version="0.0.61"):
     if data[:2] != b"MZ" or len(data) < 64:
         raise ValueError("Missing DOS header")
     pe = struct.unpack_from("<I", data, 60)[0]

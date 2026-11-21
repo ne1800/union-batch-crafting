@@ -4,9 +4,11 @@
 
 [English](README.md) · [Deutsch](README.de.md)
 
-Die deutschen Menüs zeigen Umlaute und ß. Das Spieler-ZIP **0.0.60** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](INSTALL.de.md)
+Die deutschen Menüs zeigen Umlaute und ß. Das Spieler-ZIP **0.0.61** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](INSTALL.de.md)
 
 Bei gesperrten Rezepten steht der Grund in eckigen Klammern, etwa „[Zutaten fehlen]“ oder „[Platz fehlt]“. Auch bei „Herstellen“ erscheint der Grund für die gewählte Menge, sobald er bekannt ist. Während der Prüfung steht dort „[gesperrt]“.
+
+Folgezeilen beginnen in der Spalte der Rezeptnamen. Ein größerer Abstand trennt die einzelnen Rezepte.
 
 Wähle in Gothic II: Die Nacht des Raben mit Marcello L’Hiver DE 2.0.4 und Union ein Rezept und stelle mehrere Portionen auf einmal her. Version 0.0.57 deckt 98 Profile an neun Stationen ab. Die Anleitung nennt die im Spiel geprüften Mengen und erklärt freie Mengenwahl, Abbruch und den Prüfstand zur Controllerbedienung. [Stationsanleitung](docs/STATIONEN.md) · [Changelog](CHANGELOG.md#deutsch)
 
@@ -50,7 +52,7 @@ Commit-Betreffzeilen sind auf Englisch und folgen Conventional Commits, etwa `fi
 
 Die Entwicklung erfolgt im privaten GitLab. Änderungen auf einen Feature-Branch pushen, einen Merge Request mit englischem Conventional-Commit-Titel öffnen und nach grüner Pipeline nach `main` mergen. GitLab prüft Commit-Titel, prek, portable Tests, Sanitizer, den Windows-x86-Build und einen temporären Quell-Export mit Leckscan.
 
-GitHub prüft die exportierten Quellen bei Pushes und Pull Requests. Beide Systeme cachen das gepinnte Windows-SDK und vergleichen Spieler- und Test-DLL mit den SHA-256-Werten von 0.0.60. Ein passender Versionstag baut das Spieler-ZIP und legt einen Entwurf zur manuellen Prüfung und Veröffentlichung an. Spiel- und Controllertests laufen lokal.
+GitHub prüft die exportierten Quellen bei Pushes und Pull Requests. Beide Systeme cachen das gepinnte Windows-SDK und vergleichen Spieler- und Test-DLL mit den SHA-256-Werten von 0.0.61. Ein passender Versionstag baut das Spieler-ZIP und legt einen Entwurf zur manuellen Prüfung und Veröffentlichung an. Spiel- und Controllertests laufen lokal.
 
 <a id="renovate"></a>
 

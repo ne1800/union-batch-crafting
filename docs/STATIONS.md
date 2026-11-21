@@ -1,6 +1,6 @@
 <a id="guide"></a>
 
-# Union Batch Crafting 0.0.60
+# Union Batch Crafting 0.0.61
 
 [English](STATIONS.md) · [Deutsch](STATIONEN.md)
 
@@ -10,9 +10,11 @@ This local build for Marcello L’Hiver DE 2.0.4 covers 98 recipe profiles at th
 
 ## Player installation
 
-The **0.0.60 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](../INSTALL.md)
+The **0.0.61 player ZIP** stays enabled after installation. Set `Enabled=0` in Gothic.INI to switch it off. [Install and uninstall the player ZIP](../INSTALL.md)
 
 Blocked recipes show the reason in brackets, such as “[missing ingredients]” or “[no space]”. The craft action shows the reason for the selected amount when known. While its availability is being checked, it shows “[locked]”.
+
+Wrapped lines start in the recipe-name column. A larger gap separates adjacent recipes.
 
 <a id="compatibility"></a>
 

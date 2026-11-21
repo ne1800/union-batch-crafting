@@ -4,6 +4,7 @@
 #ifdef _WIN32
 #include "../../../src/ui/native_ui_language.hpp"
 #endif
+#include <sstream>
 #include <string>
 #include <vector>
 #define UBC_CRAFTING_FIXTURE_ONLY
@@ -195,6 +196,48 @@ void test_translations() {
   }
 }
 
+// Only the second list entry changes. Keep the range footer and all detail rows byte-identical.
+void test_list_boundaries() {
+  auto snapshot = example(Kind::alchemy);
+  for (const auto& d : c::recipes)
+    if (d.station == Kind::alchemy && d.id != 1 && d.id != 0x4001) {
+      state(snapshot, d.id).known = false;
+      state(snapshot, d.id).maximum = 0;
+    }
+  state(snapshot, 0x4001).contract = false;
+  ubc::CraftingSession session;
+  ubc::CraftingMenu menu;
+  check(session.open(snapshot), "two alchemy recipes open for layout comparison");
+  for (const auto* text : {&ubc::ui_text::de::table, &ubc::ui_text::en::table}) {
+    for (const unsigned width : {640u, 1920u}) {
+      auto labels = *text;
+      ui::Frame compact, wrapped;
+      labels.labels[static_cast<unsigned>(L::hint_contract_unverified)] = "[x]";
+      check(ui::compose(compact, session, menu, true, width, 1080, labels), "short hint fits");
+      labels.labels[static_cast<unsigned>(L::hint_contract_unverified)] =
+          "[a longer translated hint for this recipe]";
+      check(ui::compose(wrapped, session, menu, true, width, 1080, labels) &&
+                wrapped.count > compact.count,
+            "long hint wraps the unselected entry");
+      const int footer = width == 640 ? 2200 : 4550;
+      std::size_t i = 0, j = 0;
+      while (i < compact.count && compact.lines[i].y != footer)
+        ++i;
+      while (j < wrapped.count && wrapped.lines[j].y != footer)
+        ++j;
+      check(i < compact.count && j < wrapped.count && compact.count - i == wrapped.count - j,
+            "same footer and number of detail rows");
+      for (; i < compact.count && j < wrapped.count; ++i, ++j) {
+        const auto& a = compact.lines[i];
+        const auto& b = wrapped.lines[j];
+        check(a.x == b.x && a.y == b.y && a.character_limit == b.character_limit &&
+                  a.text == b.text,
+              "wrapping preserves every footer and detail row");
+      }
+    }
+  }
+}
+
 int main(int argc, [[maybe_unused]] char** argv) {
   if (argc != 1) {
 #ifdef _WIN32
@@ -212,6 +255,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
     return EXIT_FAILURE;
   }
   test_translations();
+  test_list_boundaries();
   ui::Frame frame;
   std::set<std::int32_t> unknown_names;
   for (const auto& d : c::recipes) {
@@ -271,22 +315,47 @@ int main(int argc, [[maybe_unused]] char** argv) {
         check(ui::compose(frame, session, menu, false, dimensions[0], dimensions[1], worst),
               "longest hint composes with every recipe");
         bounded(frame);
-        std::string row;
-        for (std::size_t i = 2; i < frame.count; ++i) {
-          const auto& line = frame.lines[i];
-          if (line.x != 300 || line.y >= (dimensions[0] >= 1600 ? 4550 : 2200))
-            break;
-          const std::string part = line.text.data();
-          if (part.compare(0, 2, "> ") == 0)
-            row = part;
-          else if (!row.empty()) {
-            if (part.compare(0, 2, "  ") == 0)
-              break;
-            row += " " + part;
-          }
+        const bool wide = dimensions[0] >= 1600;
+        const int footer = wide ? 4550 : 2200;
+        const std::size_t limit = wide ? 28 : (dimensions[0] < 1000 ? 40 : 68);
+        std::vector<std::string> expected{"> "};
+        std::istringstream words(std::string(longest) + " " + text.recipe(d.id));
+        for (std::string word; words >> word;) {
+          if (expected.back().size() + 1 + word.size() > limit)
+            expected.emplace_back("  ");
+          if (expected.back().size() > 2)
+            expected.back() += ' ';
+          expected.back() += word;
         }
-        check(row == std::string("> ") + longest + " " + text.recipe(d.id),
-              "selected list entry retains every encoded byte across line breaks");
+        std::size_t index = 2;
+        int previous_y = 0;
+        bool found = false;
+        for (; index < frame.count && frame.lines[index].y < footer; ++index) {
+          const auto& line = frame.lines[index];
+          const bool selected = std::string_view(line.text.data()).substr(0, 2) == "> ";
+          if (selected) {
+            found = true;
+            for (std::size_t j = 0; j < expected.size(); ++j) {
+              const auto pos = index + j;
+              check(pos < frame.count && frame.lines[pos].x == 300 &&
+                        frame.lines[pos].y == line.y + static_cast<int>(j) * 230 &&
+                        frame.lines[pos].y + 220 <= footer &&
+                        frame.lines[pos].character_limit == limit &&
+                        frame.lines[pos].text.data() == expected[j],
+                    "selected list line has exact indented bytes, position and byte budget");
+            }
+          }
+          const int gap = line.y - previous_y;
+          check(line.x == 300 && (index == 2 ? line.y == (wide ? 1250 : 1000)
+                                             : gap == 230 || gap == (wide ? 400 : 300)),
+                "list rows maintain separate continuation and entry spacing");
+          previous_y = line.y;
+        }
+        check(found && index + 1 < frame.count && frame.lines[index].x == 300 &&
+                  frame.lines[index].y == footer &&
+                  frame.lines[index + 1].x == (wide ? 3350 : 300) &&
+                  frame.lines[index + 1].y == (wide ? 700 : 2500),
+              "selection stays visible before the footer and detail column");
         check(contains(frame, (std::string(text[L::test_amount]) + " " + longest).c_str()),
               "confirmation includes the specific reason");
         const auto notice = success(d);

@@ -1,6 +1,6 @@
 <a id="guide"></a>
 
-# Union Batch Crafting 0.0.60
+# Union Batch Crafting 0.0.61
 
 [English](STATIONS.md) · [Deutsch](STATIONEN.md)
 
@@ -10,9 +10,11 @@ Die lokale Testfassung für Marcello L’Hiver DE 2.0.4 verbindet 98 Rezeptprofi
 
 ## Installation für Spieler
 
-Das Spieler-ZIP **0.0.60** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](../INSTALL.de.md)
+Das Spieler-ZIP **0.0.61** bleibt nach der Installation aktiv. In Gothic.INI schaltet `Enabled=0` es ab. [Spielerinstallation und Deinstallation](../INSTALL.de.md)
 
 Bei gesperrten Rezepten steht der Grund in eckigen Klammern, etwa „[Zutaten fehlen]“ oder „[Platz fehlt]“. Auch bei „Herstellen“ erscheint der Grund für die gewählte Menge, sobald er bekannt ist. Während der Prüfung steht dort „[gesperrt]“.
+
+Folgezeilen beginnen in der Spalte der Rezeptnamen. Ein größerer Abstand trennt die einzelnen Rezepte.
 
 <a id="compatibility"></a>
 
