@@ -60,27 +60,27 @@ Build the player ZIP with `mise run package:player-WRITES -- --apply`.
 
 <a id="development"></a>
 
-## Development
+## Contributing
 
-Run `mise run lint:all` to check all tracked files with prek. prek installs pinned versions of all formatters and linters on first use, including clang-format 23.1.5 and gersemi 0.29.2. Run `mise run test:report-WRITES -- --apply` for the portable tests. The private development checkout enables pre-commit and commit-msg with `mise x -- prek install`. In the source export, run the mise tasks directly.
+Report bugs and suggest changes in GitHub issues. Send code changes as pull requests against `main`. A maintainer reviews each pull request.
 
-Write Conventional Commit subjects in English, for example `fix(ui): handle empty recipe lists`. The scope is optional. Add `!` before the colon for a breaking change.
+Write commit subjects and pull request titles as English Conventional Commits, for example `fix(ui): handle empty recipe lists`. The scope is optional. Add `!` before the colon for a breaking change.
+
+Run `mise run lint:all` to check all tracked files with prek. prek installs pinned versions of all formatters and linters on first use, including clang-format 23.1.5 and gersemi 0.29.2. Run `mise run test:report-WRITES -- --apply` for the portable tests. After `mise x -- prek install` the checks run before each commit.
+
+The automated tests do not start the game. If your change affects crafting in the game, describe in the pull request what you tested in the game and with which setup. [Tested with](TESTED-WITH.md) lists the reference setup.
 
 <a id="ci"></a>
 
 ## Continuous integration
 
-Development takes place in the private GitLab repository. Push a feature branch, open a merge request with an English Conventional Commit title and merge into `main` after the pipeline passes. GitLab checks commit subjects, prek, portable tests, sanitizers, the Windows x86 build and a temporary source export with a leak scan.
-
-GitHub checks the exported sources on pushes and pull requests. Both systems cache the pinned Windows SDK and compare the player and test DLLs with the SHA-256 values for 0.0.61. A matching version tag builds the player ZIP and creates a draft for manual review and publication. Game and controller tests run locally.
+GitHub Actions checks every pull request and every push to `main` with prek, the portable tests and a Windows x86 build. The build must reproduce the SHA-256 values of the player and test DLLs in `tools/ci/dll-<version>.sha256`. If your change alters a DLL, the job log shows the new values. Update the file in the same pull request. A version tag builds the player ZIP and prepares a release.
 
 <a id="renovate"></a>
 
-## Renovate
+## Dependency updates
 
-Renovate opens update notifications on GitHub. Actions checks each PR. A maintainer imports it into the private development branch, runs the tests and exports the accepted update. Leave the GitHub PR open for Renovate to close after the export arrives.
-
-The update window opens on Mondays before 06:00 (Europe/Berlin). Updates mature for 14 days. Approve entries labelled `dll-impact` in the dashboard and run level 2 checks with both DLL hashes. Changed binaries may require an approved world test. For xwin, independently verify the archive and update its SHA-256 manually. Until then Windows CI fails the checksum check. Maintain the Arch archive date in `tools/ci/bootstrap.sh` and the Windows SDK manifest manually.
+Renovate proposes updates for pinned tools and GitHub Actions as pull requests, on Mondays before 06:00 (Europe/Berlin) and after a 14-day waiting period. Updates to the Windows build toolchain change the DLLs and wait for approval on the dependency dashboard.
 
 <a id="license"></a>
 
