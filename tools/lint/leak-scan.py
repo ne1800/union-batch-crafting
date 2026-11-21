@@ -1,7 +1,8 @@
-"""Check export paths, tracked contents and all Git objects, including unreachable objects."""
+"""Check repository paths, tracked contents and all Git objects, including unreachable objects."""
 
 import re
-import runpy
+import json
+import os
 import subprocess
 from pathlib import Path
 from urllib.parse import unquote
@@ -49,13 +50,15 @@ def findings(name, data, patterns, *, commit=False):
 
 
 def git(root, *args):
-    return subprocess.check_output(["git", "-C", root, *args])
+    return subprocess.check_output(
+        ["git", "-C", root, *args], stderr=subprocess.DEVNULL
+    )
 
 
 def scan(root, patterns):
     def check(name, data, object_id, *, commit=False):
         if issues := findings(name, data, patterns, commit=commit):
-            raise ValueError(f"Export scan failed ({object_id}): {', '.join(issues)}")
+            raise ValueError(f"Leak scan failed ({object_id}): {', '.join(issues)}")
 
     files = git(root, "ls-files", "-z").decode().split("\0")[:-1]
     for name in files:
@@ -82,17 +85,45 @@ def scan(root, patterns):
                 check(raw.decode(), b"", oid)
         else:
             check("", git(root, "cat-file", kind, oid), oid, commit=kind == "commit")
-    print(f"Export scan passed: {len(files)} files, {len(objects)} Git objects")
+    print(f"Leak scan passed: {len(files)} files, {len(objects)} Git objects")
+
+
+def load_patterns(root, additional=()):
+    """Read JSON arrays of regexes. A configured but unreadable file is an error."""
+    configured = os.environ.get("UBC_LEAK_PATTERNS")
+    if configured is None:
+        result = subprocess.run(
+            ["git", "-C", root, "config", "--local", "--get", "ubc.leakPatterns"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            configured = result.stdout.rstrip("\n")
+        elif result.returncode != 1:
+            raise ValueError("Cannot read local Git configuration")
+    paths = list(additional)
+    if configured is not None:
+        paths.append(root / configured)
+    rules = {label: re.compile(rule, re.I | re.M) for label, rule in RULES.items()}
+    for path in paths:
+        try:
+            extra = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(extra, list) or not all(
+                isinstance(item, str) and item for item in extra
+            ):
+                raise ValueError
+            for pattern in extra:
+                rules[f"local pattern {len(rules)}"] = re.compile(pattern, re.I | re.M)
+        except (OSError, ValueError, re.error):
+            raise ValueError("Cannot load local scan patterns") from None
+    return rules
 
 
 if __name__ == "__main__":
-    root = Path(__file__).resolve().parents[2]
-    exporter = root / "tools/publish/public-export-WRITES.py"
-    if exporter.exists():
-        private = runpy.run_path(str(exporter))
-        scan(private["TARGET"], private["private_patterns"](root))
-    else:
-        scan(
-            root,
-            {label: re.compile(rule, re.I | re.M) for label, rule in RULES.items()},
-        )
+    try:
+        root = Path(git(Path.cwd(), "rev-parse", "--show-toplevel").decode().strip())
+        scan(root, load_patterns(root))
+    except (UnicodeError, OSError, subprocess.SubprocessError):
+        raise SystemExit("Cannot scan repository") from None
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from None
