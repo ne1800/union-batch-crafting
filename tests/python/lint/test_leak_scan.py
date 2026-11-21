@@ -25,7 +25,7 @@ class LeakScanTests(unittest.TestCase):
         self.git("add", "example")
 
     def git(self, *args):
-        subprocess.run(["git", *args], cwd=self.root, check=True, capture_output=True)
+        return subprocess.check_output(["git", *args], cwd=self.root, text=True).strip()
 
     def scan(self, *, use_env=False):
         env = os.environ.copy()
@@ -53,9 +53,12 @@ class LeakScanTests(unittest.TestCase):
         self.assertNotEqual(self.scan(use_env=True).returncode, 0)
         self.git("config", "--local", "ubc.leakPatterns", str(self.config))
         self.assertIn("local pattern", self.scan().stdout)
+        original = self.git("rev-parse", ":example")
         self.tracked.write_text("clean")
         self.git("add", "example")
         self.assertIn("local pattern", self.scan().stdout)  # Unreachable first blob.
+        self.git("replace", original, self.git("rev-parse", ":example"))
+        self.assertIn("local pattern", self.scan().stdout)
 
     def test_unreadable_and_malformed_configuration(self):
         self.git("config", "--local", "ubc.leakPatterns", str(self.config))

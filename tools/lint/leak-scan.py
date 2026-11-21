@@ -51,7 +51,7 @@ def findings(name, data, patterns, *, commit=False):
 
 def git(root, *args):
     return subprocess.check_output(
-        ["git", "-C", root, *args], stderr=subprocess.DEVNULL
+        ["git", "--no-replace-objects", "-C", root, *args], stderr=subprocess.DEVNULL
     )
 
 
