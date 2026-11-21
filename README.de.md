@@ -32,7 +32,7 @@ mise run build:windows
 
 Das Plugin liegt unter `build/windows/player/UnionBatchCraftingExtended.dll`. Der Bau benötigt keine Spieldateien. Der eigene Code steht unter der [MIT-Lizenz](LICENSE). Für xwin gilt MIT/Apache-2.0. Für das SDK und die statisch in die Windows-DLL eingebundene Release-CRT gelten Microsofts Bedingungen.
 
-Die deutschen Menüs zeigen Umlaute und ß. Das Spieler-ZIP entsteht mit `mise run package:player-WRITES -- --apply`.
+Das Spieler-ZIP entsteht mit `mise run package:player-WRITES -- --apply`.
 
 <a id="development"></a>
 
