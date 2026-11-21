@@ -1,7 +1,8 @@
 name: CI
 on:
+  # A branch filter alone excludes tag pushes; release.yml handles v* tags.
   push:
-    tags-ignore: ['v*']
+    branches: ['**']
   pull_request:
   workflow_call:
 permissions:
