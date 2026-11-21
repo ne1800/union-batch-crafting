@@ -41,3 +41,11 @@ Das Spieler-ZIP entsteht mit `mise run package:player-WRITES -- --apply`.
 `mise run lint:all` führt prek auf allen versionierten Dateien aus. prek installiert beim ersten Lauf alle Formatierer und Linter in fest gepinnten Versionen, darunter clang-format 23.1.5 und gersemi 0.29.2. Mit `mise run test:report-WRITES -- --apply` laufen die portablen Tests. Git-Hooks werden im privaten Entwicklungs-Checkout mit `mise x -- prek install` für pre-commit und commit-msg aktiviert. Im Export laufen die Prüfungen über die mise-Aufgaben.
 
 Commit-Betreffzeilen sind auf Englisch und folgen Conventional Commits, etwa `fix(ui): handle empty recipe lists`. Der Scope ist optional. Ein `!` vor dem Doppelpunkt kennzeichnet eine inkompatible Änderung.
+
+<a id="ci"></a>
+
+## Kontinuierliche Integration
+
+Die Entwicklung erfolgt im privaten GitLab. Änderungen auf einen Feature-Branch pushen, einen Merge Request mit englischem Conventional-Commit-Titel öffnen und nach grüner Pipeline nach `main` mergen. GitLab prüft Commit-Titel, prek, portable Tests, Sanitizer, den Windows-x86-Build und einen temporären Quell-Export mit Leckscan.
+
+GitHub prüft die exportierten Quellen bei Pushes und Pull Requests. Beide Systeme cachen das gepinnte Windows-SDK und vergleichen Spieler- und Test-DLL mit den SHA-256-Werten von 0.0.59. Ein passender Versionstag baut das Spieler-ZIP und legt einen Entwurf zur manuellen Prüfung und Veröffentlichung an. Spiel- und Controllertests laufen lokal.

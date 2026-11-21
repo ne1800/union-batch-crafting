@@ -15,6 +15,11 @@ def valid(subject):
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--stdin"]:
+        for line in sys.stdin:
+            if not valid(line.rstrip("\n")):
+                sys.exit(f"Invalid Conventional Commit subject: {line.rstrip()}")
+        sys.exit(0)
     with Path(sys.argv[1]).open(encoding="utf-8") as message:
         if not valid(message.readline().rstrip("\n")):
             sys.exit("Use type(scope): English subject, with optional scope and !")

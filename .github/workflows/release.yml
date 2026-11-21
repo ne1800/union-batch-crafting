@@ -1,0 +1,35 @@
+name: Draft player release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/ci.yml
+  draft:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: windows-x86
+      - name: Create draft and attach the matching player ZIP
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const fs = require('node:fs')
+            const tag = context.ref.slice('refs/tags/'.length)
+            if (!/^v[0-9]+\.[0-9]+\.[0-9]+$/.test(tag)) throw Error('Expected vX.Y.Z')
+            const name = 'union-batch-crafting-player-' + tag.slice(1) + '.zip'
+            const data = fs.readFileSync('dist/' + name)
+            const {data: draft} = await github.rest.repos.createRelease({
+              ...context.repo, tag_name: tag, name: tag, draft: true
+            })
+            await github.rest.repos.uploadReleaseAsset({
+              ...context.repo, release_id: draft.id, name, data
+            })

@@ -1,0 +1,50 @@
+name: CI
+on:
+  push:
+    tags-ignore: ['v*']
+  pull_request:
+  workflow_call:
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [lint, portable, windows]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Cache Windows SDK
+        if: matrix.check == 'windows'
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: .cache/ci-sdk.tar.gz
+          key: xwin-x86-v1-${{ hashFiles('tools/build/windows-sdk-manifest.json', 'tools/build/setup-toolchain-WRITES.py') }}
+      - name: Run pinned build environment
+        env:
+          CHECK: ${{ matrix.check }}
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src -e CHECK -e CMAKE_BUILD_PARALLEL_LEVEL=2 \
+            archlinux:base-20261108.0.623074@sha256:fcee73ea1b96e236248f53a213f71276cc9072d9025b58bce9915e32f19963ae \
+            bash -euc '
+              bash tools/ci/bootstrap.sh "$CHECK"
+              case "$CHECK" in
+                lint) mise run lint:all ;;
+                portable) mise run test:report-WRITES -- --apply --timeout-seconds 1200 ;;
+                windows) bash tools/ci/windows.sh ;;
+              esac'
+      - name: Save player package and hash report
+        if: matrix.check == 'windows'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: windows-x86
+          path: |
+            dist/*-player-*.zip
+            reports/windows-hashes.txt
+          if-no-files-found: error
+          retention-days: 3

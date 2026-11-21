@@ -52,8 +52,18 @@ repos:
       - id: gersemi
         types: [cmake]
         exclude: *format_exclude
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.37.0
+    hooks:
+      - id: check-github-workflows
+      - id: check-gitlab-ci
   - repo: local
     hooks:
+      - id: actionlint
+        name: Lint GitHub Actions workflows
+        language: system
+        entry: mise x actionlint@1.7.12 -- actionlint
+        files: ^\.github/workflows/[^/]+\.ya?ml$
       - id: bilingual-docs
         name: Check bilingual documentation
         language: system

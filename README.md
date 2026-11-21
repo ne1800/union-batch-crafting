@@ -41,3 +41,11 @@ Build the player ZIP with `mise run package:player-WRITES -- --apply`.
 Run `mise run lint:all` to check all tracked files with prek. prek installs pinned versions of all formatters and linters on first use, including clang-format 23.1.5 and gersemi 0.29.2. Run `mise run test:report-WRITES -- --apply` for the portable tests. The private development checkout enables pre-commit and commit-msg with `mise x -- prek install`. In the source export, run the mise tasks directly.
 
 Write Conventional Commit subjects in English, for example `fix(ui): handle empty recipe lists`. The scope is optional. Add `!` before the colon for a breaking change.
+
+<a id="ci"></a>
+
+## Continuous integration
+
+Development takes place in the private GitLab repository. Push a feature branch, open a merge request with an English Conventional Commit title and merge into `main` after the pipeline passes. GitLab checks commit subjects, prek, portable tests, sanitizers, the Windows x86 build and a temporary source export with a leak scan.
+
+GitHub checks the exported sources on pushes and pull requests. Both systems cache the pinned Windows SDK and compare the player and test DLLs with the SHA-256 values for 0.0.59. A matching version tag builds the player ZIP and creates a draft for manual review and publication. Game and controller tests run locally.
