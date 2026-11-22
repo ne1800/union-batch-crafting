@@ -11,10 +11,11 @@ on:
   workflow_call:
 permissions:
   contents: read
-# A new push cancels the older run of the same pull request. Runs on main
-# finish, so every merged commit keeps its result.
+# A new push cancels the older run of the same pull request. Every other run
+# gets its own group: a shared group would drop a waiting run on main when a
+# third commit arrives, and that commit would never get a result.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
