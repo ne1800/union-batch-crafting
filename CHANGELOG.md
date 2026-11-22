@@ -4,6 +4,8 @@
 
 ## English
 
+- **0.0.63** A translucent black background makes the recipe list and quantity details easier to read. If the drawing code is unrecognized, the menu uses its text-only layout and logs the reason.
+
 - **0.0.62** The quantity menu keeps one focus arrow. On wide screens, more recipes fit on a page, and `[x]` identifies the selected recipe while you adjust its quantity. The preview shows starting stock, output and final stock. The footer lists the keys for the active control.
 
 - **0.0.61** Wrapped recipe names align with the text above them. Each recipe has the same spacing before the next entry.
@@ -27,6 +29,8 @@
 - **0.0.30–0.0.35** measured and bounded the grinding preview. Rough swords passed the in-game comparison at 1, 2, 5 and maximum 3 in 0.0.35.
 
 ## Deutsch
+
+- **0.0.63** Ein halbtransparenter schwarzer Hintergrund macht die Rezeptliste und die Mengendetails besser lesbar. Bei einer unbekannten Zeichenroutine zeigt das Menü die bisherige Textansicht und protokolliert den Grund.
 
 - **0.0.62** Im Mengenmenü zeigt ein Pfeil den Fokus. Auf breiten Bildschirmen passen mehr Rezepte auf eine Seite. Beim Einstellen der Menge bleibt das Rezept mit `[x]` markiert. Die Vorschau zeigt Anfangsbestand, Ausgabemenge und Endbestand als Rechnung. Die Fußzeile nennt die Tasten für das gewählte Feld.
 

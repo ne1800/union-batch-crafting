@@ -64,6 +64,7 @@ class NativeCraftingUi {
 public:
   void inspect_open(BowMenuTrace&) const noexcept;
   bool open(BowMenuTrace* trace = nullptr, BowMenuTrace* opened_trace = nullptr) noexcept;
+  const char* apply_backdrop() noexcept;
   bool open_failure() noexcept;
   bool open_success(const NativeCraftingSuccess&) noexcept;
   void close() noexcept;

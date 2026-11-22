@@ -480,6 +480,7 @@ bool compose_failure(Frame& frame, unsigned width, unsigned height, const Table&
 
 #if defined(_WIN32) && defined(_M_IX86)
 #include <windows.h>
+#include "ubc/core/sha256.hpp"
 #include "ubc/engine/windows_probe.hpp"
 namespace ubc {
 namespace {
@@ -502,6 +503,30 @@ public:
 
 private:
   m::StringStorage data_{};
+};
+struct BackdropFunction {
+  std::uintptr_t address;
+  std::size_t length;
+  lhiver::Digest digest;
+  const char* mismatch;
+};
+// Union 1.0m corrects four viewport edges and selects farZ 65534 in Blit.
+// Both complete bodies draw the same tile before the same text call.
+constexpr auto union_blit =
+    lhiver::digest_literal("996de8ea410b89b6298273c34c0b256ff38aa3275c07f1f6c6de1832b337f2f7");
+constexpr BackdropFunction backdrop_functions[] = {
+    {m::view_insert_back, 253,
+     lhiver::digest_literal("a4ba95d10af5a714014d8f95036e6656369cf4485602bb3677f5e2d786ca63e1"),
+     "ui_backdrop_insert_mismatch"},
+    {m::view_set_blend, 12,
+     lhiver::digest_literal("8b1870c33b0980ec04fdb4f6ecc447d847f94bd7810e63593fe5a451ca96a946"),
+     "ui_backdrop_blend_mismatch"},
+    {m::view_set_alpha, 10,
+     lhiver::digest_literal("b4f3c0e5997d991ad194c8fd1a9871303aefe560b0803af4a518d7cd41634389"),
+     "ui_backdrop_alpha_mismatch"},
+    {m::view_blit, 899,
+     lhiver::digest_literal("da926dc025f49cbe9e20a4c62a0a401bbf71335c5541779f2923fbc649090c3c"),
+     "ui_backdrop_blit_mismatch"},
 };
 bool shift() noexcept {
   auto* input = pointer(m::input_pointer);
@@ -613,6 +638,39 @@ bool NativeCraftingUi::open(BowMenuTrace* trace, BowMenuTrace* opened_trace) noe
   success_ = {};
   submitted_receipt_ = 0;
   return true;
+}
+const char* NativeCraftingUi::apply_backdrop() noexcept {
+  if (!opened())
+    return "ui_backdrop_window_closed";
+  const auto parent = m::read<std::uint32_t>(object(), m::menu_window);
+  auto* view = reinterpret_cast<void*>(m::read<std::uint32_t>(object(), m::menu_inner_window));
+  if (!parent || !w::readable(view, m::view_size) ||
+      m::read<std::uint32_t>(view, m::view_owner) != parent ||
+      m::read<std::int32_t>(view, m::view_id) != m::view_item ||
+      m::read<std::uintptr_t>(view, 0) != m::menu_view_vtable ||
+      pointer(m::menu_view_vtable + m::view_blit_slot * sizeof(void*)) !=
+          reinterpret_cast<void*>(m::view_blit))
+    return "ui_backdrop_view_mismatch";
+  if (m::read<std::uintptr_t>(view, m::view_back_texture))
+    return "ui_backdrop_texture_in_use";
+  for (const auto& function : backdrop_functions) {
+    const auto* code = reinterpret_cast<const void*>(function.address);
+    if (!w::readable(code, function.length, true, true))
+      return function.mismatch;
+    Sha256 hash;
+    hash.update(code, function.length);
+    const auto actual = hash.finish();
+    if (actual != function.digest && !(function.address == m::view_blit && actual == union_blit))
+      return function.mismatch;
+  }
+  // The window owns the texture reference until ScreenDone destroys it.
+  Text black("BLACK.TGA");
+  reinterpret_cast<m::ViewInsertBack>(m::view_insert_back)(view, black.get());
+  if (!m::read<std::uintptr_t>(view, m::view_back_texture))
+    return "ui_backdrop_texture_missing";
+  reinterpret_cast<m::ViewSetBlend>(m::view_set_blend)(view, m::alpha_blend);
+  reinterpret_cast<m::ViewSetAlpha>(m::view_set_alpha)(view, m::backdrop_opacity);
+  return "ui_backdrop_ready";
 }
 bool NativeCraftingUi::update_size() noexcept {
   unsigned width = 0, height = 0;
