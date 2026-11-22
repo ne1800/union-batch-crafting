@@ -1,14 +1,13 @@
 name: CI
 on:
   # Only main: Renovate branches are checked once through their pull request.
-  # A branch filter alone also excludes tag pushes; release.yml handles v* tags.
+  # The release job below creates the tags.
   push:
     branches: [main]
   # Title edits do not change the code. pr-title.yml checks the title alone, so
   # the results of these checks stay with the commit they tested.
   pull_request:
     types: [opened, reopened, synchronize]
-  workflow_call:
 permissions:
   contents: read
 # A new push cancels the older run of the same pull request. Every other run
@@ -60,6 +59,10 @@ jobs:
                   if [[ "$EVENT" == pull_request || ( "$EVENT" == push && "$EVENT_REF" == refs/heads/main ) ]]; then
                     bash tools/ci/check-commits.sh "$BASE" "$HEAD_SHA"
                   fi
+                  # A version pull request must ship the player DLL tested in game.
+                  if [[ "$EVENT" == pull_request ]] && ! git diff --quiet "$BASE" "$HEAD_SHA" -- VERSION; then
+                    python3 -B tools/release/release.py check --evidence
+                  fi
                   ;;
                 windows) bash tools/ci/windows.sh ;;
               esac'
@@ -73,3 +76,37 @@ jobs:
             reports/windows-hashes.txt
           if-no-files-found: error
           retention-days: 3
+
+  # A merge that changes VERSION publishes that version: tag, player ZIP and
+  # notes with the changelog and SHA-256 values. Every other push to main finds
+  # the release of the current version and stops.
+  release:
+    needs: checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: windows-x86
+      - name: Publish the release of VERSION
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          release=$(cat VERSION)
+          if gh release view "v$release" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "v$release is already released"
+            exit 0
+          fi
+          archive="dist/union-batch-crafting-player-$release.zip"
+          python3 -B tools/release/release.py notes "$archive" --repository "$GITHUB_REPOSITORY" >notes.md
+          gh release create "v$release" "$archive" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "Union Batch Crafting $release" --notes-file notes.md --latest

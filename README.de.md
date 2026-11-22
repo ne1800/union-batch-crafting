@@ -74,7 +74,9 @@ Die automatischen Tests starten das Spiel nicht. Wenn deine Änderung das Herste
 
 ## Kontinuierliche Integration
 
-GitHub Actions prüft jeden Pull Request und jeden Push nach `main` mit prek, den portablen Tests und einem Windows-x86-Build. Der Build muss die SHA-256-Werte von Spieler- und Test-DLL aus `tools/ci/dll-<Version>.sha256` reproduzieren. Ändert dein Beitrag eine DLL, zeigt das Job-Log die neuen Werte. Trage sie im selben Pull Request in die Datei ein. Ein Versionstag baut das Spieler-ZIP und bereitet ein Release vor.
+GitHub Actions prüft jeden Pull Request und jeden Push nach `main` mit prek, den portablen Tests und einem Windows-x86-Build. Der Build muss die SHA-256-Werte von Spieler- und Test-DLL aus `tools/ci/dll.sha256` reproduzieren. Ändert dein Beitrag eine DLL, zeigt das Job-Log die neuen Werte. Trage sie im selben Pull Request in die Datei ein oder führe nach einem Windows-Build `mise run release:prepare-WRITES -- --pin-dlls --apply` aus.
+
+Die Datei `VERSION` nennt die aktuelle Version. `mise run release:prepare-WRITES -- --version <x.y.z> --apply` setzt sie in den Anleitungen und legt Changelog-Platzhalter in beiden Sprachen an. Ein Pull Request, der `VERSION` ändert, muss außerdem die im Spiel getestete Spieler-DLL in [Getestet mit](TESTED-WITH.md) eintragen. Mergt der Maintainer ihn, setzt GitHub Actions den Versionstag und veröffentlicht das Release mit Spieler-ZIP, Changelog-Eintrag und SHA-256-Werten.
 
 <a id="renovate"></a>
 
