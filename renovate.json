@@ -54,6 +54,12 @@
   ],
   "packageRules": [
     {
+      "description": "Keep the Ubuntu 24.04 runner until actionlint knows newer runner labels.",
+      "matchDatasources": ["github-runners"],
+      "matchDepNames": ["ubuntu"],
+      "allowedVersions": "/^24\\./"
+    },
+    {
       "description": "Track Python as major.minor; mise follows patch releases on its own",
       "matchManagers": ["mise"],
       "matchDepNames": ["python"],
