@@ -74,7 +74,9 @@ The automated tests do not start the game. If your change affects crafting in th
 
 ## Continuous integration
 
-GitHub Actions checks every pull request and every push to `main` with prek, the portable tests and a Windows x86 build. The build must reproduce the SHA-256 values of the player and test DLLs in `tools/ci/dll-<version>.sha256`. If your change alters a DLL, the job log shows the new values. Update the file in the same pull request. A version tag builds the player ZIP and prepares a release.
+GitHub Actions checks every pull request and every push to `main` with prek, the portable tests and a Windows x86 build. The build must reproduce the SHA-256 values of the player and test DLLs in `tools/ci/dll.sha256`. If your change alters a DLL, the job log shows the new values. Update the file in the same pull request, or run `mise run release:prepare-WRITES -- --pin-dlls --apply` after a Windows build.
+
+The file `VERSION` names the current version. `mise run release:prepare-WRITES -- --version <x.y.z> --apply` sets it in the guides and adds changelog stubs in both languages. A pull request that changes `VERSION` must also record the player DLL from its in-game test in [Tested with](TESTED-WITH.md). When the maintainer merges it, GitHub Actions tags the version and publishes the release with the player ZIP, the changelog entry and the SHA-256 values.
 
 <a id="renovate"></a>
 

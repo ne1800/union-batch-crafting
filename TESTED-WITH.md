@@ -39,3 +39,5 @@ Mit 0.0.61 stimmten am Alchemietisch die Koordinaten und Windows-1252-Bytes alle
 | In-game ZIP / ZIP im Weltlauf (0.0.60) | `26a106b6e843917b0871fbe86c400b2af631ddf09368ca1a3ebf4ade6ffa7023` |
 | Player DLL / Spieler-DLL (0.0.61) | `ce7dd2bb779e9357ba8dce85daa593c45c084ee20a294060f56bad44ca756c04` |
 | In-game ZIP / ZIP im Weltlauf (0.0.61) | `a872e792a4ae7e5f1e9e5f96d6e7bd8ada6458fd876aa2ed1c3af2735ccb9ed3` |
+
+The release ZIP also contains this file, so its SHA-256 differs from the ZIP used in game. Compare the player DLL instead. Each release lists the SHA-256 of its ZIP and DLL. · Das Release-ZIP enthält auch diese Datei, sein SHA-256 weicht deshalb vom ZIP im Weltlauf ab. Vergleiche stattdessen die Spieler-DLL. Jedes Release nennt den SHA-256 seines ZIPs und seiner DLL.
