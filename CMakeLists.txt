@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.21)
-project(UnionBatchCrafting VERSION 0.0.1 LANGUAGES CXX)
+# VERSION is the only place that names a release.
+file(STRINGS VERSION UBC_VERSION LIMIT_COUNT 1)
+if(NOT UBC_VERSION MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)$")
+    message(FATAL_ERROR "VERSION must be major.minor.patch, got ${UBC_VERSION}")
+endif()
+set(UBC_VERSION_COMMAS "${CMAKE_MATCH_1},${CMAKE_MATCH_2},${CMAKE_MATCH_3},0")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS VERSION)
+project(UnionBatchCrafting VERSION ${UBC_VERSION} LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -683,11 +690,11 @@ if(WIN32)
         "Getrennter Build für das Kühl-Welttestpaket"
         OFF
     )
-    add_crafting_plugin(
-        UnionBatchCraftingExtended
-        src/plugin/native_crafting.rc
-    )
-    add_crafting_plugin(UnionBatchCraftingPlayer src/plugin/player.rc)
+    # Both plugins carry the version resource generated from VERSION.
+    set(version_resource "${CMAKE_CURRENT_BINARY_DIR}/generated/version.rc")
+    configure_file(cmake/version.rc.in "${version_resource}" @ONLY)
+    add_crafting_plugin(UnionBatchCraftingExtended "${version_resource}")
+    add_crafting_plugin(UnionBatchCraftingPlayer "${version_resource}")
     target_compile_definitions(
         UnionBatchCraftingPlayer
         PRIVATE UBC_PLAYER_RELEASE
