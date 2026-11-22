@@ -4,7 +4,6 @@
 #ifdef _WIN32
 #include "../../../src/ui/native_ui_language.hpp"
 #endif
-#include <sstream>
 #include <string>
 #include <vector>
 #define UBC_CRAFTING_FIXTURE_ONLY
@@ -219,7 +218,7 @@ void test_list_boundaries() {
       check(ui::compose(wrapped, session, menu, true, width, 1080, labels) &&
                 wrapped.count > compact.count,
             "long hint wraps the unselected entry");
-      const int footer = width == 640 ? 2200 : 4550;
+      const int footer = width == 640 ? 2200 : 7400;
       std::size_t i = 0, j = 0;
       while (i < compact.count && compact.lines[i].y != footer)
         ++i;
@@ -234,6 +233,95 @@ void test_list_boundaries() {
                   a.text == b.text,
               "wrapping preserves every footer and detail row");
       }
+    }
+  }
+}
+
+void test_focus_and_controls() {
+  using Row = ubc::CraftingMenuRow;
+  for (const auto size :
+       {std::array{640u, 480u}, std::array{1600u, 900u}, std::array{1920u, 1080u}}) {
+    for (const auto* text : {&ubc::ui_text::de::table, &ubc::ui_text::en::table}) {
+      ubc::CraftingSession session;
+      ubc::CraftingMenu menu;
+      ui::Frame frame;
+      auto snapshot = example(Kind::alchemy, 12);
+      auto& recipe = state(snapshot, 1);
+      for (auto& material : recipe.materials)
+        if (material.unit_output)
+          material.stored = 64;
+      check(session.open(snapshot) &&
+                ui::compose(frame, session, menu, true, size[0], size[1], *text) &&
+                contains(frame, (*text)[L::release_buttons]),
+            "opening keeps the release-keys hint");
+      std::uint64_t tick = 0;
+      neutral(session, tick);
+      const auto label = [&](Row row) {
+        switch (row) {
+        case Row::recipe:
+          return text->recipe(1);
+        case Row::quantity:
+          return (text == &ubc::ui_text::de::table) ? "Menge:" : "Amount:";
+        case Row::presets: {
+          const char* buttons[] = {"[1]", "[5]", "[10]", "[Max]"};
+          return buttons[menu.column()];
+        }
+        case Row::steps:
+          return menu.column() ? "[+5]" : "[-5]";
+        case Row::manufacture:
+          return (*text)[L::craft];
+        case Row::original:
+          return (*text)[L::original_controls];
+        }
+        return "";
+      };
+      const L actions[] = {L::key_choose, L::key_continue, L::key_preset,
+                           L::key_step,   L::key_confirm,  L::key_original};
+      std::vector<std::string> initial_labels;
+      for (int pos = 0; pos < 10; ++pos) {
+        check(ui::compose(frame, session, menu, true, size[0], size[1], *text),
+              "every focus position composes");
+        const auto row = menu.row();
+        unsigned arrows = 0;
+        std::vector<std::string> labels;
+        for (std::size_t i = 0; i + 1 < frame.count; ++i) {
+          const auto& line = frame.lines[i];
+          const std::string bytes(line.text.data());
+          if (bytes == ">") {
+            ++arrows;
+            const auto& next = frame.lines[i + 1];
+            check(next.y == line.y && next.x - line.x == 220 &&
+                      std::string_view(next.text.data()).find(label(row)) == 0,
+                  "the single focus marker identifies the active control at a fixed distance");
+          } else if (bytes != "[x]") {
+            labels.push_back(std::to_string(line.x) + "/" + std::to_string(line.y) + " " + bytes);
+          }
+        }
+        if (!pos)
+          initial_labels = labels;
+        check(arrows == 1 && contains(frame, "[x]") == (row != Row::recipe) &&
+                  labels == initial_labels,
+              "moving focus preserves every label coordinate and marks the selected recipe");
+        check(contains(frame, (*text)[actions[static_cast<unsigned>(row)]]) &&
+                  contains(frame, "B/Esc") &&
+                  (size[0] == 640 || row != Row::quantity ||
+                   contains(frame, (*text)[L::adjust_amount])),
+              "the footer identifies confirm and back for the focused control");
+        check(contains(frame, "64 + 1 = 65"), "the output equation includes starting stock");
+        check(menu.on_action(ubc::CraftingMenuAction::next, session),
+              "Tab advances to the next control");
+      }
+      recipe.material_known = recipe.material_verified = false;
+      recipe.maximum = 0;
+      for (auto& material : recipe.materials)
+        if (material.unit_output)
+          material.stored = -1;
+      session.refresh(snapshot);
+      char unknown[96];
+      std::snprintf(unknown, sizeof(unknown), (*text)[L::stock_unknown], (*text)[L::output], 1LL);
+      check(ui::compose(frame, session, menu, true, size[0], size[1], *text) &&
+                contains(frame, unknown),
+            "unknown starting stock retains its output-only fallback");
     }
   }
 }
@@ -256,13 +344,18 @@ int main(int argc, [[maybe_unused]] char** argv) {
   }
   test_translations();
   test_list_boundaries();
+  test_focus_and_controls();
   ui::Frame frame;
   std::set<std::int32_t> unknown_names;
   for (const auto& d : c::recipes) {
     for (const auto* language : {&ubc::ui_text::en::table, &ubc::ui_text::de::table}) {
       const auto& text = *language;
-      for (const auto dimensions : std::array<std::array<unsigned, 2>, 4>{
-               {{{1280, 720}}, {{1920, 1080}}, {{720, 720}}, {{640, 480}}}}) {
+      for (const auto dimensions : std::array<std::array<unsigned, 2>, 6>{{{{1280, 720}},
+                                                                           {{1600, 899}},
+                                                                           {{1600, 900}},
+                                                                           {{1920, 1080}},
+                                                                           {{720, 720}},
+                                                                           {{640, 480}}}}) {
         auto snapshot = example(d.station, 7, d.grind ? d.grind->guilds[0] : 1);
         ubc::CraftingSession session;
         ubc::CraftingMenu menu;
@@ -315,47 +408,48 @@ int main(int argc, [[maybe_unused]] char** argv) {
         check(ui::compose(frame, session, menu, false, dimensions[0], dimensions[1], worst),
               "longest hint composes with every recipe");
         bounded(frame);
-        const bool wide = dimensions[0] >= 1600;
-        const int footer = wide ? 4550 : 2200;
-        const std::size_t limit = wide ? 28 : (dimensions[0] < 1000 ? 40 : 68);
-        std::vector<std::string> expected{"> "};
-        std::istringstream words(std::string(longest) + " " + text.recipe(d.id));
-        for (std::string word; words >> word;) {
-          if (expected.back().size() + 1 + word.size() > limit)
-            expected.emplace_back("  ");
-          if (expected.back().size() > 2)
-            expected.back() += ' ';
-          expected.back() += word;
-        }
+        const bool wide = dimensions[0] >= 1600 && dimensions[1] >= 900;
+        const int footer = wide ? 7400 : 2200;
         std::size_t index = 2;
         int previous_y = 0;
-        bool found = false;
+        std::string reconstructed;
+        bool selected = false;
         for (; index < frame.count && frame.lines[index].y < footer; ++index) {
           const auto& line = frame.lines[index];
-          const bool selected = std::string_view(line.text.data()).substr(0, 2) == "> ";
-          if (selected) {
-            found = true;
-            for (std::size_t j = 0; j < expected.size(); ++j) {
-              const auto pos = index + j;
-              check(pos < frame.count && frame.lines[pos].x == 300 &&
-                        frame.lines[pos].y == line.y + static_cast<int>(j) * 230 &&
-                        frame.lines[pos].y + 220 <= footer &&
-                        frame.lines[pos].character_limit == limit &&
-                        frame.lines[pos].text.data() == expected[j],
-                    "selected list line has exact indented bytes, position and byte budget");
-            }
+          const std::string_view bytes(line.text.data());
+          if (bytes == ">") {
+            check(line.x == 300 && index + 1 < frame.count && frame.lines[index + 1].y == line.y,
+                  "focus has its own gutter on the selected recipe baseline");
+            selected = true;
+            continue;
           }
           const int gap = line.y - previous_y;
-          check(line.x == 300 && (index == 2 ? line.y == (wide ? 1250 : 1000)
-                                             : gap == 230 || gap == (wide ? 400 : 300)),
-                "list rows maintain separate continuation and entry spacing");
+          check(line.x == 520 && (!previous_y || gap == 230 || gap == (wide ? 400 : 300)),
+                "recipe and continuation text share a fixed origin and keep their spacing");
+          if (selected && (gap == 230 || reconstructed.empty())) {
+            if (!reconstructed.empty())
+              reconstructed += ' ';
+            reconstructed += bytes;
+          } else {
+            selected = false;
+          }
           previous_y = line.y;
+          if (wide) {
+            // Conservative two-times old-font advances including the space between glyphs.
+            // Measure the submitted text independently of the composer's character budget.
+            int pixels = 0;
+            for (char ch : bytes)
+              pixels += std::strchr("ilfjrt ", ch) ? 20 : std::strchr("mwMW", ch) ? 30 : 28;
+            const int width = static_cast<int>(dimensions[0]);
+            check(line.x * width / 8192 + pixels < 4640 * width / 8192,
+                  "recipe text ends before the detail focus gutter in screen pixels");
+          }
         }
-        check(found && index + 1 < frame.count && frame.lines[index].x == 300 &&
-                  frame.lines[index].y == footer &&
-                  frame.lines[index + 1].x == (wide ? 3350 : 300) &&
-                  frame.lines[index + 1].y == (wide ? 700 : 2500),
-              "selection stays visible before the footer and detail column");
+        check(reconstructed == std::string(longest) + " " + text.recipe(d.id),
+              "the selected recipe and its full block reason survive wrapping and scrolling");
+        check(index + 1 < frame.count && frame.lines[index].y == footer &&
+                  frame.lines[index + 1].x == (wide ? 4860 : 520),
+              "the list ends before the footer and the details start at their own origin");
         check(contains(frame, (std::string(text[L::test_amount]) + " " + longest).c_str()),
               "confirmation includes the specific reason");
         const auto notice = success(d);
@@ -432,8 +526,8 @@ int main(int argc, [[maybe_unused]] char** argv) {
               contains(frame, "6-9 / 9") && contains(frame, "schwarzem Troll"),
           "ninth leather row is reachable in four-line narrow viewport");
     check(ui::compose(frame, session, menu, true, 1920, 1080, ubc::ui_text::de::table) &&
-              contains(frame, "4-9 / 9"),
-          "wide viewport exposes six rows without losing selected item");
+              contains(frame, "1-9 / 9"),
+          "wide viewport fits all nine recipes without losing the selection");
     check(!ui::compose(frame, session, menu, true, 0, 720, ubc::ui_text::de::table) &&
               !ui::compose(frame, session, menu, true, 1280, 0, ubc::ui_text::de::table),
           "invalid dimensions fail without native draw");

@@ -86,21 +86,33 @@ bool relevant(const CraftingMaterialValue& row, const crafting_catalog::Descript
   return row.fixed_minimum || row.unit_cost || row.unit_output ||
          crafting_catalog::hand_amounts(d, row.symbol).tool;
 }
-bool presets(char* buffer, std::size_t capacity, const CraftingSession& session,
-             const CraftingMenu& menu, const Table& text) noexcept {
-  const char* names[] = {"1", "5", "10", text[L::max_short]};
-  std::size_t used = 0;
-  for (unsigned i = 0; i < 4; ++i) {
-    const bool enabled = CraftingMenu::preset_enabled(i, session.maximum());
-    const int n =
-        std::snprintf(buffer + used, capacity - used, "%s%s%s%s ",
-                      menu.row() == CraftingMenuRow::presets && menu.column() == i ? ">" : "",
-                      enabled ? "[" : "(", names[i], enabled ? "]" : ")");
-    if (n < 0 || static_cast<std::size_t>(n) >= capacity - used)
-      return false;
-    used += static_cast<std::size_t>(n);
+// The native font is proportional. Draw the marker and the label at separate origins.
+constexpr int marker_gap = 220;
+bool choice(Frame& frame, int x, int y, const char* label, std::size_t limit,
+            const char* marker = nullptr) noexcept {
+  return (!marker || append(frame, x - marker_gap, y, marker, 3)) &&
+         append(frame, x, y, label, limit);
+}
+
+struct KeyHint {
+  L confirm, navigation;
+};
+KeyHint key_hint(CraftingMenuRow row) noexcept {
+  switch (row) {
+  case CraftingMenuRow::recipe:
+    return {L::key_choose, L::browse_recipes};
+  case CraftingMenuRow::quantity:
+    return {L::key_continue, L::adjust_amount};
+  case CraftingMenuRow::presets:
+    return {L::key_preset, L::browse_buttons};
+  case CraftingMenuRow::steps:
+    return {L::key_step, L::browse_buttons};
+  case CraftingMenuRow::manufacture:
+    return {L::key_confirm, L::change_field};
+  case CraftingMenuRow::original:
+    return {L::key_original, L::change_field};
   }
-  return true;
+  return {L::key_choose, L::browse_recipes};
 }
 } // namespace
 
@@ -170,59 +182,60 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
   if (!dimensions(width, height) || !valid_crafting_snapshot(session.preview()))
     return false;
   const bool narrow = width < 1600 || height < 900;
-  const std::size_t full = width < 1000 ? 40u : 68u, list_limit = narrow ? full : 28u,
-                    detail_limit = narrow ? full : 48u;
-  const int right = narrow ? 300 : 3350;
+  constexpr int left = 300 + marker_gap;
+  constexpr int wide_right = 4860;
+  const int right = narrow ? left : wide_right;
+  const std::size_t full = width < 1000 ? 40u : 68u, detail_limit = narrow ? full : 48u;
+  // Leave a gutter before the right focus marker. Budget 26 pixels per glyph at
+  // the two-column threshold and cap longer lines as the interface scales up.
+  const auto list_pixels =
+      static_cast<unsigned>(wide_right - marker_gap - left - 220) * width / 8192;
+  const std::size_t list_limit = narrow ? full - 2 : std::min(40u, list_pixels / 26);
+  const int first_y = narrow ? 1000 : 1250, footer_y = narrow ? 2200 : 7400;
+  const int entry_step = narrow ? 300 : 400;
+  const auto page_size = 1u + static_cast<unsigned>((footer_y - 220 - first_y) / entry_step);
   char line[192]{};
-  if (!append(frame, 300, 280, text[L::title], full))
+  if (!append(frame, 300, 280, text[L::title], full) ||
+      !append(frame, left, narrow ? 650 : 800, text[L::known_recipes], list_limit))
     return false;
-  const unsigned page_size = narrow ? 4 : 6;
   auto view = menu.viewport(session, page_size);
   const auto* selected = session.selected();
-  if (!append(frame, 300, narrow ? 650 : 800,
-              menu.row() == CraftingMenuRow::recipe ? text[L::selected_recipes]
-                                                    : text[L::known_recipes],
-              list_limit))
-    return false;
+  const bool recipe_focus = menu.row() == CraftingMenuRow::recipe;
   // Keep the selected recipe on screen even when a translated hint needs another line.
   const auto header_lines = frame.count;
-  const int footer_y = narrow ? 2200 : 4550;
   for (auto capacity = page_size; view.count;) {
     frame.count = header_lines;
-    int y = narrow ? 1000 : 1250;
+    int y = first_y;
     std::size_t i = 0;
     for (; i < view.count; ++i) {
       const auto* entry = session.visible(view.first + i);
       if (!entry)
         return false;
-      const char* marker = blocked(crafting_block_reason(*entry), text).hint;
-      std::snprintf(line, sizeof(line), "%s%s%s", marker, *marker ? " " : "",
-                    text.recipe(entry->id));
+      const char* hint = blocked(crafting_block_reason(*entry), text).hint;
+      std::snprintf(line, sizeof(line), "%s%s%s", hint, *hint ? " " : "", text.recipe(entry->id));
       std::string_view rest(line);
-      const char* prefix = entry == selected ? "> " : "  ";
-      constexpr std::size_t indent = 2;
-      const auto available = list_limit - indent;
+      const char* marker = entry == selected ? (recipe_focus ? ">" : "[x]") : nullptr;
       while (y + 220 <= footer_y) {
         auto count = rest.size();
-        if (count > available) {
-          const auto space = rest.rfind(' ', available);
-          count = space == std::string_view::npos ? available : space;
+        if (count > list_limit) {
+          const auto space = rest.rfind(' ', list_limit);
+          count = space == std::string_view::npos ? list_limit : space;
         }
         char row[192];
-        std::snprintf(row, sizeof(row), "%s%.*s", prefix, static_cast<int>(count), rest.data());
-        if (!append(frame, 300, y, row, list_limit))
+        std::snprintf(row, sizeof(row), "%.*s", static_cast<int>(count), rest.data());
+        if (!choice(frame, left, y, row, list_limit, marker))
           return false;
         rest.remove_prefix(count);
         if (rest.empty())
           break;
         if (rest.front() == ' ')
           rest.remove_prefix(1);
-        prefix = "  ";
+        marker = nullptr;
         y += 230;
       }
       if (!rest.empty())
         break;
-      y += narrow ? 300 : 400;
+      y += entry_step;
     }
     if (i == view.count)
       break;
@@ -230,35 +243,42 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
       return false;
     view = menu.viewport(session, --capacity);
   }
-  if (!view.count && !append(frame, 300, narrow ? 1000 : 1250, text[L::no_recipes], list_limit))
+  if (!view.count &&
+      !choice(frame, left, first_y, text[L::no_recipes], list_limit, recipe_focus ? ">" : nullptr))
     return false;
   std::snprintf(line, sizeof(line), text[L::list_range], view.count ? view.first + 1 : 0,
                 view.first + view.count, session.visible_count());
-  if (!append(frame, 300, narrow ? 2200 : 4550, line, list_limit))
+  if (!append(frame, left, footer_y, line, list_limit))
     return false;
   const auto* d = selected ? crafting_catalog::find(selected->id) : nullptr;
   if (!wrapped(frame, right, narrow ? 2500 : 700, d ? text.recipe(d->id) : text[L::select_recipe],
                detail_limit))
     return false;
-  const auto mark = [&](CraftingMenuRow row) { return menu.row() == row ? ">" : " "; };
-  std::snprintf(line, sizeof(line), text[L::quantity], mark(CraftingMenuRow::quantity),
-                session.quantity(), session.maximum(),
+  const auto mark = [&](CraftingMenuRow row, unsigned column = 0) -> const char* {
+    return menu.row() == row && menu.column() == column ? ">" : nullptr;
+  };
+  std::snprintf(line, sizeof(line), text[L::quantity], session.quantity(), session.maximum(),
                 d ? text[ui_text::unit(d->quantity_unit)] : "");
   if (d && d->bow)
-    std::snprintf(line, sizeof(line), text[L::bow_quantity], mark(CraftingMenuRow::quantity),
-                  session.quantity(), session.maximum());
+    std::snprintf(line, sizeof(line), text[L::bow_quantity], session.quantity(), session.maximum());
   if (!session.quantity())
-    std::snprintf(line, sizeof(line), text[L::zero_quantity], mark(CraftingMenuRow::quantity));
-  if (!append(frame, right, narrow ? 3050 : 1450, line, detail_limit))
+    std::snprintf(line, sizeof(line), "%s", text[L::zero_quantity]);
+  if (!choice(frame, right, narrow ? 3050 : 1450, line, detail_limit,
+              mark(CraftingMenuRow::quantity)))
     return false;
-  if (!presets(line, sizeof(line), session, menu, text) ||
-      !append(frame, right, narrow ? 3370 : 1870, line, detail_limit))
-    return false;
-  std::snprintf(line, sizeof(line), text[L::steps],
-                menu.row() == CraftingMenuRow::steps && menu.column() == 0 ? ">" : " ",
-                menu.row() == CraftingMenuRow::steps && menu.column() == 1 ? ">" : " ");
-  if (!append(frame, right, narrow ? 3690 : 2290, line, detail_limit))
-    return false;
+  const int cell_width = width < 1000 ? 850 : 570;
+  const char* names[] = {"1", "5", "10", text[L::max_short]};
+  for (unsigned i = 0; i < 4; ++i) {
+    const int x = right + static_cast<int>(i) * cell_width;
+    const bool enabled = CraftingMenu::preset_enabled(i, session.maximum());
+    std::snprintf(line, sizeof(line), enabled ? "[%s]" : "(%s)", names[i]);
+    if (!choice(frame, x, narrow ? 3370 : 1870, line, detail_limit,
+                mark(CraftingMenuRow::presets, i)))
+      return false;
+    if (i < 2 && !choice(frame, x, narrow ? 3690 : 2290, i ? "[+5]" : "[-5]", detail_limit,
+                         mark(CraftingMenuRow::steps, i)))
+      return false;
+  }
   int y = narrow ? 4070 : 2850;
   std::size_t material_count = 0;
   if (selected && d && d->grind && selected->grind.known) {
@@ -301,10 +321,14 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
       const auto p = crafting_amount_preview(row, session.quantity() ? session.quantity() : 1);
       if (hand.tool)
         std::snprintf(line, sizeof(line), text[L::tool_held], text.item(row.symbol));
-      else if (hand.consumed)
-        std::snprintf(line, sizeof(line), "%s (%s)", text.item(row.symbol),
-                      row.consumed_reserve < 0 ? text[L::hand_unknown] : text[L::hand_cost]);
-      else if (row.fixed_minimum)
+      else if (hand.consumed) {
+        char held[96];
+        if (row.consumed_reserve < 0)
+          std::snprintf(held, sizeof(held), "%s", text[L::hand_unknown]);
+        else
+          std::snprintf(held, sizeof(held), text[L::hand_cost], hand.consumed);
+        std::snprintf(line, sizeof(line), "%s (%s)", text.item(row.symbol), held);
+      } else if (row.fixed_minimum)
         std::snprintf(line, sizeof(line), text[L::possession], text.item(row.symbol));
       else if (row.unit_minimum && row.unit_minimum != row.unit_cost)
         std::snprintf(line, sizeof(line), text[L::minimum], text.item(row.symbol),
@@ -333,6 +357,7 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
                       static_cast<long long>(row.unit_output ? p.produced : p.required));
       else if (row.unit_output)
         std::snprintf(line, sizeof(line), text[L::output_balance],
+                      static_cast<long long>(p.available - p.required),
                       static_cast<long long>(p.produced), static_cast<long long>(p.ready_storage));
       else if (p.minimum_missing)
         std::snprintf(line, sizeof(line), text[L::missing_minimum],
@@ -364,20 +389,15 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
   char action[96]{};
   std::snprintf(action, sizeof(action), "%s%s%s", execution ? text[L::craft] : text[L::test_amount],
                 specific ? " " : "", suffix);
-  if (narrow) {
-    std::snprintf(line, sizeof(line), text[L::actions], mark(CraftingMenuRow::manufacture), action,
-                  mark(CraftingMenuRow::original));
-    if (!wrapped(frame, 300, 7410, line, full, 230))
-      return false;
-  } else {
-    std::snprintf(line, sizeof(line), "%s %s", mark(CraftingMenuRow::manufacture), action);
-    if (!append(frame, right, 6980, line, detail_limit))
-      return false;
-    std::snprintf(line, sizeof(line), text[L::original_action], mark(CraftingMenuRow::original));
-    if (!append(frame, right, 7400, line, detail_limit))
-      return false;
-  }
-  const char* status = full == 40 ? text[L::controls_short] : text[L::controls];
+  if (!choice(frame, right, narrow ? 7410 : 6980, action, detail_limit,
+              mark(CraftingMenuRow::manufacture)) ||
+      !choice(frame, right, narrow ? 7640 : 7400, text[L::original_controls], detail_limit,
+              mark(CraftingMenuRow::original)))
+    return false;
+  const auto keys = key_hint(menu.row());
+  std::snprintf(line, sizeof(line), text[full == 40 ? L::controls_short : L::controls],
+                text[keys.confirm], text[keys.navigation]);
+  const char* status = line;
   if (session.phase() == SelectionPhase::releasing || session.phase() == SelectionPhase::ready)
     status = text[L::release_continue];
   else if (session.phase() == SelectionPhase::original)
