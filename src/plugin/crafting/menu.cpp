@@ -403,6 +403,7 @@ void __fastcall after_frame(void* game, void* manager) {
                                                                : UINT32_MAX);
           ubc::BowMenuTrace window_trace{bow_menu_window, true};
           if (session_open && ui.open(bow_trace, compare ? &window_trace : nullptr)) {
+            event(ui.apply_backdrop(), static_cast<int>(c.kind));
             borrow_view(c);
             event("ui_open", static_cast<int>(c.kind), static_cast<int>(session.visible_count()));
             ui_diagnostic_events(

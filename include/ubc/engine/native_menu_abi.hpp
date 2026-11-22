@@ -36,6 +36,8 @@ inline constexpr std::size_t menu_main_selection = 0x0c40;
 inline constexpr std::size_t menu_screen_initialized = 0x0c44;
 inline constexpr std::size_t menu_item_count = 0x0cc0;
 inline constexpr std::size_t view_id = 0x10;
+inline constexpr std::size_t view_owner = 0x3c;
+inline constexpr std::size_t view_back_texture = 0x40;
 inline constexpr std::int32_t view_item = 2;
 inline constexpr std::int32_t exit_back = 1;
 
@@ -49,6 +51,18 @@ inline constexpr std::uintptr_t string_dtor = 0x00401160;
 inline constexpr std::uintptr_t menu_run = 0x004db9a0;
 inline constexpr std::uintptr_t menu_handle_event = 0x004dbb70;
 inline constexpr std::uintptr_t menu_render = 0x004ddc20;
+// ScreenInit constructs its inner zCViewWindow at 0x4dcf41 and attaches it
+// to menu_window at 0x4dcf64. Vtable slot 10 dispatches zCView::Blit.
+inline constexpr std::uintptr_t menu_view_vtable = 0x0083140c;
+inline constexpr std::size_t view_blit_slot = 10;
+inline constexpr std::uintptr_t view_blit = 0x007a63c0;
+// Blit passes backTex and color (alpha from +0x28) to DrawTile at
+// 0x7a66df before BlitText at 0x7a6701. Glyphs use fontColor (+0x68).
+inline constexpr std::uintptr_t view_insert_back = 0x007a6130; // zSTRING const&
+inline constexpr std::uintptr_t view_set_blend = 0x007a6070;   // enum const& -> +0x20
+inline constexpr std::uintptr_t view_set_alpha = 0x007a6060;   // int by value -> +0x28
+inline constexpr int alpha_blend = 2;
+inline constexpr int backdrop_opacity = 160;
 inline constexpr std::uintptr_t view_clear_printwin = 0x007aa140;
 inline constexpr std::uintptr_t view_set_font = 0x007a9920;
 inline constexpr std::uintptr_t view_print = 0x007a9a40;
@@ -121,6 +135,9 @@ using MenuRun = int(__thiscall*)(void*);
 using MenuHandleEvent = int(__thiscall*)(void*, int);
 using StringConstructor = void(__thiscall*)(void*, const char*);
 using ViewSetFont = void(__thiscall*)(void*, const void*);
+using ViewInsertBack = void(__thiscall*)(void*, const void*);
+using ViewSetBlend = void(__thiscall*)(void*, const int&);
+using ViewSetAlpha = void(__thiscall*)(void*, int);
 using ViewPrint = void(__thiscall*)(void*, int, int, const void*);
 using LogicalKey = unsigned short(__thiscall*)(void*, unsigned short);
 using KeyPressed = int(__thiscall*)(void*, int);
