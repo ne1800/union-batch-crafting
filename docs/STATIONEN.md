@@ -30,6 +30,8 @@ Die Weltvergleiche gelten für Gothic II DNdR, Marcello L’Hiver DE 2.0.4 und d
 
 Öffne eine angebundene Station. Wähle mit Auf/Ab ein bekanntes Rezept. Mit Tab wechselst du den Bereich, mit Links/Rechts die Menge um eins. Für größere Mengen gibt es −5/+5 sowie 1/5/10/Maximum. Prüfe Bedarf und Vorschau, wähle „Herstellen“ und bestätige mit A/Enter. B/Escape geht zurück. Über „Originale Bedienung“ erreichst du die ursprüngliche Auswahl. Die vorhandene Controllerbelegung bleibt nutzbar. Die physische Bedienung an Stationen ist noch offen.
 
+Der Pfeil `>` zeigt das aktive Feld. Beim Einstellen der Menge markiert `[x]` das gewählte Rezept in der Liste. Bild auf erhöht die Menge um fünf, Bild ab verringert sie um fünf. Eine Zutat aus der Hand zählt zur angezeigten Verbrauchsmenge.
+
 Bei gesperrten Rezepten steht der Grund in eckigen Klammern, etwa „[Zutaten fehlen]“ oder „[Platz fehlt]“. Auch bei „Herstellen“ erscheint der Grund für die gewählte Menge, sobald er bekannt ist. Während der Prüfung steht dort „[gesperrt]“.
 
 <a id="configuration"></a>

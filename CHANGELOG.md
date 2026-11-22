@@ -4,6 +4,8 @@
 
 ## English
 
+- **0.0.62** The quantity menu keeps one focus arrow. On wide screens, more recipes fit on a page, and `[x]` identifies the selected recipe while you adjust its quantity. The preview shows starting stock, output and final stock. The footer lists the keys for the active control.
+
 - **0.0.61** Wrapped recipe names align with the text above them. Each recipe has the same spacing before the next entry.
 
 - **0.0.60** Blocked recipes show the reason in the list. The craft action also shows a specific reason for the selected amount. An unknown sharpening recipe now fails the diagnostic check safely.
@@ -25,6 +27,8 @@
 - **0.0.30–0.0.35** measured and bounded the grinding preview. Rough swords passed the in-game comparison at 1, 2, 5 and maximum 3 in 0.0.35.
 
 ## Deutsch
+
+- **0.0.62** Im Mengenmenü zeigt ein Pfeil den Fokus. Auf breiten Bildschirmen passen mehr Rezepte auf eine Seite. Beim Einstellen der Menge bleibt das Rezept mit `[x]` markiert. Die Vorschau zeigt Anfangsbestand, Ausgabemenge und Endbestand als Rechnung. Die Fußzeile nennt die Tasten für das gewählte Feld.
 
 - **0.0.61** Umgebrochene Rezeptnamen stehen bündig unter dem Text der ersten Zeile. Der Abstand zum nächsten Eintrag ist bei allen Rezepten gleich.
 

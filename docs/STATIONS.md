@@ -30,6 +30,8 @@ The world comparisons used Gothic II: Night of the Raven, Marcello L’Hiver DE 
 
 Open a supported station. Use Up/Down to select a known recipe, Tab to change focus, and Left/Right to adjust the quantity by one. Use −5/+5 or the 1/5/10/maximum presets for larger batches. Review the materials and preview, then choose Craft and confirm with A/Enter. B/Escape goes back. Choose the original controls to return to the game's selection. The menu uses the existing controller mapping. Physical controller input at a station still needs testing.
 
+The `>` arrow marks the active control. When you edit an amount, `[x]` marks the selected recipe in the list. Page Up adds five and Page Down subtracts five. An ingredient marked as held counts toward the amount used.
+
 Blocked recipes show the reason in brackets, such as “[missing ingredients]” or “[no space]”. The craft action shows the reason for the selected amount when known. While its availability is being checked, it shows “[locked]”.
 
 <a id="configuration"></a>

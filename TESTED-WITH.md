@@ -19,6 +19,8 @@ In 0.0.60, the German recipe list showed “[Zutaten fehlen]” for Lou’s booz
 
 In 0.0.61, all ten lines of the six visible German recipes matched the expected coordinates and Windows-1252 bytes at the alchemy table. The screenshot shows the hanging indent. Two swamp tobaccos used two apple tobaccos and two laboratory flasks. After exiting without saving and uninstalling the player DLL, the hashes of all 410 save files and 21 INI and autorun files matched the fresh backup.
 
+In 0.0.62, all twelve known recipes in slot 14 fit on one page at the alchemy table. The focus arrow marked the quantity while `[x]` marked swamp tobacco. The preview showed `2 + 2 = 4` and crafting produced that stock. Apple tobacco went from 6 to 4, laboratory flasks from 26 to 24, and swampweed stayed at 116. All 410 save files matched the fresh backup after exit and uninstallation.
+
 Die Prüfsummen identifizieren die Referenz früherer Spieltests. Engine-Prüfstellen und Rezeptverträge bestimmen die verfügbaren Mengenpfade. Einzelne native Inventarpfade erfordern außerdem bestimmte Modullayouts.
 
 Die Spieler-DLL aus 0.0.57 lud ohne Marker. Am Alchemietisch verbrauchte die Herstellung von zwei Sumpftabaken zwei Apfeltabake und zwei Laborwasserflaschen. Das Sumpfkraut blieb erhalten. Das Paket 0.0.58 enthält diesen Nachweis und dieselbe DLL.
@@ -28,6 +30,8 @@ Mit 0.0.59 zeigte das deutsche Mengenmenü „2 / 6 Durchgänge“ und „Zurüc
 Mit 0.0.60 zeigte die deutsche Rezeptliste bei Lous Schnaps und permanenter Geschicklichkeit „[Zutaten fehlen]“. Beide Menüzeilen für permanente Geschicklichkeit entsprachen den erwarteten Windows-1252-Bytes. Zwei Sumpftabake verbrauchten zwei Apfeltabake und zwei Laborwasserflaschen. Nach dem Beenden ohne Speichern und der Deinstallation stimmten die Prüfsummen aller 410 Save-Dateien.
 
 Mit 0.0.61 stimmten am Alchemietisch die Koordinaten und Windows-1252-Bytes aller zehn Zeilen der sechs sichtbaren Rezepte. Das Bildschirmfoto zeigt die eingerückten Folgezeilen. Zwei Sumpftabake verbrauchten zwei Apfeltabake und zwei Laborwasserflaschen. Nach dem Beenden ohne Speichern und dem Ausbau der Spieler-DLL entsprachen die Prüfsummen aller 410 Save-Dateien und 21 INI- und Autorun-Dateien der frischen Sicherung.
+
+Mit 0.0.62 passten am Alchemietisch in Slot 14 alle zwölf bekannten Rezepte auf eine Seite. Der Fokuspfeil stand bei der Menge, `[x]` beim Sumpftabak. Die Vorschau zeigte `2 + 2 = 4`, das Inventar bestätigte vier Sumpftabake. Apfeltabak sank von 6 auf 4, Laborwasserflaschen von 26 auf 24. Der Sumpfkrautbestand blieb bei 116. Nach Spielende und Ausbau entsprachen alle 410 Save-Dateien der frischen Sicherung.
 
 | Package component / Paketbestandteil | SHA-256 |
 | --- | --- |
@@ -39,5 +43,7 @@ Mit 0.0.61 stimmten am Alchemietisch die Koordinaten und Windows-1252-Bytes alle
 | In-game ZIP / ZIP im Weltlauf (0.0.60) | `26a106b6e843917b0871fbe86c400b2af631ddf09368ca1a3ebf4ade6ffa7023` |
 | Player DLL / Spieler-DLL (0.0.61) | `ce7dd2bb779e9357ba8dce85daa593c45c084ee20a294060f56bad44ca756c04` |
 | In-game ZIP / ZIP im Weltlauf (0.0.61) | `a872e792a4ae7e5f1e9e5f96d6e7bd8ada6458fd876aa2ed1c3af2735ccb9ed3` |
+| Player DLL / Spieler-DLL (0.0.62) | `cf9af3d86e2bb1e7f3b7cdc241fd8759efc63d512b1d2f72d16a38e21e425f11` |
+| In-game ZIP / ZIP im Weltlauf (0.0.62) | `be80758b71518ec0e40f3925ccd48b8a3c7c3938480addb9bd6948fbfdae151c` |
 
 The release ZIP also contains this file, so its SHA-256 differs from the ZIP used in game. Compare the player DLL instead. Each release lists the SHA-256 of its ZIP and DLL. · Das Release-ZIP enthält auch diese Datei, sein SHA-256 weicht deshalb vom ZIP im Weltlauf ab. Vergleiche stattdessen die Spieler-DLL. Jedes Release nennt den SHA-256 seines ZIPs und seiner DLL.
