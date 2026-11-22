@@ -60,7 +60,7 @@ Bei `auto`, einem leeren Wert oder einem fehlenden Eintrag erkennt das Plugin de
 
 ## Welche Mengen wurden im Spiel geprüft?
 
-Die Mengenwahl bietet 1, 5, 10, Maximum und freie Schritte bis zur Materialgrenze. Bis einschließlich 0.0.63 sind 31 der 98 Profile durch Aufträge im Spiel belegt, darunter alle neun an der Lederbank.
+Die Mengenwahl bietet 1, 5, 10, Maximum und freie Schritte bis zur Materialgrenze. Bis einschließlich 0.0.63 sind 38 der 98 Profile durch Aufträge im Spiel belegt, darunter alle neun an der Lederbank und elf der 20 an der Bogenbank.
 
 | Station (Profile) | Rezeptfamilien | Im Spiel hergestellte Beispiele |
 | --- | --- | --- |
@@ -70,13 +70,13 @@ Die Mengenwahl bietet 1, 5, 10, Maximum und freie Schritte bis zur Materialgrenz
 | Säge (5) | Pfeile und Bolzen, auch Sondermunition | 2 Lose gewöhnliche Pfeile ergaben 60 Pfeile |
 | Esse (2) | Rohstahl erhitzen, heiße Klingen formen | Rohstahl ×2/5, heiße Klingen ×6 |
 | Amboss (13) | Normal- und Erzwaffen | Gewöhnliches Schwert ×1/2 |
-| Bogenbank (20) | Bögen und Armbrüste verbessern | Weidenbogen ×1, Kurzbogen ×2, leichte Armbrust ×1, Jagdarmbrust MAX 2 |
+| Bogenbank (20) | Bögen und Armbrüste verbessern | Menge 1 bei Weidenbogen, Kompositbogen, Eschenbogen, Langbogen und leichter Armbrust. Menge 2 bei Kurzbogen, gutem Bogen, Jagdbogen, Armbrust und guter Armbrust. Jagdarmbrust bei MAX 2. |
 | Kühlwanne (1) | Heiße Klingen abkühlen | ×2/1/MAX 3, auch die letzten zwei Lagerklingen gemeinsam |
 | Schleifstein (22) | Waffen schleifen | Grobes Schwert ×1/2/5/MAX 3 |
 
 Zusätzlich bietet das Lagerfeuer für gewöhnliches Fleisch den Originaldialog mit 1/5/10/alle. ENDE vor der Auswahl erhält den Bestand. Dieser Originaldialog steht zusätzlich zu den neun Stationen mit Mengenmenü zur Verfügung.
 
-**Offene Profile.** Für 67 Profile steht ein Auftrag im Spiel aus, darunter Waffen, Munition, Gerichte und Tränke. Beim Geisttrank war der angereicherte Zweig aktiv und nur ein Pfeffer vorhanden. An der Bogenbank verbrauchten die vier Testaufträge alle acht Leder. Je nach Profil fehlten Leder, Stahl oder die Ausgangswaffe. Beim Eichenbogen scheiterte zusätzlich die Materialprüfung. Für 21 Schleifprofile steht der eigene Weltvergleich aus.
+**Offene Profile.** Für 60 Profile steht ein Auftrag im Spiel aus, darunter Waffen, Munition, Gerichte und Tränke. Beim Geisttrank war der angereicherte Zweig aktiv und nur ein Pfeffer vorhanden. Bei sechs der neun offenen Verbesserungen an der Bogenbank fehlte die Ausgangswaffe. Die übrigen drei brauchten mehr als die acht Leder im Spielstand. Beim Eichenbogen scheiterte in einem früheren Lauf zusätzlich die Materialprüfung. Für 21 Schleifprofile steht der eigene Weltvergleich aus.
 
 **Außerhalb der Mengenwahl.** Eine Rune je Zauber genügt. Runenverbesserungen kosten einmalig Lernpunkte und ändern den Lernzustand. Rüstungstausch und Wassermagierroben betreffen Einzelstücke, das Auge Innos ist ein einmaliger Questgegenstand. Vier Schärfversuche bleiben zurückgestellt, da jeder Versuch seinen eigenen Zufall und Fertigkeitsfortschritt hat.
 

@@ -60,7 +60,7 @@ With `auto`, a blank value or a missing entry, the plugin detects German game te
 
 ## Which quantities have been tested in the game?
 
-The quantity menu offers 1, 5, 10, maximum and custom steps up to the material limit. In-game orders through 0.0.63 cover 31 of the 98 profiles, including all nine at the leather bench.
+The quantity menu offers 1, 5, 10, maximum and custom steps up to the material limit. In-game orders through 0.0.63 cover 38 of the 98 profiles, including all nine at the leather bench and 11 of the 20 at the bow bench.
 
 | Station (profiles) | Recipe families | Examples crafted in the game |
 | --- | --- | --- |
@@ -70,13 +70,13 @@ The quantity menu offers 1, 5, 10, maximum and custom steps up to the material l
 | Saw (5) | Arrows and bolts, including special ammunition | 2 lots of ordinary arrows yielded 60 arrows |
 | Forge (2) | Heat raw steel, form hot blades | Raw steel ×2/5, hot blades ×6 |
 | Anvil (13) | Ordinary and ore weapons | Ordinary sword ×1/2 |
-| Bow bench (20) | Bow and crossbow upgrades | Willow bow ×1, shortbow ×2, light crossbow ×1, hunting crossbow MAX 2 |
+| Bow bench (20) | Bow and crossbow upgrades | One each of the willow bow, composite bow, ash bow, longbow and light crossbow. Two each of the shortbow, fine bow, hunting bow, crossbow and fine crossbow. Hunting crossbow at MAX 2. |
 | Cooling tub (1) | Cool hot blades | ×2/1/MAX 3, including the last two stored blades together |
 | Grindstone (22) | Grind weapons | Rough sword ×1/2/5/MAX 3 |
 
 The campfire also offers the original 1/5/10/all choices for ordinary meat. Choosing END before selecting a quantity preserves stock. This dialogue is separate from the nine stations with a quantity menu.
 
-**Untested profiles.** The 67 profiles awaiting an in-game order include weapons, ammunition, meals and potions. For the spirit potion the enriched branch was active and only one pepper was available. At the bow bench the four orders used all eight leather. Some profiles lacked leather, steel or a base weapon. The oak bow also failed its material check. The other 21 grinding profiles await individual world comparisons.
+**Untested profiles.** The 60 profiles awaiting an in-game order include weapons, ammunition, meals and potions. For the spirit potion the enriched branch was active and only one pepper was available. Of the nine remaining bow-bench upgrades, six lacked the base weapon. The other three needed more than the eight leather in the save. The oak bow also failed its material check in an earlier run. The other 21 grinding profiles await individual world comparisons.
 
 **Outside the quantity menu.** One rune per spell suffices. Rune upgrades spend learning points once and change learned abilities. Armour exchanges and water mage robes concern individual equipment pieces, and the Eye of Innos is a one-off quest item. Four sharpening attempts remain deferred because each rolls its own outcome and advances proficiency individually.
 
