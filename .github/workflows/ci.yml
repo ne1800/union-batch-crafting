@@ -4,8 +4,10 @@ on:
   # A branch filter alone also excludes tag pushes; release.yml handles v* tags.
   push:
     branches: [main]
+  # Title edits do not change the code. pr-title.yml checks the title alone, so
+  # the results of these checks stay with the commit they tested.
   pull_request:
-    types: [opened, reopened, synchronize, edited]
+    types: [opened, reopened, synchronize]
   workflow_call:
 permissions:
   contents: read
@@ -18,33 +20,27 @@ jobs:
       fail-fast: false
       matrix:
         check: [lint, portable, sanitizers, windows, history]
-    env:
-      # A title edit only needs the history check with the new title.
-      RUN: ${{ github.event.action != 'edited' || matrix.check == 'history' }}
     steps:
-      - if: env.RUN == 'true'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: ${{ matrix.check == 'history' && '0' || '1' }}
           ref: ${{ matrix.check == 'history' && github.event.pull_request.head.sha || github.sha }}
       - name: Cache Windows SDK
-        if: env.RUN == 'true' && matrix.check == 'windows'
+        if: matrix.check == 'windows'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/ci-sdk.tar.gz
           key: xwin-x86-v1-${{ hashFiles('tools/build/windows-sdk-manifest.json', 'tools/build/setup-toolchain-WRITES.py') }}
       - name: Run pinned build environment
-        if: env.RUN == 'true'
         env:
           CHECK: ${{ matrix.check }}
           EVENT: ${{ github.event_name }}
           EVENT_REF: ${{ github.ref }}
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src -e CHECK -e EVENT -e EVENT_REF -e BASE -e HEAD_SHA -e PR_TITLE \
+          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src -e CHECK -e EVENT -e EVENT_REF -e BASE -e HEAD_SHA \
             -e CMAKE_BUILD_PARALLEL_LEVEL=2 \
             archlinux:base-20261108.0.623074@sha256:fcee73ea1b96e236248f53a213f71276cc9072d9025b58bce9915e32f19963ae \
             bash -euc '
@@ -55,16 +51,14 @@ jobs:
                 sanitizers) mise run test:sanitizers ;;
                 history)
                   python3 -B tools/lint/leak-scan.py
-                  if [[ "$EVENT" == pull_request ]]; then
-                    bash tools/ci/check-commits.sh "$BASE" "$HEAD_SHA" "$PR_TITLE"
-                  elif [[ "$EVENT" == push && "$EVENT_REF" == refs/heads/main ]]; then
+                  if [[ "$EVENT" == pull_request || ( "$EVENT" == push && "$EVENT_REF" == refs/heads/main ) ]]; then
                     bash tools/ci/check-commits.sh "$BASE" "$HEAD_SHA"
                   fi
                   ;;
                 windows) bash tools/ci/windows.sh ;;
               esac'
       - name: Save player package and hash report
-        if: env.RUN == 'true' && matrix.check == 'windows'
+        if: matrix.check == 'windows'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-x86
