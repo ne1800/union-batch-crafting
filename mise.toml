@@ -6,4 +6,4 @@ CC = "clang"
 CXX = "clang++"
 
 [tools]
-prek = "0.4.14"
+prek = "0.5.10"
