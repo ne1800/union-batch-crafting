@@ -58,10 +58,10 @@ repos:
       - id: check-github-workflows
   - repo: local
     hooks:
-      - id: actionlint
+      - id: jactionlint
         name: Lint GitHub Actions workflows
         language: system
-        entry: mise x actionlint@1.7.12 -- actionlint
+        entry: mise x jactionlint@2.5.0 -- jactionlint
         files: ^\.github/workflows/[^/]+\.ya?ml$
       - id: renovate-config
         name: Validate Renovate configuration
