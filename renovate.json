@@ -18,10 +18,10 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Track the mise actionlint invocation in the local prek hook.",
+      "description": "Track the mise jactionlint invocation in the local prek hook.",
       "managerFilePatterns": ["/^\\.pre-commit-config\\.yaml$/"],
-      "matchStrings": ["mise x actionlint@(?<currentValue>[0-9.]+) --"],
-      "depNameTemplate": "rhysd/actionlint",
+      "matchStrings": ["mise x jactionlint@(?<currentValue>[0-9.]+) --"],
+      "depNameTemplate": "jdx/jactionlint",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^v(?<version>.+)$"
     },
@@ -53,12 +53,6 @@
     }
   ],
   "packageRules": [
-    {
-      "description": "Keep the Ubuntu 24.04 runner until actionlint knows newer runner labels.",
-      "matchDatasources": ["github-runners"],
-      "matchDepNames": ["ubuntu"],
-      "allowedVersions": "/^24\\./"
-    },
     {
       "description": "Track Python as major.minor; mise follows patch releases on its own",
       "matchManagers": ["mise"],

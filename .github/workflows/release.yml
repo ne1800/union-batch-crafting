@@ -4,6 +4,11 @@ on:
     tags: ['v*']
 permissions:
   contents: read
+# A second push of the same tag waits for the running release. The called CI
+# workflow builds its group from this workflow's name, so this group differs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-caller
+  cancel-in-progress: false
 
 jobs:
   build:
