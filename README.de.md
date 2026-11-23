@@ -6,6 +6,10 @@
 
 Ein Union-Plugin für Gothic II: Die Nacht des Raben mit der Mod Marcello L’Hiver DE 2.0.4. Wähle an einer Werkstation ein gelerntes Rezept und eine Menge, prüfe Material und Vorschau und stelle alles auf einmal her, statt den Originaldialog für jedes Stück zu wiederholen.
 
+![Mengenmenü an der Säge. Fünf Lose verbrauchen fünf Holz und fünf Rohstahl für 150 Pfeile. Der Pfeilbestand steigt laut Vorschau von 881 auf 1031.](docs/images/quantity-menu-de.webp)
+
+Ein Los ergibt 30 Pfeile. Beim Verlassen der Station wandert die Säge zurück ins Inventar.
+
 <a id="features"></a>
 
 ## Funktionen
