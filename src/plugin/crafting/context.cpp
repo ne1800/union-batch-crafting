@@ -58,7 +58,9 @@ Context context() noexcept {
   if (!c.world || !c.hero)
     return c;
   c.station_known = field(c.hero, s::npc_interact_mob, c.station);
-  c.dialog = ubc::read_selection_dialog(memory, s::information_manager);
+  // The display key compares the parsed dialog fields. Animation and layout
+  // bytes elsewhere in the view do not affect the catalogue.
+  c.dialog = ubc::read_selection_dialog(live_memory, s::information_manager);
   if (!c.station_known || !c.station || !c.dialog.valid || c.dialog.npc != c.hero ||
       c.dialog.player != c.hero || !station_owns(c.station, c.hero) ||
       integer(c.station, 0x1f4) != 1 || integer(c.station, 0x1f8) != 1)
@@ -350,7 +352,7 @@ const ubc::zbug_end_compat::Binding* end_compatibility(bool predebit) noexcept {
   if (predebit ? (!end_zbug_module.observed() || !end_union_module.observed())
                : (!end_zbug_module.current() || !end_union_module.current()))
     return nullptr;
-  const auto page = ubc::windows_probe::LoadedModuleIdentity::executable_page;
+  const auto page = CraftingModule::executable_page;
   end_compatibility_binding = {
       {end_zbug_module.base(), end_zbug_module.image_size(), end_zbug_module.digest(), true, page},
       {end_union_module.base(), end_union_module.image_size(), end_union_module.digest(), true,

@@ -26,7 +26,7 @@
 #include "ubc/core/selection_snapshot.hpp"
 #include "ubc/core/post_remove_choice.hpp"
 #include "ubc/engine/windows_probe.hpp"
-#include "ubc/engine/windows_module_identity.hpp"
+#include "preview.hpp"
 #include "ubc/stations/alchemy/crafting_alchemy_extra_reader.hpp"
 #include "../../writers/tobacco_writer.hpp"
 #include "ubc/stations/alchemy/alchemy_extra_end_snapshot.hpp"
@@ -111,7 +111,6 @@ namespace nav = ubc::recipe_navigation;
 namespace rt = ubc::runtime_script;
 namespace bc = ubc::batch_call;
 using Phase = ubc::SelectionPhase;
-inline constexpr ubc::ReadOnlyMemory memory{nullptr, w::copy_memory};
 inline constexpr ubc::lhiver::Profile layout_profile{ubc::lhiver::game_parser,
                                                      ubc::lhiver::symbol_count,
                                                      ubc::lhiver::code_length,
@@ -182,12 +181,12 @@ extern bool failure_notified, failure_open_rejected_logged;
 extern ULONGLONG handoff_started, result_started;
 extern int last_frame_state, last_handoff_state, last_capture_issue, last_failure_state,
     last_end_path_issue;
-extern ubc::windows_probe::LoadedModuleIdentity end_zbug_module, end_union_module;
+extern CraftingModule end_zbug_module, end_union_module;
 extern bool end_compatibility_attempted;
 extern ubc::zbug_end_compat::Binding end_compatibility_binding;
-extern ubc::windows_probe::LoadedModuleIdentity extra_zpe_module, extra_crt_module;
-extern ubc::windows_probe::LoadedModuleIdentity bow_renderer_module;
-extern ubc::windows_probe::LoadedModuleIdentity bow_locator_module;
+extern CraftingModule extra_zpe_module, extra_crt_module;
+extern CraftingModule bow_renderer_module;
+extern CraftingModule bow_locator_module;
 extern bool bow_locator_bound;
 extern ubc::BowRecipeCatalogueReader bow_catalogue_reader;
 extern std::optional<bitem::Reader> bow_item_reader;
@@ -205,7 +204,7 @@ extern std::uint32_t tobacco_owner_call;
 extern int tobacco_choice_call;
 extern volatile LONG tobacco_unpaid_page;
 extern bool tobacco_owner_opened, tobacco_clean_rejection, tobacco_writer_entered;
-extern ubc::windows_probe::LoadedModuleIdentity tobacco_locator;
+extern CraftingModule tobacco_locator;
 extern ubc::bow_item_native::BowDispatch tobacco_targets;
 extern ubc::cool_predebit::check::Report tobacco_report;
 extern std::optional<xdep::ListReader> tobacco_list;
@@ -225,7 +224,7 @@ extern cpre::DestroyJournal cool_predebit_journal;
 extern const bc::WriterScope* cool_writer_scope;
 extern std::uint64_t cool_fence_token;
 #ifndef UBC_PLAYER_RELEASE
-extern ubc::windows_probe::LoadedModuleIdentity cool_predebit_engine;
+extern CraftingModule cool_predebit_engine;
 #endif
 extern ubc::PackedInventoryWorkspace cool_inventory;
 extern ubc::station_recipe_snapshot_detail::HandWorkspace cool_hands;
@@ -260,8 +259,8 @@ struct GrindPreviewFailureDiagnostic {
   ubc::GrindCheck check{};
 };
 extern GrindPreviewFailureDiagnostic grind_preview_failure;
-extern ubc::windows_probe::LoadedModuleIdentity grind_renderer_module;
-extern ubc::windows_probe::LoadedModuleIdentity grind_locator_module;
+extern CraftingModule grind_renderer_module;
+extern CraftingModule grind_locator_module;
 extern bool grind_locator_bound;
 extern bool grind_initialized, grind_job, grind_original_returned, grind_skill_log_pending;
 extern std::uint64_t grind_serial, grind_job_floor;

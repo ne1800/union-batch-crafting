@@ -5,11 +5,105 @@ namespace ubc_native {
 namespace {
 // A rejected view also defers notices until the player leaves this station.
 std::uint32_t rejected_view_station = 0;
+ubc::CraftingPreviewCache preview_cache;
 
 const char* menu_open_fields() noexcept {
   return ui.uses_workshop_screen_init()
              ? R"(,"field":"zCMenu::ScreenInit","status":"L'Hiver Workshop stack, patch source pending live identification")"
              : "";
+}
+
+ubc::CraftingPreviewKey preview_key(const Context& c) noexcept {
+  const auto* selected = session.selected();
+  return {key(c),
+          world_epoch,
+          rows.generation,
+          selected ? selected->id : UINT32_MAX,
+          session.quantity(),
+          c.dialog,
+          rows.count,
+          rows.valid};
+}
+
+bool can_reuse_preview(const Context& c) noexcept {
+  if (session.phase() != Phase::selecting || !same_context(c, borrowed_context) ||
+      !(key(c) == session.preview().key) || !ui.owns_input() || !grind_frame_capture_quiet() ||
+      native_update || disabled || adapter_failed() || grind_preview_input_depth ||
+      grind_preview_overflow || grind_capture_leased || grind_preview_scope.active)
+    return false;
+  switch (c.kind) {
+  case cat::Station::alchemy:
+    return extra_catalogue_reader && spirit_catalogue_reader && tobacco_list &&
+           extra_serial != UINT64_MAX;
+  case cat::Station::bow:
+    return bow_initialized && bow_item_reader;
+  case cat::Station::grind:
+    if (!grind_preview_reader || !grind_item_reader || grind_preview_serial == UINT64_MAX)
+      return false;
+    [[fallthrough]];
+  case cat::Station::cool:
+    return cool_ready && cool_destroy_installed && cool_remove_observer.owns_patch();
+  case cat::Station::saw:
+    return ammo::permits_next();
+  default:
+    return true;
+  }
+}
+
+void observe_cached_quantity(const Context& c) noexcept {
+  const auto* selected = session.selected();
+  if (!selected || (c.kind != cat::Station::grind && c.kind != cat::Station::bow &&
+                    c.kind != cat::Station::cool))
+    return;
+  const ubc::CraftingRequest request{selected->id, session.quantity(), session.preview().key,
+                                     *selected, session.preview().hands};
+  session.observe_quantity_check(request, frame, preview_cache.quantity_available());
+  if (c.kind != cat::Station::cool)
+    grind_quantity_observation = {true, request.key.generation, frame, request.id,
+                                  request.quantity};
+}
+
+void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept {
+  const auto before = preview_key(c);
+  const auto input = grind_preview_input_serial;
+  const auto still_current = [&]() {
+    const auto after = context();
+    return input == grind_preview_input_serial && same_context(c, after) &&
+           before == preview_key(after) && can_reuse_preview(after);
+  };
+  const bool cacheable = can_reuse_preview(c);
+  if (cacheable && preview_cache.reuse(session.phase(), before, live_memory) && still_current()) {
+    diagnostic.captured = GetTickCount64();
+    observe_cached_quantity(c);
+    return;
+  }
+  preview_cache.invalidate();
+  std::optional<PreviewRecording> recording;
+  if (cacheable)
+    recording.emplace(preview_cache);
+  {
+    std::optional<GrindPreviewLease> shared_grind;
+    if (session.phase() != Phase::original && c.kind == cat::Station::grind) {
+      shared_grind.emplace(c);
+      report_grind_preview_failure(*shared_grind);
+    }
+    const auto* shared = shared_grind ? &*shared_grind : nullptr;
+    if (session.phase() != Phase::original)
+      session.refresh(capture(c, shared).snapshot);
+    diagnostic.captured = GetTickCount64();
+    if (session.phase() != Phase::original) {
+      observe_bow_quantity(c);
+      observe_cool_quantity(c);
+      observe_grind_quantity(c, shared);
+    }
+  }
+  // Neither recording nor a frame-bound grind publication survives into a
+  // restored-view capture, the handoff, or an effect callback.
+  recording.reset();
+  if (cacheable && still_current())
+    preview_cache.finish(before, session.can_confirm());
+  else
+    preview_cache.invalidate();
 }
 }
 
@@ -335,23 +429,7 @@ void __fastcall after_frame(void* game, void* manager) {
         if (!same_context(c, borrowed_context) || !ui.owns_input())
           session.original(ubc::SelectionIssue::context_changed);
         diagnostic.capturing = GetTickCount64();
-        {
-          std::optional<GrindPreviewLease> shared_grind;
-          if (session.phase() != Phase::original && c.kind == cat::Station::grind)
-            shared_grind.emplace(c);
-          if (shared_grind)
-            report_grind_preview_failure(*shared_grind);
-          const auto* shared = shared_grind ? &*shared_grind : nullptr;
-          if (session.phase() != Phase::original)
-            session.refresh(capture(c, shared).snapshot);
-          diagnostic.captured = GetTickCount64();
-          if (session.phase() != Phase::original)
-            observe_bow_quantity(c);
-          if (session.phase() != Phase::original)
-            observe_cool_quantity(c);
-          if (session.phase() != Phase::original)
-            observe_grind_quantity(c, shared);
-        } // Always release before restoring the UI, taking a new snapshot or performing any handoff.
+        refresh_menu_preview(c, diagnostic);
         diagnostic.checked = GetTickCount64();
         diagnostic.refreshed = ui.diagnostic_state(session);
         ui_diagnostic_events(ui_diagnostic.frame(session.preview().key.generation, diagnostic));

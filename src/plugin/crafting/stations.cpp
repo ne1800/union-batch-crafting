@@ -162,8 +162,7 @@ bitem::Input bow_read_input(const ubc::CraftingKey& k) noexcept {
                     bow_renderer_module.digest(), true};
   if (bow_locator_bound && bow_locator_module.observed())
     input.locator = {bow_locator_module.base(), bow_locator_module.image_size(),
-                     bow_locator_module.digest(), true,
-                     ubc::windows_probe::LoadedModuleIdentity::executable_page};
+                     bow_locator_module.digest(), true, CraftingModule::executable_page};
   return input;
 }
 void initialize_bow(const Context& c) noexcept {
@@ -635,6 +634,14 @@ void observe_bow_quantity(const Context& c) noexcept {
   session.observe_quantity_check(request, frame, available);
   grind_quantity_observation = {true, request.key.generation, frame, request.id, request.quantity};
 }
+bool cool_predebit_available(std::uintptr_t, std::uintptr_t) noexcept {
+  if (!cool_predebit_executor || !cool_predebit_reader || cool_predebit_tracker.status().blocked ||
+      bc::quarantined(cpre::callback) || !cool_engine_current() || !end_compatibility(true) ||
+      !extra_zpe_module.current() || !extra_crt_module.current())
+    return false;
+  const auto d = cool_predebit_executor->diagnostics();
+  return d.configured && !d.disabled && !d.active && !d.native_scope;
+}
 void observe_cool_quantity(const Context& c) noexcept {
   const auto* selected = session.selected();
   if (!selected || session.preview().key.kind != cat::Station::cool)
@@ -653,19 +660,10 @@ void observe_cool_quantity(const Context& c) noexcept {
   if (quiet && cool_runtime_path(predebit).valid && end_path(c.station, predebit).valid) {
     const auto collection = rows.generation;
     const auto fresh = capture(c);
-    available =
-        ubc::cool_quantity_available(
-            request, fresh.snapshot, cool_info_page(c, true),
-            []() noexcept {
-              if (!cool_predebit_executor || !cool_predebit_reader ||
-                  cool_predebit_tracker.status().blocked || bc::quarantined(cpre::callback) ||
-                  !cool_engine_current() || !end_compatibility(true) ||
-                  !extra_zpe_module.current() || !extra_crt_module.current())
-                return false;
-              const auto d = cool_predebit_executor->diagnostics();
-              return d.configured && !d.disabled && !d.active && !d.native_scope;
-            }) &&
-        collection == rows.generation && same_context(c, context());
+    available = ubc::cool_quantity_available(
+                    request, fresh.snapshot, cool_info_page(c, true),
+                    []() noexcept { return PreviewRecording::probe(cool_predebit_available); }) &&
+                collection == rows.generation && same_context(c, context());
   }
   session.observe_quantity_check(request, frame, available);
 }
