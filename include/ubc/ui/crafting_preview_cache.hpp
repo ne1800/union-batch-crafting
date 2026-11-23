@@ -39,6 +39,7 @@ struct CraftingPreviewKey {
 // This object never supplies cached bytes to a reader or a crafting request.
 class CraftingPreviewCache {
 public:
+  using GrindUnits = std::array<bool, grind_recipe::recipes.size()>;
   using Probe = bool (*)(std::uintptr_t, std::uintptr_t) noexcept;
 
   ReadOnlyMemory begin(const ReadOnlyMemory& source) noexcept {
@@ -50,12 +51,14 @@ public:
     return {this, copy};
   }
 
-  void finish(const CraftingPreviewKey& key, bool quantity_available) noexcept {
+  void finish(const CraftingPreviewKey& key, bool quantity_available,
+              const GrindUnits& units = {}) noexcept {
     if (recording_ && count_) {
       std::sort(spans_.begin(), spans_.begin() + count_,
                 [](const Span& a, const Span& b) { return a.address < b.address; });
       key_ = key;
-      available_ = quantity_available;
+      original_available_ = available_ = quantity_available;
+      units_ = units;
       ready_ = true;
     }
     recording_ = false;
@@ -70,6 +73,25 @@ public:
   bool quantity_available() const noexcept { return ready_ && available_; }
   static bool allows(SelectionPhase phase) noexcept {
     return phase == SelectionPhase::selecting || phase == SelectionPhase::releasing;
+  }
+
+  // Borrowing the original dialog hides it after a successful first render.
+  // Record just that expected presentation transition. All recorded bytes and
+  // module probes must still pass reuse() before any quantity can be shown.
+  bool bind_open_grind(const CraftingPreviewKey& opened) noexcept {
+    auto borrowed = key_;
+    if (!ready_ || !key_.dialog.open || key_.dialog.hidden || opened.dialog.open ||
+        !opened.dialog.hidden || !unit_verified(opened))
+      return false;
+    borrowed.dialog.open = false;
+    borrowed.dialog.hidden = true;
+    borrowed.selection = opened.selection;
+    borrowed.quantity = opened.quantity;
+    if (!(borrowed == opened))
+      return false;
+    key_ = opened;
+    original_available_ = available_ = true;
+    return true;
   }
 
   // Module leases, executable-page protections and adapter state have inputs
@@ -92,13 +114,31 @@ public:
 
   bool reuse(SelectionPhase phase, const CraftingPreviewKey& key,
              const ReadOnlyMemory& live) noexcept {
-    if (allows(phase) && ready_ && key == key_ && unchanged(live))
-      return true;
+    if (allows(phase) && ready_) {
+      auto bound = key_;
+      const bool other_unit = key.selection != key_.selection || key.quantity != key_.quantity;
+      if (other_unit && unit_verified(key)) {
+        bound.selection = key.selection;
+        bound.quantity = 1;
+      }
+      if (key == bound && unchanged(live)) {
+        available_ = other_unit || original_available_;
+        return true;
+      }
+    }
     invalidate();
     return false;
   }
 
 private:
+  bool unit_verified(const CraftingPreviewKey& key) const noexcept {
+    if (key.owner.kind != crafting_catalog::Station::grind || key.quantity != 1)
+      return false;
+    for (std::size_t i = 0; i < units_.size(); ++i)
+      if (crafting_catalog::recipes[crafting_catalog::grind_begin + i].id == key.selection)
+        return units_[i];
+    return false;
+  }
   struct Span {
     std::uint32_t address, length, offset;
   };
@@ -117,7 +157,8 @@ private:
   std::size_t count_ = 0, used_ = 0, probe_count_ = 0;
   ReadOnlyMemory source_{};
   CraftingPreviewKey key_{};
-  bool ready_ = false, recording_ = false, available_ = false;
+  GrindUnits units_{};
+  bool ready_ = false, recording_ = false, available_ = false, original_available_ = false;
 
   static bool copy(void* raw, std::uint32_t address, void* output, std::size_t size) noexcept {
     auto& self = *static_cast<CraftingPreviewCache*>(raw);

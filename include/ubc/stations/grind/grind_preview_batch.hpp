@@ -35,6 +35,8 @@ struct FrameObservation {
 struct FrameSource {
   void* context = nullptr;
   bool (*observe)(void*, FrameObservation&) noexcept = nullptr;
+  // Compare a validated observation in place on hot private-copy reads.
+  bool (*matches)(void*, const FrameObservation&) noexcept = nullptr;
 };
 enum class Issue {
   idle,
@@ -106,9 +108,9 @@ public:
     original_ = original;
     frames_ = frames;
     expected_ = expected;
-    owner_ = owner;
     statistics_ = {};
     index_.fill(0);
+    page_heads_.fill(0);
     issue_ = Issue::none;
     phase_ = Phase::recording;
     trace_ = Sha256{};
@@ -181,9 +183,12 @@ public:
       bool& active;
       ~Guard() { active = false; }
     } guard{probing_};
+    if (frames_.matches)
+      return frames_.matches(frames_.context, expected_) ? phase_ != Phase::failed
+                                                         : reject(Issue::scope);
+    // begin() validated every field of expected_; equality also proves validity.
     FrameObservation now{};
-    if (!frames_.observe || !frames_.observe(frames_.context, now) || !valid_frame(now, owner_) ||
-        !same_frame(now, expected_))
+    if (!frames_.observe || !frames_.observe(frames_.context, now) || !same_frame(now, expected_))
       return reject(Issue::scope);
     return phase_ != Phase::failed;
   }
@@ -207,7 +212,8 @@ public:
 
 private:
   struct Span {
-    std::uint32_t address = 0, length = 0, offset = 0;
+    std::uint32_t address, offset;
+    std::uint16_t length, next_on_page;
   };
   static constexpr std::size_t index_size = max_spans * 2;
   static_assert(max_spans < UINT16_MAX && (index_size & (index_size - 1)) == 0,
@@ -238,8 +244,15 @@ private:
       return reject(Issue::call_limit);
     ++calls;
     count += size;
-    word(trace_, address);
-    word(trace_, static_cast<std::uint32_t>(size));
+    const std::array<std::uint8_t, 8> request{static_cast<std::uint8_t>(address),
+                                              static_cast<std::uint8_t>(address >> 8),
+                                              static_cast<std::uint8_t>(address >> 16),
+                                              static_cast<std::uint8_t>(address >> 24),
+                                              static_cast<std::uint8_t>(size),
+                                              static_cast<std::uint8_t>(size >> 8),
+                                              0,
+                                              0};
+    trace_.update(request.data(), request.size());
     std::uint32_t mixed = address ^ (static_cast<std::uint32_t>(size) * 0x9e3779b9u);
     mixed ^= mixed >> 16;
     mixed *= 0x7feb352du;
@@ -268,21 +281,13 @@ private:
         return reject(Issue::unreadable);
       if (phase_ != Phase::recording || !current())
         return false;
-      const auto end = std::uint64_t{address} + size;
-      for (std::size_t i = 0; i < statistics_.spans; ++i) {
-        const auto& old = spans_[i];
-        const auto low = std::max<std::uint64_t>(address, old.address),
-                   high = std::min(end, std::uint64_t{old.address} + old.length);
-        if (low >= high)
-          continue;
-        ++statistics_.overlaps;
-        if (std::memcmp(bytes_.data() + offset + static_cast<std::size_t>(low - address),
-                        bytes_.data() + old.offset + static_cast<std::size_t>(low - old.address),
-                        static_cast<std::size_t>(high - low)))
-          return reject(Issue::overlap);
-      }
-      spans_[statistics_.spans] = {address, static_cast<std::uint32_t>(size),
-                                   static_cast<std::uint32_t>(offset)};
+      const Span span{address, static_cast<std::uint32_t>(offset), static_cast<std::uint16_t>(size),
+                      page_heads_[page_bucket(address, span_width(size))]};
+      if (!check_intersections(span))
+        return reject(Issue::overlap);
+      spans_[statistics_.spans] = span;
+      page_heads_[page_bucket(address, span_width(size))] =
+          static_cast<std::uint16_t>(statistics_.spans + 1);
       index_[bucket] = static_cast<std::uint16_t>(++statistics_.spans);
       statistics_.stored_bytes += size;
       statistics_.largest_span = std::max(statistics_.largest_span, size);
@@ -291,10 +296,48 @@ private:
     }
     return reject(Issue::span_limit);
   }
+  // Short object fields and long records each use a start-address index.
+  // An interval in a class starts at most width - 1 bytes before an intersection.
+  static constexpr std::size_t small_span = 64, page_buckets = 8192;
+  static_assert(max_span_bytes <= UINT16_MAX && (page_buckets & (page_buckets - 1)) == 0);
+  static constexpr std::size_t span_width(std::size_t size) noexcept {
+    return size <= small_span ? small_span : max_span_bytes;
+  }
+  static std::size_t page_bucket(std::uint32_t address, std::size_t width) noexcept {
+    const auto page = address / width;
+    return (width == small_span ? 0 : page_buckets / 2) +
+           ((page ^ (page >> 12)) & (page_buckets / 2 - 1));
+  }
+  bool check_intersections(const Span& span) noexcept {
+    const auto end = std::uint64_t{span.address} + span.length;
+    for (const auto width : {small_span, max_span_bytes}) {
+      const auto first = span.address < width ? 0 : (span.address - (width - 1)) / width;
+      const auto last = static_cast<std::uint32_t>((end - 1) / width);
+      for (auto page = first; page <= last; ++page) {
+        for (auto entry = page_heads_[page_bucket(static_cast<std::uint32_t>(page * width), width)];
+             entry;) {
+          const auto& old = spans_[entry - 1u];
+          entry = old.next_on_page;
+          if (old.address / width != page)
+            continue;
+          const auto low = std::max(span.address, old.address);
+          const auto high = std::min(end, std::uint64_t{old.address} + old.length);
+          if (low < high) {
+            ++statistics_.overlaps;
+            if (std::memcmp(bytes_.data() + span.offset + (low - span.address),
+                            bytes_.data() + old.offset + (low - old.address),
+                            static_cast<std::size_t>(high - low)))
+              return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+  std::array<std::uint16_t, page_buckets> page_heads_{};
   ReadOnlyMemory original_{};
   FrameSource frames_{};
   FrameObservation expected_{};
-  std::uint32_t owner_ = 0;
   bool active_ = false, probing_ = false;
   Issue issue_ = Issue::idle;
   Phase phase_ = Phase::idle;

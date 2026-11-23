@@ -113,6 +113,13 @@ std::uint32_t grind_preview_current_thread() noexcept {
   static thread_local const std::uint32_t actual = GetCurrentThreadId();
   return actual;
 }
+bool grind_scope_quiet(std::uint32_t thread, const bc::Diagnostics& bridge) noexcept {
+  return ReadAcquire(&installed) && ReadAcquire(&engine_thread) == static_cast<LONG>(thread) &&
+         frame_depth == 1 && !update_depth && !info_depth && !choice_depth && !station_depth &&
+         !collection_depth && !resolved_read_depth && !grind_preview_input_depth &&
+         !bridge.readers && !bridge.writes_disabled && !handoff.active() &&
+         result_guard.permits_next() && !cool_destroy_depth && !grind_capture_leased;
+}
 bool observe_grind_preview_scope(void* object, shpreview::FrameObservation& out) noexcept {
   out = {};
   if (object != &grind_preview_scope || !grind_preview_scope.active || grind_preview_scope.failed ||
@@ -130,13 +137,24 @@ bool observe_grind_preview_scope(void* object, shpreview::FrameObservation& out)
   out.input_serial = grind_preview_input_serial;
   out.active_scope = grind_preview_scope.active;
   out.writer = bridge.writer || amount_patch.active();
-  out.quiet = InterlockedCompareExchange(&installed, 0, 0) &&
-              InterlockedCompareExchange(&engine_thread, 0, 0) == static_cast<LONG>(thread) &&
-              frame_depth == 1 && !update_depth && !info_depth && !choice_depth && !station_depth &&
-              !collection_depth && !resolved_read_depth && !grind_preview_input_depth &&
-              !bridge.readers && !bridge.writes_disabled && !handoff.active() &&
-              result_guard.permits_next() && !cool_destroy_depth && !grind_capture_leased;
+  out.quiet = grind_scope_quiet(thread, bridge);
   return true;
+}
+// The expected frame passed begin() with quiet=true, writer=false, depth=1
+// and an active scope. Compare each live binding without copying a temporary.
+bool matches_grind_preview_scope(void* object,
+                                 const shpreview::FrameObservation& expected) noexcept {
+  const auto& scope = grind_preview_scope;
+  const auto& k = expected.key;
+  const auto thread = grind_preview_current_thread();
+  const auto bridge = bc::diagnostics();
+  return object == &scope && scope.active && !scope.failed && !grind_preview_overflow &&
+         scope.serial == expected.scope_serial &&
+         grind_preview_input_serial == expected.input_serial && generation == k.generation &&
+         frame == k.frame && thread == k.thread && scope.bound.world == k.world &&
+         scope.bound.hero == k.hero && scope.bound.station == k.station &&
+         k.manager == s::information_manager && k.production_kind == 11 && !bridge.writer &&
+         !amount_patch.active() && grind_scope_quiet(thread, bridge);
 }
 bool grind_preview_station_path(const Context& c) noexcept {
   return cool_runtime_path().valid && end_path(c.station).valid &&
@@ -156,7 +174,7 @@ bool same_grind_preview_input(const shitem::Input& a, const shitem::Input& b) no
          same(a.inventory_insert.locator, b.inventory_insert.locator) &&
          same(a.inventory_insert.union_core, b.inventory_insert.union_core);
 }
-GrindPreviewLease::GrindPreviewLease(const Context& c) noexcept {
+GrindPreviewLease::GrindPreviewLease(const Context& c, bool include_selection) noexcept {
   if (!check.equal("preview.reentry", false, grind_preview_scope.active)) {
     grind_preview_scope.failed = true;
     return;
@@ -189,13 +207,14 @@ GrindPreviewLease::GrindPreviewLease(const Context& c) noexcept {
   shpreview::Selection choice;
   choice.station_path_verified = grind_preview_station_path(c);
   choice.hero_dialog_verified = c.dialog.npc == c.hero && c.dialog.player == c.hero;
-  if (const auto* selected = session.selected())
+  if (const auto* selected = include_selection ? session.selected() : nullptr)
     if (const auto* recipe = cat::find(selected->id))
       if (recipe->grind)
         choice.current = {recipe->grind->function.symbol, session.quantity()};
   failure_stage = 3;
   const bool captured = grind_preview_reader->capture_selection(
-      memory, {&grind_preview_scope, observe_grind_preview_scope}, expected, before, choice);
+      memory, {&grind_preview_scope, observe_grind_preview_scope, matches_grind_preview_scope},
+      expected, before, choice);
   statistics = grind_preview_reader->statistics();
   if (!captured) {
     read_issue = static_cast<int>(grind_preview_reader->issue());

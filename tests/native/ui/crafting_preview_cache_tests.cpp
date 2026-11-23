@@ -146,6 +146,47 @@ void changed_keys() {
   misses([](auto& k) { k.rows_valid = !k.rows_valid; });
 }
 
+void grind_open_and_selection() {
+  Preview p;
+  p.key.selection = UINT32_MAX;
+  p.key.quantity = 0;
+  p.key.dialog.open = true;
+  auto chosen = p.key;
+  chosen.selection = ubc::crafting_catalog::recipes[ubc::crafting_catalog::grind_begin].id;
+  chosen.quantity = 1;
+  chosen.dialog.open = false;
+  chosen.dialog.hidden = true;
+  auto another = chosen;
+  another.selection = ubc::crafting_catalog::recipes[ubc::crafting_catalog::grind_begin + 1].id;
+  const auto record = [&]() {
+    auto source = p.cache->begin(p.inputs.memory());
+    std::uint32_t value;
+    check(source.copy(64, &value, sizeof value), "opening dependencies read");
+    ubc::CraftingPreviewCache::GrindUnits verified{};
+    verified[0] = verified[1] = true;
+    p.cache->finish(p.key, false, verified);
+  };
+  record();
+  auto wrong = chosen;
+  ++wrong.dialog.info;
+  check(!p.cache->bind_open_grind(wrong), "an unrelated dialog change cannot bind opening data");
+  check(p.cache->bind_open_grind(chosen) &&
+            p.cache->reuse(Phase::selecting, chosen, p.inputs.memory()) &&
+            p.cache->quantity_available(),
+        "opening carries an individually verified quantity into the hidden dialog");
+  check(p.cache->reuse(Phase::selecting, another, p.inputs.memory()) &&
+            p.cache->quantity_available(),
+        "switching between verified single weapons rechecks dependencies without a new batch");
+  ++p.inputs.bytes[65];
+  check(!p.cache->reuse(Phase::selecting, another, p.inputs.memory()),
+        "a changed inventory byte revokes every row");
+  record();
+  ++another.quantity;
+  check(p.cache->bind_open_grind(chosen) &&
+            !p.cache->reuse(Phase::selecting, another, p.inputs.memory()),
+        "a single-weapon check cannot authorize two weapons");
+}
+
 void confirmation() {
   for (const auto kind : {Kind::alchemy, Kind::bow, Kind::cool, Kind::grind}) {
     for (const bool changed_after_close : {false, true}) {
@@ -182,6 +223,7 @@ int main() {
   dependencies();
   capacity();
   changed_keys();
+  grind_open_and_selection();
   confirmation();
   std::printf("crafting_preview_cache_tests: %u checks, %u failures\n", crafting_test::checks,
               crafting_test::failures);

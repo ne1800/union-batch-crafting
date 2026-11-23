@@ -248,7 +248,28 @@ struct GrindPreviewDiagnostic {
 };
 extern std::array<GrindPreviewDiagnostic, shcat::recipes.size()> grind_preview_diagnostic;
 extern std::optional<shitem::Reader> grind_item_reader;
-extern std::optional<shpreview::Reader> grind_preview_reader;
+class TimedGrindReadSet : public shpreview::detail::ReadSet {
+public:
+  bool begin(const ubc::ReadOnlyMemory& original, shpreview::FrameSource frames,
+             const shpreview::FrameObservation& expected, std::uint32_t owner) noexcept {
+    start = GetTickCount64();
+    return ReadSet::begin(original, frames, expected, owner);
+  }
+  bool freeze() noexcept {
+    const bool ok = ReadSet::freeze();
+    frozen = GetTickCount64();
+    return ok;
+  }
+  bool seal() noexcept {
+    replayed = GetTickCount64();
+    const bool ok = ReadSet::seal();
+    sealed = GetTickCount64();
+    return ok;
+  }
+  ULONGLONG start = 0, frozen = 0, replayed = 0, sealed = 0;
+};
+using GrindMenuReader = shpreview::BasicReader<TimedGrindReadSet>;
+extern std::optional<GrindMenuReader> grind_preview_reader;
 extern shpreview::Publication grind_preview_publication;
 extern std::uint64_t grind_preview_serial, grind_preview_input_serial;
 extern unsigned grind_preview_input_depth;
