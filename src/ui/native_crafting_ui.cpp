@@ -320,16 +320,15 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
         continue;
       const auto hand = crafting_catalog::hand_amounts(*d, row.symbol);
       const auto p = crafting_amount_preview(row, session.quantity() ? session.quantity() : 1);
+      const bool held_amount_unknown = hand.consumed && row.consumed_reserve < 0;
       if (hand.tool && p.end_known)
         std::snprintf(line, sizeof(line), text[L::tool_held], text.item(row.symbol));
-      else if (hand.consumed) {
-        char held[96];
-        if (row.consumed_reserve < 0)
-          std::snprintf(held, sizeof(held), "%s", text[L::hand_unknown]);
-        else
-          std::snprintf(held, sizeof(held), text[L::hand_cost], hand.consumed);
-        std::snprintf(line, sizeof(line), "%s (%s)", text.item(row.symbol), held);
-      } else if (row.fixed_minimum)
+      else if (held_amount_unknown)
+        std::snprintf(line, sizeof(line), text[L::hand_needed], text.item(row.symbol),
+                      static_cast<long long>(p.required));
+      else if (hand.consumed)
+        std::snprintf(line, sizeof(line), text[L::hand_cost], text.item(row.symbol), hand.consumed);
+      else if (row.fixed_minimum)
         std::snprintf(line, sizeof(line), text[L::possession], text.item(row.symbol));
       else if (row.unit_minimum && row.unit_minimum != row.unit_cost)
         std::snprintf(line, sizeof(line), text[L::minimum], text.item(row.symbol),
@@ -352,7 +351,10 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
           std::snprintf(
               line, sizeof(line), text[L::output_balance], static_cast<long long>(p.ready_storage),
               static_cast<long long>(row.tool_reserve), static_cast<long long>(p.end_storage));
-      } else if (!p.available_known) {
+      } else if (held_amount_unknown)
+        std::snprintf(line, sizeof(line), "%s",
+                      text[row.stored < 0 ? L::stock_and_hand_unknown : L::hand_unknown]);
+      else if (!p.available_known) {
         const auto needed = row.fixed_minimum ? p.original_minimum : p.required;
         std::snprintf(line, sizeof(line), text[L::stock_unknown],
                       row.unit_output ? text[L::output] : text[L::required],

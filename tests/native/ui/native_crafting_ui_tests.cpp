@@ -315,22 +315,24 @@ void test_focus_and_controls() {
       recipe.material_known = recipe.material_verified = recipe.hand_known = false;
       recipe.maximum = 0;
       for (auto& material : recipe.materials) {
-        if (material.unit_output)
-          material.stored = -1;
         if (material.consumed_reserve)
           material.consumed_reserve = -1;
+        else
+          material.stored = -1;
       }
       session.refresh(snapshot);
       const bool de = text == &ubc::ui_text::de::table;
       check(ui::compose(frame, session, menu, true, size[0], size[1], *text) &&
                 contains(frame, de ? "Vorrat unklar. Du erh\xe4ltst 1."
                                    : "Stock is unknown. You get 1.") &&
-                contains_wrapped(frame, de ? "Laborwasserflasche (Anzahl in der Hand unklar)"
-                                           : "Lab water flask (number held is unknown)") &&
+                contains(frame, de ? "Laborwasserflasche (1 ben\xf6tigt)"
+                                   : "Lab water flask (1 needed)") &&
+                contains(frame, de ? "Unklar, wie viele du in der Hand hast."
+                                   : "The number in your hand is unknown.") &&
                 contains(frame,
                          de ? "Vorrat unklar. Du brauchst 1." : "Stock is unknown. You need 1.") &&
-                contains(frame, de ? "Menge 0. Vorschau f\xfcr einen Durchgang."
-                                   : "Amount 0. Preview for one batch."),
+                contains(frame, de ? "Menge: 0. Vorschau f\xfcr einen Durchgang."
+                                   : "Amount: 0. Preview for one batch."),
             "unknown stock and held amounts retain the one-batch cost and yield");
       bounded(frame);
     }
@@ -434,8 +436,8 @@ int main(int argc, [[maybe_unused]] char** argv) {
                                                                      : "Honing skill 98 to 99"),
                 "grinding labels the current and projected skill");
         if (d.bow)
-          check(contains(frame, language == &ubc::ui_text::de::table ? "Wahl 1, Material f\xfcr 7"
-                                                                     : "Upgrade 1, parts for 7"),
+          check(contains(frame, language == &ubc::ui_text::de::table ? "Menge: 1, Teile f\xfcr 7"
+                                                                     : "Amount: 1, parts for 7"),
                 "bow upgrades label the selected quantity and the material limit");
         if (d.id == 0xb002 && language == &ubc::ui_text::de::table) {
           char expected[64];
@@ -516,6 +518,28 @@ int main(int argc, [[maybe_unused]] char** argv) {
               "the list ends before the footer and the details start at their own origin");
         check(contains(frame, (std::string(text[L::test_amount]) + " " + longest).c_str()),
               "confirmation includes the specific reason");
+        auto& unreadable = state(snapshot, d.id);
+        unreadable.contract = true;
+        unreadable.material_known = unreadable.material_verified = unreadable.hand_known = false;
+        unreadable.maximum = 0;
+        for (auto& material : unreadable.materials) {
+          material.stored = -1;
+          if (material.consumed_reserve)
+            material.consumed_reserve = -1;
+          if (material.tool_reserve)
+            material.tool_reserve = -1;
+        }
+        session.refresh(snapshot);
+        check(ui::compose(frame, session, menu, true, dimensions[0], dimensions[1], text),
+              "the detail column also fits recipes with unknown inventory and held counts");
+        bounded(frame);
+        if (d.tobacco) {
+          const bool de = language == &ubc::ui_text::de::table;
+          check(contains(frame, de ? "Vorrat und Menge in der Hand unbekannt."
+                                   : "Stock and amount in hand are unknown.") &&
+                    !contains(frame, de ? "Du brauchst 0." : "You need 0."),
+                "an unreadable flask and a possession-only ingredient retain their requirements");
+        }
         const auto notice = success(d);
         check(ui::valid_success(notice) &&
                   ui::compose_success(frame, notice, dimensions[0], dimensions[1], text),
@@ -611,7 +635,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
     ubc::CraftingSession empty;
     check(empty.open(snapshot) &&
               ui::compose(frame, empty, menu, true, 640, 480, ubc::ui_text::de::table) &&
-              contains(frame, "Menge 0") && !contains(frame, "Durchgang"),
+              contains(frame, "Menge: 0") && !contains(frame, "Durchgang"),
           "an empty recipe list has no one-batch preview");
   }
   {
@@ -625,7 +649,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
     neutral(session, f);
     check(
         ui::compose(frame, session, menu, true, 1280, 720, ubc::ui_text::de::table) &&
-            contains(frame, "Wahl 2, Material f\xfcr 7") && contains(frame, "Minimum 24") &&
+            contains(frame, "Menge: 2, Teile f\xfcr 7") && contains(frame, "Minimum 24") &&
             contains(frame, " - 20 = ") && contains(frame, " - 24 = "),
         "Bow UI separates stock bound, original steel minimum and actual steel/leather consumption");
     check(session.preset(7) &&
