@@ -54,12 +54,12 @@ bool failure_notified = false, failure_open_rejected_logged = false;
 ULONGLONG handoff_started = 0, result_started = 0;
 int last_frame_state = -1, last_handoff_state = -1, last_capture_issue = -1,
     last_failure_state = -1, last_end_path_issue = -1;
-ubc::windows_probe::LoadedModuleIdentity end_zbug_module, end_union_module;
+CraftingModule end_zbug_module, end_union_module;
 bool end_compatibility_attempted = false;
 ubc::zbug_end_compat::Binding end_compatibility_binding{};
-ubc::windows_probe::LoadedModuleIdentity extra_zpe_module, extra_crt_module;
-ubc::windows_probe::LoadedModuleIdentity bow_renderer_module;
-ubc::windows_probe::LoadedModuleIdentity bow_locator_module;
+CraftingModule extra_zpe_module, extra_crt_module;
+CraftingModule bow_renderer_module;
+CraftingModule bow_locator_module;
 bool bow_locator_bound = false;
 ubc::BowRecipeCatalogueReader bow_catalogue_reader;
 std::optional<bitem::Reader> bow_item_reader;
@@ -77,7 +77,7 @@ std::uint32_t tobacco_owner_call = 0;
 int tobacco_choice_call = 0;
 volatile LONG tobacco_unpaid_page = 0;
 bool tobacco_owner_opened = false, tobacco_clean_rejection = false, tobacco_writer_entered = false;
-ubc::windows_probe::LoadedModuleIdentity tobacco_locator;
+CraftingModule tobacco_locator;
 ubc::bow_item_native::BowDispatch tobacco_targets;
 ubc::cool_predebit::check::Report tobacco_report;
 std::optional<xdep::ListReader> tobacco_list;
@@ -97,7 +97,7 @@ cpre::DestroyJournal cool_predebit_journal;
 const bc::WriterScope* cool_writer_scope = nullptr;
 std::uint64_t cool_fence_token = 0;
 #ifndef UBC_PLAYER_RELEASE
-ubc::windows_probe::LoadedModuleIdentity cool_predebit_engine;
+CraftingModule cool_predebit_engine;
 #endif
 ubc::PackedInventoryWorkspace cool_inventory;
 ubc::station_recipe_snapshot_detail::HandWorkspace cool_hands;
@@ -122,8 +122,8 @@ std::uint64_t grind_preview_serial = 0, grind_preview_input_serial = 0;
 unsigned grind_preview_input_depth = 0;
 bool grind_preview_overflow = false;
 GrindPreviewFailureDiagnostic grind_preview_failure;
-ubc::windows_probe::LoadedModuleIdentity grind_renderer_module;
-ubc::windows_probe::LoadedModuleIdentity grind_locator_module;
+CraftingModule grind_renderer_module;
+CraftingModule grind_locator_module;
 bool grind_locator_bound = false;
 bool grind_initialized = false, grind_job = false, grind_original_returned = false,
      grind_skill_log_pending = false;

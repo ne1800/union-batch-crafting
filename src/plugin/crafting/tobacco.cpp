@@ -80,8 +80,7 @@ void tobacco_module_checks(ubc::bow_item_native::BowDispatch& targets, bool empt
   targets.empty_pack = empty_pack;
   if (tobacco_locator.observed())
     targets.locator = {tobacco_locator.base(), tobacco_locator.image_size(),
-                       tobacco_locator.digest(), true,
-                       ubc::windows_probe::LoadedModuleIdentity::executable_page};
+                       tobacco_locator.digest(), true, CraftingModule::executable_page};
   const auto unpack = ubc::bow_item_native::detail::hasitems(
       memory, modules, nullptr, nullptr, &targets,
       ubc::bow_item_native::detail::PackedHasItems::observed_tobacco_wrapper);
