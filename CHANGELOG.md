@@ -4,6 +4,8 @@
 
 ## English
 
+- **0.0.65** At the grindstone and other stations, the quantity menu reuses the preview while its values stay the same to reduce stutter. Each time the menu opens, the plugin checks the game's menu functions. It recognizes the variant seen in the L’Hiver Workshop setup. If the check fails, you can still use the station's original controls.
+
 - **0.0.64** Clearer detail lines explain returned tools, held items, zero-quantity previews, unknown stock counts, honing skill progress and bow material limits. If the menu window is rejected, no text is drawn to it and the original station controls remain usable.
 
 - **0.0.63** A translucent black background makes the recipe list and quantity details easier to read. If the drawing code is unrecognized, the menu uses its text-only layout and logs the reason.
@@ -31,6 +33,8 @@
 - **0.0.30–0.0.35** measured and bounded the grinding preview. Rough swords passed the in-game comparison at 1, 2, 5 and maximum 3 in 0.0.35.
 
 ## Deutsch
+
+- **0.0.65** Am Schleifstein und an anderen Stationen verwendet das Mengenmenü die Vorschau weiter, solange ihre Werte gleich bleiben. Das verringert Ruckler. Bei jedem Öffnen prüft das Plugin die Menüfunktionen des Spiels. Es erkennt auch die Variante aus der L’Hiver-Workshop-Installation. Schlägt die Prüfung fehl, kannst du die Station wie im Original bedienen.
 
 - **0.0.64** Verständlichere Detailzeilen erklären zurückgegebene Werkzeuge, gehaltene Gegenstände, Vorschauen bei Menge null, unbekannte Bestände, Schleifkunst und Materialgrenzen an der Bogenbank. Wird das Menüfenster abgewiesen, schreibt das Plugin keinen Text hinein und die Originalbedienung der Station bleibt bedienbar.
 
