@@ -63,7 +63,7 @@ Bei `auto`, einem leeren Wert oder einem fehlenden Eintrag erkennt das Plugin de
 
 ## Welche Mengen wurden im Spiel geprüft?
 
-Die Mengenwahl bietet 1, 5, 10, Maximum und freie Schritte bis zur Materialgrenze. Bis einschließlich 0.0.65 sind 80 der 98 Profile durch Aufträge im Spiel belegt, darunter alle drei am Herd, alle 23 am Alchemietisch (mit beiden Geisttrank-Zweigen), alle 20 an der Bogenbank, alle 13 am Amboss, alle neun an der Lederbank, alle fünf an der Säge und vier der 22 am Schleifstein.
+Die Mengenwahl bietet 1, 5, 10, Maximum und freie Schritte bis zur Materialgrenze. Bis einschließlich 0.0.65 sind alle 98 von 98 Profilen an allen neun Stationen durch Aufträge im Spiel belegt: alle drei am Herd, alle 23 am Alchemietisch (mit beiden Geisttrank-Zweigen), alle neun an der Lederbank, alle fünf an der Säge, beide an der Esse, alle 13 am Amboss, alle 20 an der Bogenbank, das Profil an der Kühlwanne sowie alle 22 am Schleifstein.
 
 | Station (Profile) | Rezeptfamilien | Im Spiel hergestellte Beispiele |
 | --- | --- | --- |
@@ -75,11 +75,11 @@ Die Mengenwahl bietet 1, 5, 10, Maximum und freie Schritte bis zur Materialgrenz
 | Amboss (13) | Normal- und Erzwaffen | Gewöhnliches Schwert ×1/2; edles Schwert, edles Langschwert, Rubinklinge, El Bastardo und alle acht Erzwaffen (Erz-Langschwert bis großer Erz-Drachentöter) jeweils ×2 |
 | Bogenbank (20) | Bögen und Armbrüste verbessern | Alle 20 Profile: Weidenbogen, Kompositbogen, Eschenbogen, Langbogen und leichte Armbrust ×1; Kurzbogen, guter Bogen, Jagdbogen, Ulmenbogen, Buchenbogen, Knochenbogen, Eichenbogen, Kriegsbogen, Drachenbogen, Armbrust, gute Armbrust, Kriegsarmbrust, schwere Armbrust und Drachenjägerarmbrust ×2; Jagdarmbrust bei MAX 2. |
 | Kühlwanne (1) | Heiße Klingen abkühlen | ×2/1/MAX 3, auch die letzten zwei Lagerklingen gemeinsam |
-| Schleifstein (22) | Waffen schleifen | Grobes Schwert ×1/2/5/MAX 3. Je 2 bei grobem Zweihänder, grobem Bastardschwert und Zweihänder. |
+| Schleifstein (22) | Waffen schleifen | Alle 22 Profile: grobes Schwert ×1/2/5/MAX 3; edles Schwert, Rubinklinge und Paladin-Zweihänder ×1; Paladinschwert, alle sechs gesegneten Erzklingen (1H/2H roh, gesegnet/Ordensschwert, Innos Zorn, Heiliger Vollstrecker), grober Zweihänder, grobes Bastardschwert, Zweihänder sowie alle acht Drachenjäger-Erzwaffen (Erz-Langschwert bis großer Erz-Drachentöter) jeweils ×2. |
 
 Zusätzlich bietet das Lagerfeuer für gewöhnliches Fleisch den Originaldialog mit 1/5/10/alle. ENDE vor der Auswahl erhält den Bestand. Dieser Originaldialog steht zusätzlich zu den neun Stationen mit Mengenmenü zur Verfügung.
 
-**Offene Profile.** Für 18 Profile steht ein Auftrag im Spiel aus: die übrigen 18 Schleifprofile.
+**Offene Profile.** Keine. Alle 98 integrierten Profile an allen neun Stationen sind durch Aufträge im Spiel belegt.
 
 **Außerhalb der Mengenwahl.** Eine Rune je Zauber genügt. Runenverbesserungen kosten einmalig Lernpunkte und ändern den Lernzustand. Rüstungstausch und Wassermagierroben betreffen Einzelstücke, das Auge Innos ist ein einmaliger Questgegenstand. Vier Schärfversuche bleiben zurückgestellt, da jeder Versuch seinen eigenen Zufall und Fertigkeitsfortschritt hat.
 
@@ -144,6 +144,6 @@ zwei Drachenjägerarmbrüste mindestens 24 Rohstahl im Vorrat, verbrauchen aber
 
 ## Prüfstand und Grenzen
 
-Im Spiel wurden die Aufträge aus der [Stationstabelle](#coverage) geprüft. Am Alchemietisch bestätigten die Tests die deutschen Rezepttexte und die angezeigten Sperrgründe. Zwei Portionen Sumpftabak verbrauchten zwei Apfeltabake und zwei Laborflaschen. Für einige Rezepte und die physische Controllerbedienung an Stationen steht der Spieltest noch aus.
+Im Spiel wurden alle 98 Profile aus der [Stationstabelle](#coverage) geprüft. Am Alchemietisch bestätigten die Tests die deutschen Rezepttexte und die angezeigten Sperrgründe. Zwei Portionen Sumpftabak verbrauchten zwei Apfeltabake und zwei Laborflaschen. Die physische Controllerbedienung an Stationen steht noch aus.
 
 [Spielnachweise](../TESTED-WITH.md) · [Änderungen je Version](../CHANGELOG.md#deutsch) · [Projektübersicht](../README.de.md)
