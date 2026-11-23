@@ -1061,6 +1061,22 @@ void files(char** argv) {
         static_cast<unsigned long long>(s.final_bytes), s.spans, s.stored_bytes, s.overlaps,
         static_cast<unsigned long long>(s.recording_calls),
         static_cast<unsigned long long>(s.replay_calls), sizeof(batch::Reader));
+    if (variant == 2) {
+      prototype->close();
+      auto precise = f.image.memory();
+      precise.precise_parser_reads = []() noexcept { return true; };
+      check(prototype->capture_selection(precise, frame.source(), frame.value, input,
+                                         {requested.back(), true, true}) &&
+                prototype->publish(*publication) && publication->count > 1,
+            "frozen selection verifies multiple real candidates and the selected amount");
+      for (std::size_t i = 0; i < publication->count; ++i) {
+        const auto request = publication->requests[i];
+        const auto full =
+            reader.capture_preview(live, c, guild, request.callback, request.quantity, input);
+        check(batch::detail::same_item_result(full, publication->items[i]),
+              "narrow reads and shared checks retain the independent full item proof");
+      }
+    }
     ++frame.value.key.frame;
     check(!prototype->publish(*publication) && publication->count == 0,
           "even a successful copy is not published in another current frame");

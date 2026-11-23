@@ -114,19 +114,20 @@ public:
     issue_ = Issue::none;
     phase_ = Phase::recording;
     trace_ = Sha256{};
+    trace_bytes_ = 0;
     first_trace_ = {};
     receipt_ = {};
     if (!original.read || !frames.observe || !valid_frame(expected, owner))
       return reject(Issue::scope);
     return current();
   }
-  ReadOnlyMemory memory() noexcept { return {this, &copy}; }
+  ReadOnlyMemory memory() noexcept { return {this, &copy, original_.precise_parser_reads}; }
   bool freeze() noexcept {
     if (active_ || phase_ != Phase::recording)
       return reject(active_ ? Issue::reentry : Issue::closed);
     if (!current() || !statistics_.spans)
       return reject(Issue::scope);
-    first_trace_ = trace_.finish();
+    first_trace_ = finish_trace();
     trace_ = Sha256{};
     phase_ = Phase::replay;
     return true;
@@ -135,7 +136,7 @@ public:
     if (active_ || phase_ != Phase::replay)
       return reject(active_ ? Issue::reentry : Issue::closed);
     if (statistics_.recording_calls != statistics_.replay_calls ||
-        statistics_.recording_bytes != statistics_.replay_bytes || trace_.finish() != first_trace_)
+        statistics_.recording_bytes != statistics_.replay_bytes || finish_trace() != first_trace_)
       return reject(Issue::replay_changed);
     active_ = true;
     struct Guard {
@@ -244,15 +245,7 @@ private:
       return reject(Issue::call_limit);
     ++calls;
     count += size;
-    const std::array<std::uint8_t, 8> request{static_cast<std::uint8_t>(address),
-                                              static_cast<std::uint8_t>(address >> 8),
-                                              static_cast<std::uint8_t>(address >> 16),
-                                              static_cast<std::uint8_t>(address >> 24),
-                                              static_cast<std::uint8_t>(size),
-                                              static_cast<std::uint8_t>(size >> 8),
-                                              0,
-                                              0};
-    trace_.update(request.data(), request.size());
+    append_trace(address, static_cast<std::uint32_t>(size));
     std::uint32_t mixed = address ^ (static_cast<std::uint32_t>(size) * 0x9e3779b9u);
     mixed ^= mixed >> 16;
     mixed *= 0x7feb352du;
@@ -334,6 +327,25 @@ private:
     }
     return true;
   }
+  void append_trace(std::uint32_t address, std::uint32_t length) noexcept {
+    // Canonical little-endian address/length pairs, identical to word().
+    for (const auto value : {address, length}) {
+      for (unsigned i = 0; i != 4; ++i)
+        trace_buffer_[trace_bytes_ + i] = static_cast<std::uint8_t>(value >> (8 * i));
+      trace_bytes_ += 4;
+    }
+    if (trace_bytes_ == trace_buffer_.size()) {
+      trace_.update(trace_buffer_.data(), trace_bytes_);
+      trace_bytes_ = 0;
+    }
+  }
+  lhiver::Digest finish_trace() noexcept {
+    trace_.update(trace_buffer_.data(), trace_bytes_);
+    trace_bytes_ = 0;
+    return trace_.finish();
+  }
+  std::array<std::uint8_t, 512> trace_buffer_{};
+  unsigned trace_bytes_ = 0;
   std::array<std::uint16_t, page_buckets> page_heads_{};
   ReadOnlyMemory original_{};
   FrameSource frames_{};
@@ -603,19 +615,30 @@ private:
     ready_ = true;
     return true;
   }
-  bool item(Publication& out, const grind_item_runtime::Input& input, Request request) noexcept {
+  bool item(Publication& out, const grind_item_runtime::Input& input, Request request,
+            grind_item_runtime::FrozenChecks* frozen = nullptr) noexcept {
     if (out.count == max_requests)
       return reads_.reject(Issue::request);
     const auto index = out.count++;
     out.requests[index] = request;
-    const auto found = runtime_reader_.capture_preview(reads_.memory(), out.catalogue, out.physical,
-                                                       request.callback, request.quantity, input);
+    if (frozen && request.quantity > 1) {
+      for (std::size_t i = 0; i < index; ++i) {
+        if (out.requests[i].callback == request.callback && out.items[i].item_path_verified) {
+          frozen->selected_unit = &out.items[i];
+          break;
+        }
+      }
+    }
+    const auto found = runtime_reader_.capture(reads_.memory(), out.catalogue, request.callback,
+                                               request.quantity, input, &out.physical, frozen);
     if (!reads_.current())
       return false;
     if (grind_item_runtime::matches(found, out.key, request.callback, request.quantity,
-                                    grind_item_path::Scope::preview))
+                                    grind_item_path::Scope::preview)) {
       out.items[index] = found;
-    else {
+      if (frozen)
+        frozen->common = &out.items[index];
+    } else {
       if (found.item_path_verified || found.issue == grind_item_runtime::Issue::none ||
           found.issue == grind_item_runtime::Issue::thread ||
           found.issue == grind_item_runtime::Issue::reentry ||
@@ -643,6 +666,7 @@ private:
         if (!item(out, input, requests_[i]))
           return false;
     } else {
+      grind_item_runtime::FrozenChecks shared_checks{};
       const auto& raw = out.catalogue;
       const auto& d = raw.diagnostic;
       out.station.stable_boundary_verified =
@@ -665,7 +689,7 @@ private:
         if (!candidate(out.snapshot.recipes[crafting_catalog::grind_begin + i]))
           continue;
         const auto index = out.count;
-        if (!item(out, input, {grind_recipe::recipes[i].function.symbol, 1}))
+        if (!item(out, input, {grind_recipe::recipes[i].function.symbol, 1}, &shared_checks))
           return false;
         if (!out.blocked[index].blocked)
           projection.materials[i] = bind_grind_material(raw, out.items[index], out.station);
@@ -681,7 +705,7 @@ private:
           const auto& row = out.snapshot.recipes[crafting_catalog::grind_begin + i];
           if (row.material_verified && chosen.quantity <= row.maximum &&
               crafting_quantity_block_reason(row, chosen.quantity) == CraftingBlockReason::none &&
-              !item(out, input, chosen))
+              !item(out, input, chosen, &shared_checks))
             return false;
         }
     }

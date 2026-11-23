@@ -4,6 +4,9 @@
 #include "ubc/stations/grind/grind_item_path.hpp"
 #include "ubc/stations/bow/bow_item_runtime.hpp"
 
+namespace ubc::grind_preview_batch {
+template <class ReadSet> class BasicReader;
+}
 namespace ubc::grind_item_runtime {
 namespace path = grind_item_path;
 namespace native = bow_item_native;
@@ -236,6 +239,19 @@ inline bool whole(const Evidence& out) noexcept {
 }
 }
 
+// Lifetime is one independent evaluation of the immutable batch copy.
+struct FrozenChecks {
+  const Evidence* common = nullptr;
+  const Evidence* selected_unit = nullptr;
+  struct Entry {
+    std::uint32_t listed_nodes = 0;
+    native::PoolPath path{};
+    native::PoolEvidence pool{};
+    native::WorldListEvidence world{};
+  };
+  std::array<Entry, 3> allocations{}; // two to four required allocations
+};
+
 class Reader {
 public:
   explicit Reader(std::uint32_t owner) noexcept : owner_(owner), inventory_(owner) {}
@@ -254,9 +270,11 @@ public:
   }
 
 private:
+  template <class> friend class grind_preview_batch::BasicReader;
   Evidence capture(const ReadOnlyMemory& memory, const GrindRecipeCatalogueCapture& catalogue,
                    std::uint32_t callback, std::uint32_t quantity, const Input& in,
-                   const GrindGuildSnapshot* physical) noexcept {
+                   const GrindGuildSnapshot* physical, FrozenChecks* frozen = nullptr) noexcept {
+    ReadOrigin origin("item_path");
     Evidence out;
     out.key = in.boundary.key;
     out.callback = callback;
@@ -318,52 +336,76 @@ private:
     const alchemy_flask_debit::Context context{
         out.key.generation, out.key.thread, lhiver::game_parser, game,
         out.key.world,      out.key.hero,   out.key.station};
-    out.modules = code::observe_modules(memory, in.modules, context);
-    if (!out.modules.observed) {
-      out.issue = Issue::modules;
-      out.failed_address = out.modules.code.address;
-      return out;
+    const auto* common = frozen ? frozen->common : nullptr;
+    const auto* unit = frozen ? frozen->selected_unit : nullptr;
+    // Game, module inputs and frame key are fixed throughout this evaluation.
+    if (common)
+      out.modules = common->modules;
+    else {
+      out.modules = code::observe_modules(memory, in.modules, context);
+      if (!out.modules.observed) {
+        out.issue = Issue::modules;
+        out.failed_address = out.modules.code.address;
+        return out;
+      }
+      const auto external = code::verify_externals(memory, lhiver::game_parser);
+      if (!external.verified) {
+        out.issue = Issue::externals;
+        out.failed_address = external.address;
+        out.failed_symbol = external.symbol;
+        return out;
+      }
     }
-    const auto external = code::verify_externals(memory, lhiver::game_parser);
-    if (!external.verified) {
-      out.issue = Issue::externals;
-      out.failed_address = external.address;
-      out.failed_symbol = external.symbol;
-      return out;
-    }
-    out.constructors = detail::constructors(memory, *recipe);
+    out.constructors = unit ? unit->constructors : detail::constructors(memory, *recipe);
     if (!out.constructors.values_verified) {
       out.issue = Issue::constructors;
       out.failed_symbol = out.constructors.symbol;
       return out;
     }
-    for (const auto checked :
-         {native::verify_engine_parts(memory),
-          native::verify_grind_routed_code(memory, in.modules, out.key, in.inventory_insert,
-                                           &out.inventory_insert, &out.unpack)})
-      if (!checked.verified) {
-        out.issue = Issue::native_code;
-        out.failed_address = checked.address;
+    if (common) {
+      out.renderer = common->renderer;
+      out.inventory_insert = common->inventory_insert;
+      out.unpack = common->unpack;
+    } else {
+      for (const auto checked :
+           {native::verify_engine_parts(memory),
+            native::verify_grind_routed_code(memory, in.modules, out.key, in.inventory_insert,
+                                             &out.inventory_insert, &out.unpack)})
+        if (!checked.verified) {
+          out.issue = Issue::native_code;
+          out.failed_address = checked.address;
+          return out;
+        }
+      out.renderer = renderer::verify_forwarding(memory, in.renderer);
+      if (!out.renderer.verified) {
+        out.issue = Issue::renderer_path;
         return out;
       }
-    out.renderer = renderer::verify_forwarding(memory, in.renderer);
-    if (!out.renderer.verified) {
-      out.issue = Issue::renderer_path;
-      return out;
     }
     // A debit may require two world-list nodes; each of the two real
     // CreateInvItems outputs at most one new inventory node. No N-factor.
     const std::uint32_t allocations =
         2u + unsigned{out.new_output_node[0]} + unsigned{out.new_output_node[1]};
-    out.pool = native::verify_pool_allocations(memory, in.modules, allocations);
-    if (!out.pool.verified) {
-      out.issue = Issue::pool;
-      return out;
-    }
-    const auto free_nodes = native::read_pool_allocations(memory, allocations);
-    if (!free_nodes.stable || free_nodes.fingerprint != out.pool.fingerprint) {
-      out.issue = Issue::changed;
-      return out;
+    auto* shared = frozen ? &frozen->allocations[allocations - 2] : nullptr;
+    native::PoolEvidence free_nodes{};
+    if (shared && shared->path.verified) {
+      out.pool = shared->path;
+      free_nodes = shared->pool;
+    } else {
+      out.pool = native::verify_pool_allocations(memory, in.modules, allocations);
+      if (!out.pool.verified) {
+        out.issue = Issue::pool;
+        return out;
+      }
+      free_nodes = native::read_pool_allocations(memory, allocations);
+      if (!free_nodes.stable || free_nodes.fingerprint != out.pool.fingerprint) {
+        out.issue = Issue::changed;
+        return out;
+      }
+      if (shared) {
+        shared->path = out.pool;
+        shared->pool = free_nodes;
+      }
     }
     const auto assembly = grind_recipe_runtime::assemble(*recipe);
     std::array<PackedInventoryTarget, 3> targets{};
@@ -372,8 +414,9 @@ private:
       targets[i] = {grind_recipe_profile::item_for(static_cast<std::uint32_t>(id))->function->name,
                     id};
     }
-    out.sort = native::read_sort_values(memory, assembly.profile(), out.key.hero,
-                                        out.stock.listed_nodes, targets.data(), targets.size());
+    out.sort =
+        native::read_sort_values(memory, assembly.profile(), out.key.hero, out.stock.listed_nodes,
+                                 targets.data(), targets.size(), frozen != nullptr);
     if (!out.sort.stable) {
       out.issue = Issue::sorter;
       return out;
@@ -381,13 +424,33 @@ private:
     const auto remove = detail::removal(out.stock);
     const native::WorldListRequest world_request{out.key.hero, out.key.world,
                                                  out.stock.listed_nodes, &remove, 1};
-    out.world = native::read_world_values(memory, world_request, free_nodes);
+    // A split never consults membership of the removed object. Its world
+    // proof depends only on the two lists, inventory and free-node prefix.
+    const bool split = shared && remove.path == bow_item_path::Removal::split;
+    if (split && shared->world.stable && shared->listed_nodes == world_request.listed_nodes)
+      out.world = shared->world;
+    else {
+      out.world = native::read_world_values(memory, world_request, free_nodes, frozen != nullptr);
+      if (split && out.world.stable) {
+        shared->listed_nodes = world_request.listed_nodes;
+        shared->world = out.world;
+      }
+    }
     if (!out.world.stable) {
       out.issue = Issue::world;
       return out;
     }
     if (!detail::whole(out)) {
       out.issue = Issue::whole_stack;
+      return out;
+    }
+    // Inside a batch each exact read returns its immutable first copy.
+    // The second independent evaluation compares these complete proofs and
+    // seal rereads every original span. Repeating the same pure functions on
+    // this copy cannot observe a newer stock, module, pool or world list.
+    if (frozen && physical) {
+      out.item_path_verified = true;
+      out.issue = Issue::none;
       return out;
     }
     const auto late = stock();

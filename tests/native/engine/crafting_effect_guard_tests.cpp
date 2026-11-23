@@ -544,6 +544,34 @@ const basecat::Callback* fixture_callback(const cat::Descriptor& recipe,
                                           true};
   return &callback;
 }
+void grind_display_pages() {
+  SYSTEM_INFO system{};
+  GetSystemInfo(&system);
+  const auto n = system.dwPageSize;
+  auto* pages = static_cast<std::uint8_t*>(
+      VirtualAlloc(nullptr, 2 * n, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
+  check(pages != nullptr, "allocate two test pages");
+  if (!pages)
+    return;
+  const auto last = reinterpret_cast<std::uint32_t>(pages + n - 1);
+  std::array<std::uint8_t, 2> copy{};
+  pages[n - 1] = 17;
+  pages[n] = 23;
+  check(ubc_native::grind_display_memory.copy(last, copy.data(), copy.size()) && copy[0] == 17 &&
+            copy[1] == 23,
+        "display copies the exact cross-page input");
+  DWORD previous = 0;
+  for (const DWORD protection : {PAGE_NOACCESS, PAGE_EXECUTE, PAGE_READWRITE | PAGE_GUARD}) {
+    check(VirtualProtect(pages + n, n, protection, &previous) &&
+              !ubc_native::grind_display_memory.copy(last, copy.data(), copy.size()),
+          "display rejects any unreadable or guarded part of the range");
+    MEMORY_BASIC_INFORMATION state{};
+    check(VirtualQuery(pages + n, &state, sizeof(state)) == sizeof(state) &&
+              state.Protect == protection,
+          "the guard on a rejected range remains intact");
+  }
+  VirtualFree(pages, 0, MEM_RELEASE);
+}
 class PrivatePages {
 public:
   static constexpr std::size_t size = 0x40000;
@@ -3900,6 +3928,7 @@ int main(int argc, char** argv) {
     return ok ? 0 : 1;
   }
   registry_tests();
+  grind_display_pages();
   PrivatePages pages;
   if (!pages.open()) {
     check(false, "private test pages allocated");

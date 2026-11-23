@@ -370,6 +370,7 @@ inline std::uint32_t maximum_allocations(const path::Snapshot& snapshot) noexcep
 // Positive reuse of existing pool nodes; Growth is reported
 // separately. An unknown malloc/heap limit is not positively guessed.
 inline PoolEvidence read_pool_allocations(const ReadOnlyMemory& memory,std::uint32_t required) noexcept {
+  ReadOrigin origin("node_pool");
   PoolEvidence out;out.required=required;
   if(!out.required||out.required>max_allocations){out.issue=Issue::boundary;return out;}
   lhiver::Digest first{};
@@ -432,7 +433,7 @@ struct SortEvidence {bool stable=false;Issue issue=Issue::none;std::uint32_t nod
 namespace detail {
 inline bool symbol_name(const ReadOnlyMemory& m,const rs::detail::Layout& layout,std::uint32_t index,
     std::array<std::uint8_t,128>& bytes,std::uint32_t& length,Sha256& hash) noexcept {
-  rs::detail::Symbol s{};if(rs::detail::lookup(m,layout,index,s)!=rs::Issue::none||!s.name_length||s.name_length>=bytes.size())return false;
+  rs::detail::Symbol s{};if(rs::detail::lookup(m,layout,index,s,rs::detail::SymbolFields::name)!=rs::Issue::none||!s.name_length||s.name_length>=bytes.size())return false;
   length=s.name_length;if(!read_hash(m,s.name_data,bytes.data(),length+1,hash)||bytes[length]||std::memchr(bytes.data(),0,length))return false;
   // No output of original names. The native comparison needs only a
   // positive, finite buffer; also non-recipe-related instances are read.
@@ -458,13 +459,14 @@ inline bool resolves(const ReadOnlyMemory& m,const rs::detail::Layout& layout,st
 // listed GetInstanceName buffers plus exactly the four native
 // FindSymbol search paths. No engine HasItems/FindSymbol is executed.
 inline SortEvidence read_sort_values(const ReadOnlyMemory& memory,const lhiver::Profile& profile,
-    std::uint32_t hero,std::uint32_t listed_nodes,const PackedInventoryTarget* targets,std::size_t target_count) noexcept {
+    std::uint32_t hero,std::uint32_t listed_nodes,const PackedInventoryTarget* targets,std::size_t target_count, bool immutable_copy=false) noexcept {
+  ReadOrigin origin("sorter");
   SortEvidence out;
   if(!hero||hero>UINT32_MAX-0x1000u||listed_nodes>max_packed_inventory_nodes||!targets||!target_count||target_count>45||
      !rs::detail::valid_profile(profile)){out.issue=Issue::boundary;return out;}
   rs::detail::Layout layout{};if(rs::detail::read_layout(memory,lhiver::game_parser,profile,layout)!=rs::Issue::none){out.issue=Issue::lookup;return out;}
   lhiver::Digest first{};
-  for(unsigned pass=0;pass<2;++pass){
+  for(unsigned pass=0;pass<(immutable_copy?1u:2u);++pass){
     Sha256 hash;std::array<std::uint8_t,36> order{};std::uint32_t seen=0,sorted=0,compare=0,head=0;
     if(!detail::read_hash(memory,0x8b6be0,order.data(),order.size(),hash)||
        !detail::word(memory,lhiver::game_parser,0x24,sorted)||!detail::range(sorted,std::size_t{layout.count}*4)||
@@ -511,11 +513,12 @@ struct WorldListRequest {
 // provided the original admission into the two world lists demonstrably increased
 // it before release. No imaginary pointer for items generated only later.
 inline WorldListEvidence read_world_values(const ReadOnlyMemory& memory,const WorldListRequest& request,
-    const PoolEvidence& pool) noexcept {
+    const PoolEvidence& pool, bool immutable_copy=false) noexcept {
+  ReadOrigin origin("world_lists");
   WorldListEvidence out;if(!request.hero||!request.world||request.hero>UINT32_MAX-0x1000u||request.world>UINT32_MAX-0x628cu||
     !request.removals||!request.removal_count||request.removal_count>3||request.listed_nodes>max_packed_inventory_nodes||!pool.stable){out.issue=Issue::boundary;return out;}
   lhiver::Digest first{};
-  for(unsigned pass=0;pass<2;++pass){
+  for(unsigned pass=0;pass<(immutable_copy?1u:2u);++pass){
     Sha256 hash;std::array<std::array<bool,3>,2> present{};
     std::uint32_t inventory=0;if(!detail::word(memory,request.hero,0x718,inventory)){out.issue=Issue::unreadable;return out;}
     std::uint32_t inventory_count=0;

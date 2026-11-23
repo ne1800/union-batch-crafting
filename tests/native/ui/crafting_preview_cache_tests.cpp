@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 #include "ubc/ui/crafting_preview_cache.hpp"
 #include "ubc/core/crafting_session.hpp"
+#include "ubc/stations/grind/grind_preview_stability.hpp"
 #define UBC_CRAFTING_FIXTURE_ONLY
 #include "../catalogs/crafting_catalog_tests.cpp"
 #include <memory>
@@ -97,6 +98,75 @@ void dependencies() {
   p.cache->finish(p.key, true);
   check(!p.cache->reuse(Phase::selecting, p.key, p.inputs.memory()),
         "contradictory reads cannot seed a cache");
+}
+
+// A stable selection can miss on consecutive frames if the source keeps
+// changing. Only the first observed difference is a reason for this frame.
+void consecutive_misses() {
+  Preview p;
+  for (unsigned frame = 0; frame < 8; ++frame) {
+    ubc::ReadOrigin origin("inventory");
+    p.capture();
+    ++p.inputs.bytes[65];
+    ++p.inputs.bytes[256];
+    check(!p.cache->reuse(Phase::selecting, p.key, p.inputs.memory()) &&
+              !p.cache->quantity_available(),
+          "moving inputs revoke each previous quantity");
+    const auto& miss = p.cache->miss();
+    check(std::strcmp(miss.reason, "bytes") == 0 && std::strcmp(miss.field, "inventory") == 0 &&
+              miss.address == 64 && miss.offset == 1 && miss.length == 4 && miss.before == frame &&
+              miss.after == frame + 1,
+          "report the first differing byte and its original consumer");
+  }
+  p.capture();
+  for (unsigned frame = 0; frame < 60; ++frame)
+    check(p.cache->reuse(Phase::selecting, p.key, p.inputs.memory()),
+          "settled inputs reuse the preview");
+  auto changed = p.key;
+  ++changed.quantity;
+  ++p.inputs.bytes[65];
+  check(!p.cache->reuse(Phase::selecting, changed, p.inputs.memory()) &&
+            std::strcmp(p.cache->miss().field, "quantity") == 0,
+        "a key mismatch precedes the byte comparison");
+  p.capture();
+  p.inputs.module_current = false;
+  ++p.inputs.bytes[65];
+  check(!p.cache->reuse(Phase::selecting, p.key, p.inputs.memory()) &&
+            std::strcmp(p.cache->miss().reason, "probe") == 0,
+        "a module mismatch precedes the byte comparison");
+}
+
+void settling_inputs() {
+  Preview p;
+  ubc::GrindPreviewStability gate;
+  p.capture();
+  ++p.inputs.bytes[65];
+  check(!p.cache->reuse(Phase::selecting, p.key, p.inputs.memory()), "a real span changed");
+  auto miss = p.cache->miss();
+  constexpr std::uint32_t pool = 96;
+  check(gate.start(miss, p.key.owner, p.inputs.memory(), pool, 1, 3),
+        "start waiting on the first miss");
+  for (unsigned frame = 2; frame < 16; ++frame) {
+    if (frame < 7)
+      ++p.inputs.bytes[65];
+    if (frame == 8)
+      ++p.inputs.bytes[pool];
+    check(gate.waiting(p.key.owner, p.inputs.memory(), pool, frame, frame < 10 ? 3 : 4) &&
+              !p.cache->quantity_available(),
+          "symbol, pool and menu input extend the same pending calculation");
+  }
+  check(!gate.waiting(p.key.owner, p.inputs.memory(), pool, 16, 4) && !gate.active() &&
+            !p.cache->reuse(Phase::selecting, p.key, p.inputs.memory()),
+        "six quiet frames permit a new calculation but cannot revive old evidence");
+  p.capture(false);
+  for (unsigned i = 0; i < 60; ++i)
+    check(p.cache->reuse(Phase::selecting, p.key, p.inputs.memory()) &&
+              !p.cache->quantity_available(),
+          "fresh blocked stock stays blocked for 60 frames");
+  check(gate.start(miss, p.key.owner, p.inputs.memory(), pool, 100, 4), "second burst begins");
+  p.inputs.readable = false;
+  check(!gate.waiting(p.key.owner, p.inputs.memory(), pool, 101, 4) && !gate.active(),
+        "a lost mapping immediately falls back to the full reader");
 }
 
 void capacity() {
@@ -221,6 +291,8 @@ void confirmation() {
 
 int main() {
   dependencies();
+  consecutive_misses();
+  settling_inputs();
   capacity();
   changed_keys();
   grind_open_and_selection();

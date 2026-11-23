@@ -508,6 +508,21 @@ void test_translations() {
   }
 }
 
+void test_pending_grind_preview() {
+  ubc::CraftingSession session;
+  ubc::CraftingMenu menu;
+  auto snapshot = example(Kind::grind);
+  check(session.open(snapshot), "open grind menu");
+  session.set_preview_pending(true);
+  for (const auto* text : {&ubc::ui_text::de::table, &ubc::ui_text::en::table}) {
+    ui::Frame frame;
+    check(ui::compose(frame, session, menu, true, 640, 480, *text) && frame.count == 2 &&
+              contains(frame, (*text)[L::tool_stock_unknown]) && !session.can_confirm() &&
+              !session.confirm(),
+          "pending frames have no stock, quantity or action");
+  }
+}
+
 void test_equipped_ingredient_layout() {
   auto snapshot = example(Kind::bow);
   auto& oak = state(snapshot, 0x800b);
@@ -752,6 +767,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
   test_screen_init_digests();
   test_menu_code_guards();
   test_translations();
+  test_pending_grind_preview();
   test_equipped_ingredient_layout();
   test_list_boundaries();
   test_focus_and_controls();

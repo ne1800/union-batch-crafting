@@ -19,18 +19,66 @@ struct CraftingPreviewKey {
   std::size_t rows = 0;
   bool rows_valid = false;
 
-  bool matches_dialog(const SelectionDialog& b) const noexcept {
-    return dialog.view == b.view && dialog.npc == b.npc && dialog.player == b.player &&
-           dialog.info == b.info && dialog.mode == b.mode && dialog.selected == b.selected &&
-           dialog.count == b.count && dialog.valid == b.valid && dialog.waiting == b.waiting &&
-           dialog.open == b.open && dialog.hidden == b.hidden && dialog.done == b.done &&
-           dialog.rejected_info_transition == b.rejected_info_transition;
+  const char* dialog_difference(const SelectionDialog& b) const noexcept {
+    if (dialog.view != b.view)
+      return "dialog.view";
+    if (dialog.npc != b.npc)
+      return "dialog.npc";
+    if (dialog.player != b.player)
+      return "dialog.player";
+    if (dialog.info != b.info)
+      return "dialog.info";
+    if (dialog.mode != b.mode)
+      return "dialog.mode";
+    if (dialog.selected != b.selected)
+      return "dialog.selected";
+    if (dialog.count != b.count)
+      return "dialog.count";
+    if (dialog.valid != b.valid)
+      return "dialog.valid";
+    if (dialog.waiting != b.waiting)
+      return "dialog.waiting";
+    if (dialog.open != b.open)
+      return "dialog.open";
+    if (dialog.hidden != b.hidden)
+      return "dialog.hidden";
+    if (dialog.done != b.done)
+      return "dialog.done";
+    if (dialog.rejected_info_transition != b.rejected_info_transition)
+      return "dialog.rejected_info_transition";
+    return nullptr;
   }
-  bool operator==(const CraftingPreviewKey& b) const noexcept {
-    return owner == b.owner && world_epoch == b.world_epoch && collection == b.collection &&
-           selection == b.selection && quantity == b.quantity && rows == b.rows &&
-           rows_valid == b.rows_valid && matches_dialog(b.dialog);
+  bool matches_dialog(const SelectionDialog& b) const noexcept { return !dialog_difference(b); }
+  const char* difference(const CraftingPreviewKey& b) const noexcept {
+    if (owner.generation != b.owner.generation)
+      return "owner.generation";
+    if (owner.thread != b.owner.thread)
+      return "owner.thread";
+    if (owner.world != b.owner.world)
+      return "owner.world";
+    if (owner.hero != b.owner.hero)
+      return "owner.hero";
+    if (owner.station != b.owner.station)
+      return "owner.station";
+    if (owner.manager != b.owner.manager)
+      return "owner.manager";
+    if (owner.kind != b.owner.kind)
+      return "owner.kind";
+    if (world_epoch != b.world_epoch)
+      return "world_epoch";
+    if (collection != b.collection)
+      return "collection";
+    if (selection != b.selection)
+      return "selection";
+    if (quantity != b.quantity)
+      return "quantity";
+    if (rows != b.rows)
+      return "rows";
+    if (rows_valid != b.rows_valid)
+      return "rows_valid";
+    return dialog_difference(b.dialog);
   }
+  bool operator==(const CraftingPreviewKey& b) const noexcept { return !difference(b); }
 };
 
 // The session already owns its display snapshot. Remember exactly which live
@@ -42,8 +90,23 @@ public:
   using GrindUnits = std::array<bool, grind_recipe::recipes.size()>;
   using Probe = bool (*)(std::uintptr_t, std::uintptr_t) noexcept;
 
-  ReadOnlyMemory begin(const ReadOnlyMemory& source) noexcept {
+  struct Miss {
+    const char* reason = "empty";
+    const char* field = "cache";
+    std::uintptr_t address = 0;
+    std::uint32_t length = 0, offset = 0;
+    std::uint64_t before = 0, after = 0;
+    std::uint32_t subject = 0;
+  };
+
+  const Miss& miss() const noexcept { return miss_; }
+  void invalidate(Miss miss) noexcept {
+    miss_ = miss;
     invalidate();
+  }
+
+  ReadOnlyMemory begin(const ReadOnlyMemory& source) noexcept {
+    invalidate({"empty", "recording"});
     source_ = source;
     recording_ = true;
     count_ = used_ = probe_count_ = 0;
@@ -80,15 +143,28 @@ public:
   // module probes must still pass reuse() before any quantity can be shown.
   bool bind_open_grind(const CraftingPreviewKey& opened) noexcept {
     auto borrowed = key_;
-    if (!ready_ || !key_.dialog.open || key_.dialog.hidden || opened.dialog.open ||
-        !opened.dialog.hidden || !unit_verified(opened))
+    if (!ready_)
       return false;
+    if (!key_.dialog.open || opened.dialog.open) {
+      miss_ = {"key", "dialog.open"};
+      return false;
+    }
+    if (key_.dialog.hidden || !opened.dialog.hidden) {
+      miss_ = {"key", "dialog.hidden"};
+      return false;
+    }
+    if (!unit_verified(opened)) {
+      miss_ = {"capture", "opening_unit"};
+      return false;
+    }
     borrowed.dialog.open = false;
     borrowed.dialog.hidden = true;
     borrowed.selection = opened.selection;
     borrowed.quantity = opened.quantity;
-    if (!(borrowed == opened))
+    if (const auto* field = borrowed.difference(opened)) {
+      miss_ = {"key", field};
       return false;
+    }
     key_ = opened;
     original_available_ = available_ = true;
     return true;
@@ -96,20 +172,25 @@ public:
 
   // Module leases, executable-page protections and adapter state have inputs
   // outside ReadOnlyMemory. Recheck each distinct query once on a cache hit.
-  void observe(Probe read, std::uintptr_t a, std::uintptr_t b, bool result) noexcept {
+  void observe(Probe read, std::uintptr_t a, std::uintptr_t b, bool result,
+               const char* name = "probe") noexcept {
     if (!recording_)
       return;
     for (std::size_t i = 0; i < probe_count_; ++i) {
       const auto& p = probes_[i];
       if (p.read == read && p.a == a && p.b == b) {
-        recording_ = p.result == result;
+        if (p.result != result) {
+          miss_ = {"probe", p.name, p.b ? p.b : p.a, 0, 0, p.result, result};
+          recording_ = false;
+        }
         return;
       }
     }
-    if (probe_count_ == probes_.size())
+    if (probe_count_ == probes_.size()) {
+      miss_ = {"capacity", "probes"};
       recording_ = false;
-    else
-      probes_[probe_count_++] = {read, a, b, result};
+    } else
+      probes_[probe_count_++] = {read, a, b, result, name};
   }
 
   bool reuse(SelectionPhase phase, const CraftingPreviewKey& key,
@@ -121,11 +202,14 @@ public:
         bound.selection = key.selection;
         bound.quantity = 1;
       }
-      if (key == bound && unchanged(live)) {
+      if (const auto* field = bound.difference(key))
+        miss_ = {"key", field};
+      else if (unchanged(live)) {
         available_ = other_unit || original_available_;
         return true;
       }
-    }
+    } else if (!allows(phase))
+      miss_ = {"gate", "phase"};
     invalidate();
     return false;
   }
@@ -141,11 +225,14 @@ private:
   }
   struct Span {
     std::uint32_t address, length, offset;
+    const char* origin;
+    std::uint32_t subject;
   };
   struct ProbeResult {
     Probe read;
     std::uintptr_t a, b;
     bool result;
+    const char* name;
   };
   // Keep this optional display optimization bounded even with fragmented
   // inventories. A full table simply leaves the original frame path in use.
@@ -158,11 +245,21 @@ private:
   ReadOnlyMemory source_{};
   CraftingPreviewKey key_{};
   GrindUnits units_{};
+  Miss miss_{};
   bool ready_ = false, recording_ = false, available_ = false, original_available_ = false;
 
   static bool copy(void* raw, std::uint32_t address, void* output, std::size_t size) noexcept {
     auto& self = *static_cast<CraftingPreviewCache*>(raw);
     if (!self.source_.copy(address, output, size)) {
+      if (self.recording_)
+        self.miss_ = {"unreadable",
+                      ReadOrigin::current,
+                      address,
+                      static_cast<std::uint32_t>(size),
+                      0,
+                      0,
+                      0,
+                      ReadOrigin::subject};
       self.recording_ = false;
       return false;
     }
@@ -185,27 +282,44 @@ private:
     while (index_[bucket]) {
       const auto& span = spans_[index_[bucket] - 1u];
       if (span.address == address && span.length == size)
-        return std::memcmp(bytes_.data() + span.offset, data, size) == 0;
+        return compare(span, data);
       bucket = (bucket + 1) % index_.size();
     }
-    if (count_ == max_spans || size > bytes_.size() - used_)
+    if (count_ == max_spans || size > bytes_.size() - used_) {
+      miss_ = {"capacity", count_ == max_spans ? "spans" : "bytes", address,
+               static_cast<std::uint32_t>(size)};
       return false;
-    spans_[count_] = {address, static_cast<std::uint32_t>(size), static_cast<std::uint32_t>(used_)};
+    }
+    spans_[count_] = {address, static_cast<std::uint32_t>(size), static_cast<std::uint32_t>(used_),
+                      ReadOrigin::current, ReadOrigin::subject};
     index_[bucket] = static_cast<std::uint16_t>(++count_);
     std::memcpy(bytes_.data() + used_, data, size);
     used_ += size;
     return true;
   }
 
-  bool probes_current() const noexcept {
+  bool compare(const Span& span, const std::uint8_t* actual) noexcept {
+    const auto* expected = bytes_.data() + span.offset;
+    if (std::memcmp(expected, actual, span.length) == 0)
+      return true;
+    const auto offset = static_cast<std::uint32_t>(
+        std::mismatch(expected, expected + span.length, actual).first - expected);
+    miss_ = {"bytes", span.origin,      span.address,   span.length,
+             offset,  expected[offset], actual[offset], span.subject};
+    return false;
+  }
+  bool probes_current() noexcept {
     for (std::size_t i = 0; i < probe_count_; ++i) {
       const auto& p = probes_[i];
-      if (p.read(p.a, p.b) != p.result)
+      const bool now = p.read(p.a, p.b);
+      if (now != p.result) {
+        miss_ = {"probe", p.name, p.b ? p.b : p.a, 0, 0, p.result, now};
         return false;
+      }
     }
     return true;
   }
-  bool unchanged(const ReadOnlyMemory& live) const noexcept {
+  bool unchanged(const ReadOnlyMemory& live) noexcept {
     if (!probes_current())
       return false;
     std::array<std::uint8_t, page_size> scratch;
@@ -225,8 +339,11 @@ private:
         // A sparse reader may reject a gap. Every originally observed span
         // must still be readable and equal in its entirety.
         auto* actual = scratch.data() + (span.address - start);
-        if ((!grouped && !live.copy(span.address, actual, span.length)) ||
-            std::memcmp(actual, bytes_.data() + span.offset, span.length))
+        if (!grouped && !live.copy(span.address, actual, span.length)) {
+          miss_ = {"unreadable", span.origin, span.address, span.length, 0, 0, 0, span.subject};
+          return false;
+        }
+        if (!compare(span, actual))
           return false;
       }
     }
