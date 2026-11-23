@@ -4,7 +4,7 @@
 
 ## English
 
-- **0.0.64** TODO: describe the change for players.
+- **0.0.64** Clearer detail lines explain returned tools, held items, zero-quantity previews, unknown stock counts, honing skill progress and bow material limits. If the menu window is rejected, no text is drawn to it and the original station controls remain usable.
 
 - **0.0.63** A translucent black background makes the recipe list and quantity details easier to read. If the drawing code is unrecognized, the menu uses its text-only layout and logs the reason.
 
@@ -32,7 +32,7 @@
 
 ## Deutsch
 
-- **0.0.64** TODO: die Änderung für Spieler beschreiben.
+- **0.0.64** Verständlichere Detailzeilen erklären zurückgegebene Werkzeuge, gehaltene Gegenstände, Vorschauen bei Menge null, unbekannte Bestände, Schleifkunst und Materialgrenzen an der Bogenbank. Wird das Menüfenster abgewiesen, schreibt das Plugin keinen Text hinein und die Originalbedienung der Station bleibt bedienbar.
 
 - **0.0.63** Ein halbtransparenter schwarzer Hintergrund macht die Rezeptliste und die Mengendetails besser lesbar. Bei einer unbekannten Zeichenroutine zeigt das Menü die bisherige Textansicht und protokolliert den Grund.
 

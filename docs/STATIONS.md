@@ -104,7 +104,7 @@ After a verified order the receipt shows the output and updated stocks. Reopenin
 
 The catalogue includes 13 additional alchemy recipes, five ordinary anvil weapons, eight ore weapons and both original spirit potion outputs. The learned branch determines the output. Changing branches discards an open order. Both potion stocks are checked afterwards. Crafting requires a match to the recipe's verified material and station conditions. Additional alchemy accounts for the reserved laboratory flask and every other required flask. Hot steel split between listed and packed stacks remains blocked. The corresponding original selection is available.
 
-The bow bench supports 20 upgrades. “Stock for” is the material limit. The menu checks the actual inventory path for the selected quantity before confirmation. Changing the quantity requires a new check. Craft stays locked until it passes. The UI distinguishes minimum stock from consumption when the original requires different values. Two dragon hunter crossbows need at least 24 raw steel on hand but consume 20 steel and 24 leather.
+The bow bench supports 20 upgrades. “parts for” is the material limit. The menu checks the actual inventory path for the selected quantity before confirmation. Changing the quantity requires a new check. Craft stays locked until it passes. The UI distinguishes minimum stock from consumption when the original requires different values. Two dragon hunter crossbows need at least 24 raw steel on hand but consume 20 steel and 24 leather.
 
 <a id="evidence"></a>
 
