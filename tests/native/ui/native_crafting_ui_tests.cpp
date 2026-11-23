@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Our own layout regressions. No game bytes or engine calls.
 #include "ubc/ui/native_crafting_ui.hpp"
+#include "ubc/ui/crafting_preview_cache.hpp"
 #ifdef _WIN32
 #include "../../../src/ui/native_ui_language.hpp"
 #endif
 #include <algorithm>
 #include <fstream>
 #include <iterator>
+#include <memory>
 #include <string>
 #include <vector>
 #define UBC_CRAFTING_FIXTURE_ONLY
@@ -508,18 +510,82 @@ void test_translations() {
   }
 }
 
-void test_pending_grind_preview() {
+void test_grind_preview_miss_frames() {
+  using Cache = ubc::CraftingPreviewCache;
+  auto cache = std::make_unique<Cache>();
   ubc::CraftingSession session;
   ubc::CraftingMenu menu;
-  auto snapshot = example(Kind::grind);
-  check(session.open(snapshot), "open grind menu");
-  session.set_preview_pending(true);
-  for (const auto* text : {&ubc::ui_text::de::table, &ubc::ui_text::en::table}) {
-    ui::Frame frame;
-    check(ui::compose(frame, session, menu, true, 640, 480, *text) && frame.count == 2 &&
-              contains(frame, (*text)[L::tool_stock_unknown]) && !session.can_confirm() &&
-              !session.confirm(),
-          "pending frames have no stock, quantity or action");
+  struct Inputs {
+    std::uint32_t head = 0x4000, stock = 7;
+  } inputs;
+  const auto memory = ubc::ReadOnlyMemory{
+      &inputs, [](void* raw, std::uint32_t address, void* output, std::size_t size) noexcept {
+        if ((address != 12 && address != 4096) || size != sizeof(std::uint32_t))
+          return false;
+        const auto& words = *static_cast<const Inputs*>(raw);
+        std::memcpy(output, address == 12 ? &words.head : &words.stock, size);
+        return true;
+      }};
+  const auto capture = [&] {
+    const auto recorder = cache->begin(memory);
+    {
+      ubc::ReadOrigin origin("node_pool");
+      std::uint32_t head = 0;
+      check(recorder.copy(12, &head, sizeof head) && head == inputs.head, "record the pool head");
+    }
+    ubc::ReadOrigin origin("inventory");
+    std::uint32_t stock = 0;
+    check(recorder.copy(4096, &stock, sizeof stock), "read the new stock for the recipe list");
+    return example(Kind::grind, stock, 6);
+  };
+  const auto check_rows = [&] {
+    const auto stock = inputs.stock;
+    const auto balance = std::to_string(stock) + " - 1 = " + std::to_string(stock - 1);
+    for (const auto* text : {&ubc::ui_text::de::table, &ubc::ui_text::en::table}) {
+      ui::Frame frame;
+      char quantity[96];
+      std::snprintf(quantity, sizeof quantity, (*text)[L::quantity], 1u, stock,
+                    (*text)[ubc::ui_text::unit(c::find(0x900c)->quantity_unit)]);
+      check(ui::compose(frame, session, menu, true, 640, 480, *text) &&
+                contains(frame, text->recipe(0x900b)) && contains(frame, text->recipe(0x900c)) &&
+                contains(frame, quantity) && contains(frame, balance.c_str()),
+            "every frame shows both grind recipes and the current quantity and stock");
+    }
+  };
+  check(session.open(capture(), 0x900c), "open on the selected grind recipe");
+  check_rows();
+  ubc::CraftingPreviewKey key{session.preview().key};
+  key.dialog.open = true;
+  Cache::GrindUnits units{};
+  units[0x900c - c::grind_first_id] = true;
+  cache->finish(key, false, units);
+  key.dialog.open = false;
+  key.dialog.hidden = true;
+  key.selection = 0x900c;
+  key.quantity = 1;
+  check(cache->bind_open_grind(key), "bind the verified opening selection");
+  for (unsigned frame = 1; frame <= 9; ++frame) {
+    session.observe(frame, false, true);
+    // The first miss only changes the free list. On the next frame both
+    // inputs change, then stock changes again with the same free list.
+    const bool changed = frame <= 3;
+    if (frame <= 2)
+      inputs.head += 12;
+    if (frame == 2 || frame == 3)
+      inputs.stock -= 2;
+    unsigned captures = 0;
+    const bool reused = cache->reuse_or_capture(
+        session.phase(), key, memory, nullptr, [] { return true; },
+        [&](const Cache::Miss& miss) {
+          check(!std::strcmp(miss.field, frame <= 2 ? "node_pool" : "inventory"),
+                "identify the first changed input");
+          ++captures;
+          session.refresh(capture());
+          cache->finish(key, true);
+        });
+    check(reused == !changed && captures == unsigned{changed},
+          "each miss recaptures in the same frame and quiet frames reuse it");
+    check_rows();
   }
 }
 
@@ -767,7 +833,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
   test_screen_init_digests();
   test_menu_code_guards();
   test_translations();
-  test_pending_grind_preview();
+  test_grind_preview_miss_frames();
   test_equipped_ingredient_layout();
   test_list_boundaries();
   test_focus_and_controls();
