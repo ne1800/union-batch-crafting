@@ -67,6 +67,7 @@ public:
   bool open(BowMenuTrace* trace = nullptr, BowMenuTrace* opened_trace = nullptr) noexcept;
   crafting_ui::BackdropResult apply_backdrop() noexcept;
   bool has_valid_view() noexcept { return menu_view().get() != nullptr; }
+  bool text_view_rejected() const noexcept { return text_view_rejected_; }
   bool open_failure() noexcept;
   bool open_success(const NativeCraftingSuccess&) noexcept;
   void close() noexcept;
@@ -128,5 +129,6 @@ private:
   unsigned width_ = 0, height_ = 0;
   Mode mode_ = Mode::selection;
   bool dismiss_ = false;
+  bool text_view_rejected_ = false;
 };
 } // namespace ubc
