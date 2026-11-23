@@ -63,7 +63,7 @@ Bei `auto`, einem leeren Wert oder einem fehlenden Eintrag erkennt das Plugin de
 
 ## Welche Mengen wurden im Spiel geprüft?
 
-Die Mengenwahl bietet 1, 5, 10, Maximum und freie Schritte bis zur Materialgrenze. Bis einschließlich 0.0.64 sind 70 der 98 Profile durch Aufträge im Spiel belegt, darunter alle 23 am Alchemietisch (mit beiden Geisttrank-Zweigen), alle 13 am Amboss, alle neun an der Lederbank, alle fünf an der Säge, elf der 20 an der Bogenbank und vier der 22 am Schleifstein.
+Die Mengenwahl bietet 1, 5, 10, Maximum und freie Schritte bis zur Materialgrenze. Bis einschließlich 0.0.65 sind 79 der 98 Profile durch Aufträge im Spiel belegt, darunter alle 23 am Alchemietisch (mit beiden Geisttrank-Zweigen), alle 20 an der Bogenbank, alle 13 am Amboss, alle neun an der Lederbank, alle fünf an der Säge und vier der 22 am Schleifstein.
 
 | Station (Profile) | Rezeptfamilien | Im Spiel hergestellte Beispiele |
 | --- | --- | --- |
@@ -73,13 +73,13 @@ Die Mengenwahl bietet 1, 5, 10, Maximum und freie Schritte bis zur Materialgrenz
 | Säge (5) | Pfeile und Bolzen, auch Sondermunition | Je 2 Lose gewöhnliche Pfeile (60), Feuerpfeile (20), Magiepfeile (20), Bolzen (60) und Magiebolzen (20) |
 | Esse (2) | Rohstahl erhitzen, heiße Klingen formen | Rohstahl ×2/5, heiße Klingen ×6 |
 | Amboss (13) | Normal- und Erzwaffen | Gewöhnliches Schwert ×1/2; edles Schwert, edles Langschwert, Rubinklinge, El Bastardo und alle acht Erzwaffen (Erz-Langschwert bis großer Erz-Drachentöter) jeweils ×2 |
-| Bogenbank (20) | Bögen und Armbrüste verbessern | Menge 1 bei Weidenbogen, Kompositbogen, Eschenbogen, Langbogen und leichter Armbrust. Menge 2 bei Kurzbogen, gutem Bogen, Jagdbogen, Armbrust und guter Armbrust. Jagdarmbrust bei MAX 2. |
+| Bogenbank (20) | Bögen und Armbrüste verbessern | Alle 20 Profile: Weidenbogen, Kompositbogen, Eschenbogen, Langbogen und leichte Armbrust ×1; Kurzbogen, guter Bogen, Jagdbogen, Ulmenbogen, Buchenbogen, Knochenbogen, Eichenbogen, Kriegsbogen, Drachenbogen, Armbrust, gute Armbrust, Kriegsarmbrust, schwere Armbrust und Drachenjägerarmbrust ×2; Jagdarmbrust bei MAX 2. |
 | Kühlwanne (1) | Heiße Klingen abkühlen | ×2/1/MAX 3, auch die letzten zwei Lagerklingen gemeinsam |
 | Schleifstein (22) | Waffen schleifen | Grobes Schwert ×1/2/5/MAX 3. Je 2 bei grobem Zweihänder, grobem Bastardschwert und Zweihänder. |
 
 Zusätzlich bietet das Lagerfeuer für gewöhnliches Fleisch den Originaldialog mit 1/5/10/alle. ENDE vor der Auswahl erhält den Bestand. Dieser Originaldialog steht zusätzlich zu den neun Stationen mit Mengenmenü zur Verfügung.
 
-**Offene Profile.** Für 28 Profile steht ein Auftrag im Spiel aus: 18 Schleifprofile, neun Bogenbank-Verbesserungen und ein Herdgericht (Moleratgericht). Bei sechs der neun offenen Verbesserungen an der Bogenbank fehlte im unveränderten Spielstand die Ausgangswaffe, die übrigen drei brauchten mehr als die acht Leder im Vorrat; beim Eichenbogen scheiterte in einem früheren Lauf zusätzlich die Materialprüfung.
+**Offene Profile.** Für 19 Profile steht ein Auftrag im Spiel aus: 18 Schleifprofile und ein Herdgericht (Moleratgericht).
 
 **Außerhalb der Mengenwahl.** Eine Rune je Zauber genügt. Runenverbesserungen kosten einmalig Lernpunkte und ändern den Lernzustand. Rüstungstausch und Wassermagierroben betreffen Einzelstücke, das Auge Innos ist ein einmaliger Questgegenstand. Vier Schärfversuche bleiben zurückgestellt, da jeder Versuch seinen eigenen Zufall und Fertigkeitsfortschritt hat.
 
@@ -134,6 +134,7 @@ An der Bogenbank sind 20 Verbesserungen angebunden. „Teile für“ bezeichnet
 die rechnerische Materialgrenze. Die gewählte Menge wird vor der Bestätigung
 zusätzlich auf ihren tatsächlichen Inventarpfad geprüft. Ein Mengenwechsel
 verlangt eine neue Prüfung; bei fehlendem Beleg bleibt „Herstellen“ gesperrt.
+Ausgerüstete Ausgangswaffen bleiben gesperrt, bis sie abgelegt werden.
 Falls das Original unterschiedliche Mindestbestände und Verbrauchsmengen
 verlangt, zeigt die Oberfläche beide Werte getrennt. Beispielsweise benötigen
 zwei Drachenjägerarmbrüste mindestens 24 Rohstahl im Vorrat, verbrauchen aber
