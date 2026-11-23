@@ -4,11 +4,13 @@
 #include "ubc/engine/native_menu_abi.hpp"
 #include "ubc/engine/runtime_script.hpp"
 #include "ubc/engine/windows_probe.hpp"
+#include "ubc/ui/crafting_menu_code.hpp"
 
 namespace ubc::ui_text {
 namespace language_detail {
 namespace vm = runtime_script::detail;
 inline constexpr ReadOnlyMemory memory{nullptr, windows_probe::copy_memory};
+inline constexpr ReadOnlyMemory code_memory{nullptr, windows_probe::copy_engine_code};
 
 inline bool string_equals(const vm::Symbol& symbol, std::string_view expected) noexcept {
   if (symbol.type != 3 || symbol.elements != 1 || symbol.flags != 1 || symbol.parent)
@@ -24,9 +26,11 @@ inline bool string_equals(const vm::Symbol& symbol, std::string_view expected) n
 inline bool german_script(bool main_menu) noexcept {
   // The standalone control probe opens before the game scripts have loaded.
   // Its own menu parser already contains the localized load and save labels.
-  using GetMenuParser = std::uint32_t(__cdecl*)();
+  if (main_menu && crafting_ui::verify_menu_parser(code_memory) != nullptr)
+    return false;
   const auto parser =
-      main_menu ? reinterpret_cast<GetMenuParser>(0x004DB130)() : lhiver::game_parser;
+      main_menu ? reinterpret_cast<native_menu::MenuParser>(native_menu::menu_get_parser)()
+                : lhiver::game_parser;
   lhiver::Profile profile{};
   profile.parser_address = parser;
   vm::Layout layout{};
@@ -48,13 +52,14 @@ inline bool german_script(bool main_menu) noexcept {
 
   // Gothic II AddOn zCParser::GetIndex resolves the named constant in the
   // loaded game, including mods which move it to a different symbol index.
+  if (crafting_ui::verify_language(code_memory) != nullptr)
+    return false;
   constexpr char name[] = "PRINT_NOTENOUGHGOLD";
   native_menu::StringStorage key{};
   reinterpret_cast<native_menu::StringConstructor>(native_menu::string_ctor)(key.bytes.data(),
                                                                              name);
-  using GetIndex = int(__thiscall*)(void*, const void*);
-  const auto index =
-      reinterpret_cast<GetIndex>(0x00793470)(reinterpret_cast<void*>(parser), key.bytes.data());
+  const auto index = reinterpret_cast<native_menu::ParserGetIndex>(native_menu::parser_get_index)(
+      reinterpret_cast<void*>(parser), key.bytes.data());
   reinterpret_cast<native_menu::ObjectFunction>(native_menu::string_dtor)(key.bytes.data());
   return index >= 0 &&
          vm::lookup(memory, layout, static_cast<std::uint32_t>(index), symbol) ==

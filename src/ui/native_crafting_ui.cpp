@@ -484,7 +484,6 @@ bool compose_failure(Frame& frame, unsigned width, unsigned height, const Table&
 
 #if defined(_WIN32) && defined(_M_IX86)
 #include <windows.h>
-#include "ubc/core/sha256.hpp"
 #include "ubc/engine/windows_probe.hpp"
 namespace ubc {
 namespace {
@@ -508,30 +507,7 @@ public:
 private:
   m::StringStorage data_{};
 };
-struct BackdropFunction {
-  std::uintptr_t address;
-  std::size_t length;
-  lhiver::Digest digest;
-  const char* mismatch;
-};
-// Union 1.0m corrects four viewport edges and selects farZ 65534 in Blit.
-// Both complete bodies draw the same tile before the same text call.
-constexpr auto union_blit =
-    lhiver::digest_literal("996de8ea410b89b6298273c34c0b256ff38aa3275c07f1f6c6de1832b337f2f7");
-constexpr BackdropFunction backdrop_functions[] = {
-    {m::view_insert_back, 253,
-     lhiver::digest_literal("a4ba95d10af5a714014d8f95036e6656369cf4485602bb3677f5e2d786ca63e1"),
-     "ui_backdrop_insert_mismatch"},
-    {m::view_set_blend, 12,
-     lhiver::digest_literal("8b1870c33b0980ec04fdb4f6ecc447d847f94bd7810e63593fe5a451ca96a946"),
-     "ui_backdrop_blend_mismatch"},
-    {m::view_set_alpha, 10,
-     lhiver::digest_literal("b4f3c0e5997d991ad194c8fd1a9871303aefe560b0803af4a518d7cd41634389"),
-     "ui_backdrop_alpha_mismatch"},
-    {m::view_blit, 899,
-     lhiver::digest_literal("da926dc025f49cbe9e20a4c62a0a401bbf71335c5541779f2923fbc649090c3c"),
-     "ui_backdrop_blit_mismatch"},
-};
+constexpr ReadOnlyMemory engine_code{nullptr, w::copy_engine_code};
 bool shift() noexcept {
   auto* input = pointer(m::input_pointer);
   if (!input || !w::readable(input, 4))
@@ -621,6 +597,7 @@ void NativeCraftingUi::inspect_open(BowMenuTrace& trace) const noexcept {
   trace.pending("ui.input_owner", "eigenes Menue", "vor ScreenInit");
 }
 bool NativeCraftingUi::open(BowMenuTrace* trace, BowMenuTrace* opened_trace) noexcept {
+  window_.clear_open_rejection();
   if (opened()) {
     if (trace)
       trace->equal("ui.opened", 0, 1);
@@ -638,6 +615,8 @@ bool NativeCraftingUi::open(BowMenuTrace* trace, BowMenuTrace* opened_trace) noe
   mode_ = Mode::selection;
   menu_.reset();
   dismiss_ = false;
+  text_view_rejected_ = false;
+  text_rejection_ = nullptr;
   notice_input_ = {};
   success_ = {};
   submitted_receipt_ = 0;
@@ -650,16 +629,8 @@ namespace {
 const char* apply_view_backdrop(void* view) noexcept {
   if (m::read<std::uintptr_t>(view, m::view_back_texture))
     return "ui_backdrop_texture_in_use";
-  for (const auto& function : backdrop_functions) {
-    const auto* code = reinterpret_cast<const void*>(function.address);
-    if (!w::readable(code, function.length, true, true))
-      return function.mismatch;
-    Sha256 hash;
-    hash.update(code, function.length);
-    const auto actual = hash.finish();
-    if (actual != function.digest && !(function.address == m::view_blit && actual == union_blit))
-      return function.mismatch;
-  }
+  if (const char* mismatch = crafting_ui::verify_backdrop(engine_code))
+    return mismatch;
   // The window owns the texture reference until ScreenDone destroys it.
   Text black("BLACK.TGA");
   reinterpret_cast<m::ViewInsertBack>(m::view_insert_back)(view, black.get());
@@ -671,7 +642,12 @@ const char* apply_view_backdrop(void* view) noexcept {
 }
 } // namespace
 crafting_ui::BackdropResult NativeCraftingUi::apply_backdrop() noexcept {
-  return menu_view().backdrop(apply_view_backdrop);
+  const auto view = menu_view();
+  if (!view.get())
+    return {opened() ? "ui_backdrop_view_mismatch" : "ui_backdrop_window_closed", false};
+  if (const char* mismatch = crafting_ui::verify_strings(engine_code))
+    return {mismatch, false};
+  return view.backdrop(apply_view_backdrop);
 }
 bool NativeCraftingUi::update_size() noexcept {
   unsigned width = 0, height = 0;
@@ -687,17 +663,21 @@ bool NativeCraftingUi::notice_window() noexcept {
   return update_size() && (opened() ? owns_input() : window_.open());
 }
 bool NativeCraftingUi::open_failure() noexcept {
+  window_.clear_open_rejection();
   if (mode_ == Mode::failure && opened())
     return owns_input();
   if (!notice_window())
     return false;
   mode_ = Mode::failure;
   dismiss_ = false;
+  text_view_rejected_ = false;
+  text_rejection_ = nullptr;
   notice_input_ = {};
   submitted_receipt_ = 0;
   return true;
 }
 bool NativeCraftingUi::open_success(const NativeCraftingSuccess& value) noexcept {
+  window_.clear_open_rejection();
   if (mode_ == Mode::failure || mode_ == Mode::success || value.receipt <= last_receipt_ ||
       !crafting_ui::valid_success(value) || !notice_window())
     return false;
@@ -706,12 +686,15 @@ bool NativeCraftingUi::open_success(const NativeCraftingSuccess& value) noexcept
   submitted_receipt_ = 0;
   mode_ = Mode::success;
   dismiss_ = false;
+  text_view_rejected_ = false;
+  text_rejection_ = nullptr;
   notice_input_ = {};
   return true;
 }
 void NativeCraftingUi::close() noexcept {
   window_.close();
   text_view_rejected_ = false;
+  text_rejection_ = nullptr;
   mode_ = Mode::selection;
   success_ = {};
   submitted_receipt_ = 0;
@@ -744,6 +727,12 @@ int NativeCraftingUi::handle(CraftingSession& session, int key,
 bool NativeCraftingUi::submit() noexcept {
   if (!opened() || !frame_.valid || text_view_rejected_)
     return false;
+  if (const char* mismatch = crafting_ui::verify_strings(engine_code)) {
+    text_rejection_ = mismatch;
+    text_view_rejected_ = true;
+    return false;
+  }
+  text_rejection_ = nullptr;
   text_view_rejected_ = !menu_view().submit([this](void* view) {
     reinterpret_cast<m::ObjectFunction>(m::view_clear_printwin)(view);
     Text font("FONT_OLD_10_WHITE.TGA");

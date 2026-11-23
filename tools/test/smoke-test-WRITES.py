@@ -576,6 +576,16 @@ def main() -> None:
                 ):
                     print(run([str(payload / name)]), flush=True)
                 print(
+                    run(
+                        [
+                            str(payload / "ubc_native_crafting_ui_tests.exe"),
+                            "--local-exe",
+                            facts[0],
+                        ]
+                    ),
+                    flush=True,
+                )
+                print(
                     run([str(payload / "ubc_crafting_effect_guard_tests.exe")]),
                     flush=True,
                 )

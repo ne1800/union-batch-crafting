@@ -6,6 +6,7 @@
 #include "ubc/stations/bow/bow_menu_trace.hpp"
 #include "ubc/engine/selection_abi.hpp"
 #include "ubc/engine/windows_probe.hpp"
+#include "ubc/ui/crafting_menu_code.hpp"
 
 namespace ubc {
 using L = ui_text::Label;
@@ -120,8 +121,14 @@ bool NativeSelectionUi::can_open(BowMenuTrace* trace) const noexcept {
   return !created_ && screen && input;
 }
 bool NativeSelectionUi::open(BowMenuTrace* trace, BowMenuTrace* opened_trace) noexcept {
+  open_rejection_ = nullptr;
   if (!can_open(trace))
     return false;
+  const ReadOnlyMemory code{nullptr, w::copy_engine_code};
+  if (const char* mismatch = crafting_ui::verify_open(code)) {
+    open_rejection_ = mismatch;
+    return false;
+  }
   reinterpret_cast<m::ObjectFunction>(m::menu_ctor)(storage_.bytes.data());
   created_ = true;
   const auto table = m::read<std::uint32_t>(object(), 0);
@@ -161,6 +168,7 @@ bool NativeSelectionUi::open(BowMenuTrace* trace, BowMenuTrace* opened_trace) no
   return true;
 }
 void NativeSelectionUi::close() noexcept {
+  open_rejection_ = nullptr;
   if (!created_)
     return;
   if (initialized_)
@@ -207,7 +215,9 @@ bool NativeSelectionUi::render(const SelectionSession& session, OriginalRecipe r
     return false;
   const auto& text = texts();
   auto* view = reinterpret_cast<void*>(m::read<std::uint32_t>(object(), m::menu_inner_window));
-  if (!w::readable(view, m::view_size) || m::read<std::int32_t>(view, m::view_id) != m::view_item)
+  const ReadOnlyMemory code{nullptr, w::copy_engine_code};
+  if (!w::readable(view, m::view_size) || m::read<std::int32_t>(view, m::view_id) != m::view_item ||
+      crafting_ui::verify_strings(code) != nullptr)
     return false;
   reinterpret_cast<m::ObjectFunction>(m::view_clear_printwin)(view);
   Text font("FONT_OLD_10_WHITE.TGA");

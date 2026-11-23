@@ -48,6 +48,11 @@ inline constexpr std::uintptr_t menu_ctor = 0x004da470;
 inline constexpr std::uintptr_t menu_dtor = 0x004da750;
 inline constexpr std::uintptr_t string_ctor = 0x004010c0;
 inline constexpr std::uintptr_t string_dtor = 0x00401160;
+// zCMenu::GetParser returns the global menu parser pointer from 0x8d1e68
+// (6 bytes, __cdecl). zCParser::GetIndex(zSTRING const&) resolves a named
+// symbol index (177 bytes, __thiscall). Both match the released 2.6fix EXE.
+inline constexpr std::uintptr_t menu_get_parser = 0x004db130;
+inline constexpr std::uintptr_t parser_get_index = 0x00793470;
 inline constexpr std::uintptr_t menu_run = 0x004db9a0;
 inline constexpr std::uintptr_t menu_handle_event = 0x004dbb70;
 inline constexpr std::uintptr_t menu_render = 0x004ddc20;
@@ -134,6 +139,8 @@ using ObjectFunction = void(__thiscall*)(void*);
 using MenuRun = int(__thiscall*)(void*);
 using MenuHandleEvent = int(__thiscall*)(void*, int);
 using StringConstructor = void(__thiscall*)(void*, const char*);
+using MenuParser = std::uint32_t(__cdecl*)();
+using ParserGetIndex = int(__thiscall*)(void*, const void*);
 using ViewSetFont = void(__thiscall*)(void*, const void*);
 using ViewInsertBack = void(__thiscall*)(void*, const void*);
 using ViewSetBlend = void(__thiscall*)(void*, const int&);

@@ -36,6 +36,11 @@ std::uintptr_t caller = 0;
 std::uint8_t *globals = nullptr, *manager_bytes = nullptr, *parser_bytes = nullptr;
 bool inject_contracts = false, ui_created = false, ui_owned = false, ui_render_ok = false;
 bool ui_view_valid = true;
+bool ui_open_ok = true;
+const char* ui_open_rejection = nullptr;
+const char* ui_backdrop_rejection = nullptr;
+const char* ui_text_rejection = nullptr;
+bool ui_text_view_rejected = false;
 unsigned selection_renders = 0;
 bool test_notice = false, lose_input_on_submit = false;
 unsigned notice_renders = 0, notice_receipt_reads = 0;
@@ -189,10 +194,34 @@ public:
 class CraftingGuardUi : public NativeCraftingUi {
 public:
   static bool focused() noexcept { return crafting_guard_test::inject_contracts; }
+  bool open(BowMenuTrace* = nullptr, BowMenuTrace* = nullptr) noexcept {
+    if (!crafting_guard_test::ui_open_ok)
+      return false;
+    crafting_guard_test::ui_created = crafting_guard_test::ui_owned = true;
+    return true;
+  }
+  const char* open_rejection() const noexcept { return crafting_guard_test::ui_open_rejection; }
   bool opened() const noexcept { return crafting_guard_test::ui_created; }
   void* object() noexcept { return crafting_guard_test::ui_created ? this : nullptr; }
   bool owns_input() const noexcept { return crafting_guard_test::ui_owned; }
+  bool has_valid_view() noexcept { return crafting_guard_test::ui_view_valid; }
+  bool text_view_rejected() const noexcept { return crafting_guard_test::ui_text_view_rejected; }
+  const char* text_rejection() const noexcept { return crafting_guard_test::ui_text_rejection; }
+  bool open_failure() noexcept {
+    if (!crafting_guard_test::ui_open_ok)
+      return false;
+    crafting_guard_test::ui_created = crafting_guard_test::ui_owned = true;
+    return true;
+  }
+  bool open_success(const NativeCraftingSuccess&) noexcept {
+    if (!crafting_guard_test::ui_open_ok)
+      return false;
+    crafting_guard_test::ui_created = crafting_guard_test::ui_owned = true;
+    return true;
+  }
   crafting_ui::BackdropResult apply_backdrop() noexcept {
+    if (crafting_guard_test::ui_backdrop_rejection)
+      return {crafting_guard_test::ui_backdrop_rejection, false};
     return crafting_guard_test::ui_view_valid
                ? crafting_ui::BackdropResult{"ui_backdrop_texture_missing", true}
                : crafting_ui::BackdropResult{"ui_backdrop_view_mismatch", false};
@@ -225,7 +254,12 @@ public:
     ++crafting_guard_test::notice_receipt_reads;
     return 101;
   }
-  void close() noexcept { crafting_guard_test::ui_created = crafting_guard_test::ui_owned = false; }
+  void close() noexcept {
+    crafting_guard_test::ui_created = crafting_guard_test::ui_owned = false;
+    crafting_guard_test::ui_open_rejection = nullptr;
+    crafting_guard_test::ui_text_rejection = nullptr;
+    crafting_guard_test::ui_text_view_rejected = false;
+  }
 };
 namespace runtime_script {
 inline RuntimeContract
@@ -723,6 +757,11 @@ struct Fixture {
     rendered_generation = request_ui_generation = 0;
     request_ui_key = {};
     ui_created = ui_owned = ui_render_ok = false;
+    ui_view_valid = ui_open_ok = true;
+    ui_open_rejection = ui_backdrop_rejection = ui_text_rejection = nullptr;
+    ui_text_view_rejected = false;
+    rejected_view_station = 0;
+    failure_open_rejected_logged = false;
     ammo_available = ammo_accept = end_path_valid = true;
     ammo_armed = damage_after_admit = false;
     ammo_admits = ammo_enters = ammo_closes = info_calls = choice_calls = input_calls =
@@ -1176,6 +1215,173 @@ void selection_view_cases(Fixture& f) {
                 input_calls == 1,
             "original choice callback receives the next input after rejection");
     }
+  }
+}
+
+void screen_init_guard_cases(Fixture& f) {
+  const auto reset_log = [&] {
+    diagnostic_size = 0;
+    diagnostic_log[0] = 0;
+    diagnostic_writes = 0;
+    log_bytes = log_events = 0;
+    diagnostic_probe = true;
+    log_file = reinterpret_cast<HANDLE>(1);
+  };
+  const auto stop_log = [&] {
+    diagnostic_probe = false;
+    log_file = INVALID_HANDLE_VALUE;
+  };
+  for (const auto& site : ubc::crafting_ui::open_sites) {
+    check(f.reset(0x2001) && f.native_phase() && session.open(injected),
+          "pre-open code guard test starts with a valid saw snapshot");
+    handoff = {};
+    const auto c = context();
+    original_station = 0;
+    rejected_view_station = 0;
+    ui_open_ok = false;
+    ui_open_rejection = site.mismatch;
+    reset_log();
+    check(!open_selection_ui(c), "mismatched pre-open function refuses to open the menu");
+    check(diagnostic_event(site.mismatch, static_cast<int>(c.kind), 0),
+          "pre-open code mismatch logs its dedicated reason key");
+    check(!ui.opened() && !ui.owns_input() && !borrowed_view && c.station &&
+              original_station == c.station && rejected_view_station == c.station &&
+              session.phase() == Phase::original,
+          "pre-open code rejection leaves the original dialog untouched and active");
+    check(observe_choice_event(f.view.data() + a::view_callback, nullptr, m::key_return) == 73 &&
+              input_calls == 1,
+          "original choice callback stays usable after pre-open code rejection");
+    stop_log();
+  }
+  // Positive match opens and renders normally.
+  {
+    check(f.reset(0x2001) && f.native_phase() && session.open(injected),
+          "matching pre-open code guard starts with a valid saw snapshot");
+    handoff = {};
+    const auto c = context();
+    original_station = 0;
+    selection_renders = 0;
+    ui_open_ok = ui_view_valid = ui_render_ok = true;
+    ui_open_rejection = nullptr;
+    reset_log();
+    unsigned borrows = 0;
+    const auto borrow = [&](const Context&) { ++borrows; };
+    check(open_selection_ui(c) && show_selection_view(c, borrow) && borrows == 1 && ui.opened() &&
+              !original_station &&
+              diagnostic_event("ui_backdrop_texture_missing", static_cast<int>(c.kind), 0),
+          "matching pre-open functions open the menu and keep existing backdrop log keys");
+    close_ui(c);
+    stop_log();
+  }
+  // Backdrop zSTRING mismatch skips rendering and borrowing and preserves original controls.
+  for (const auto& site : ubc::crafting_ui::string_sites) {
+    check(f.reset(0x2001) && f.native_phase() && session.open(injected),
+          "backdrop zSTRING guard test starts with a valid saw snapshot");
+    handoff = {};
+    const auto c = context();
+    original_station = 0;
+    selection_renders = 0;
+    ui_created = ui_owned = true;
+    ui_view_valid = ui_render_ok = true;
+    ui_backdrop_rejection = site.mismatch;
+    reset_log();
+    unsigned borrows = 0;
+    const auto borrow = [&](const Context&) { ++borrows; };
+    check(!show_selection_view(c, borrow) && !borrows && !selection_renders && !ui.opened() &&
+              original_station == c.station && !borrowed_view &&
+              diagnostic_event(site.mismatch, static_cast<int>(c.kind), 0),
+          "backdrop zSTRING mismatch logs its reason and keeps original controls");
+    check(observe_choice_event(f.view.data() + a::view_callback, nullptr, m::key_return) == 73 &&
+              input_calls == 1,
+          "original dialog stays usable after backdrop zSTRING mismatch");
+    stop_log();
+  }
+  // Submission zSTRING mismatch logs its dedicated reason rather than generic view/frame keys.
+  for (const auto& site : ubc::crafting_ui::string_sites) {
+    check(f.reset(0x2001) && f.native_phase() && session.open(injected),
+          "submit zSTRING guard test starts with a valid saw snapshot");
+    handoff = {};
+    const auto c = context();
+    original_station = 0;
+    selection_renders = 0;
+    ui_created = ui_owned = true;
+    ui_view_valid = true;
+    ui_render_ok = false;
+    ui_text_view_rejected = true;
+    ui_text_rejection = site.mismatch;
+    reset_log();
+    unsigned borrows = 0;
+    const auto borrow = [&](const Context&) { ++borrows; };
+    check(!show_selection_view(c, borrow) && !borrows && selection_renders == 1 && !ui.opened() &&
+              original_station == c.station && !borrowed_view &&
+              diagnostic_event(site.mismatch, static_cast<int>(c.kind), 0) &&
+              !diagnostic_event("ui_text_view_mismatch", static_cast<int>(c.kind), 0),
+          "initial submit zSTRING mismatch logs its dedicated key and keeps original controls");
+    check(observe_choice_event(f.view.data() + a::view_callback, nullptr, m::key_return) == 73 &&
+              input_calls == 1,
+          "original dialog stays usable after submit zSTRING mismatch");
+    stop_log();
+  }
+  // Mid-menu reject_text_view preserves ui_text_view_mismatch for view failures and uses the
+  // specific zSTRING mismatch key when set.
+  for (const char* reason : {static_cast<const char*>(nullptr), "ui_string_dtor_mismatch"}) {
+    check(f.reset(0x2001) && f.native_phase() && session.open(injected),
+          "mid-menu text rejection fixture is fresh");
+    handoff = {};
+    const auto c = context();
+    original_station = 0;
+    ui_created = ui_owned = true;
+    ui_text_view_rejected = true;
+    ui_text_rejection = reason;
+    reset_log();
+    reject_text_view(c);
+    const char* expected = reason ? reason : "ui_text_view_mismatch";
+    check(!ui.opened() && original_station == c.station &&
+              diagnostic_event(expected, static_cast<int>(c.kind), 0),
+          "mid-menu rejection reports zSTRING mismatch or preserves ui_text_view_mismatch");
+    stop_log();
+  }
+  // Notice open paths (success and failure) log the pre-open mismatch and keep original controls.
+  {
+    check(f.reset(0x2001) && f.native_phase(), "success notice rejection fixture is fresh");
+    handoff = {};
+    const auto c = context();
+    original_station = 0;
+    success_pending = true;
+    ui_open_ok = false;
+    ui_open_rejection = "ui_screen_init_mismatch";
+    reset_log();
+    check(!open_success_notice(c) && !success_pending &&
+              result_guard.state() == ubc::CraftingResultState::failed && !ui.opened() &&
+              !borrowed_view && original_station == c.station &&
+              diagnostic_event("ui_screen_init_mismatch", static_cast<int>(c.kind), 0),
+          "success notice pre-open mismatch logs its key and leaves original controls active");
+    check(observe_choice_event(f.view.data() + a::view_callback, nullptr, m::key_return) == 73 &&
+              input_calls == 1,
+          "original choice callback stays usable after success notice pre-open mismatch");
+    stop_log();
+  }
+  {
+    check(f.reset(0x2001) && f.native_phase(), "failure notice rejection fixture is fresh");
+    handoff = {};
+    const auto c = context();
+    original_station = 0;
+    ui_open_ok = false;
+    ui_open_rejection = "ui_screen_init_alpha_mismatch";
+    reset_log();
+    check(!open_failure_notice(c) && !ui.opened() && !borrowed_view &&
+              original_station == c.station &&
+              diagnostic_event("ui_screen_init_alpha_mismatch", static_cast<int>(c.kind), 0) &&
+              diagnostic_event("failure_notice_open_rejected", 0, 0),
+          "failure notice pre-open mismatch logs its key alongside failure_notice_open_rejected");
+    const auto writes_after_first = diagnostic_writes;
+    ui_open_rejection = "ui_screen_init_alpha_mismatch";
+    check(!open_failure_notice(c) && diagnostic_writes == writes_after_first,
+          "repeated failure notice rejections do not spam the log");
+    check(observe_choice_event(f.view.data() + a::view_callback, nullptr, m::key_return) == 73 &&
+              input_calls == 1,
+          "original choice callback stays usable after failure notice pre-open mismatch");
+    stop_log();
   }
 }
 
@@ -3707,6 +3913,7 @@ int main(int argc, char** argv) {
   original_resolve = counted_resolve;
   original_choice_event = counted_input;
   selection_view_cases(f);
+  screen_init_guard_cases(f);
   install_gate_cases(f);
   original_three_cases(f);
   tobacco_guard_cases(f);

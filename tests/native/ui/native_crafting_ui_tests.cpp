@@ -5,6 +5,8 @@
 #include "../../../src/ui/native_ui_language.hpp"
 #endif
 #include <algorithm>
+#include <fstream>
+#include <iterator>
 #include <string>
 #include <vector>
 #define UBC_CRAFTING_FIXTURE_ONLY
@@ -77,6 +79,208 @@ void test_menu_view() {
   rejected("ui_backdrop_view_mismatch", "an unreadable replacement view cannot draw");
   target.menu = nullptr;
   rejected("ui_backdrop_window_closed", "a closed window cannot draw");
+}
+
+void test_menu_code_guards() {
+  const auto hash_bytes = [](const std::vector<std::uint8_t>& bytes) {
+    ubc::Sha256 hash;
+    hash.update(bytes.data(), bytes.size());
+    return hash.finish();
+  };
+  struct Memory {
+    std::uint32_t base = 0;
+    std::vector<std::uint8_t> bytes;
+    std::uint32_t blocked_begin = 0, blocked_end = 0;
+  };
+  const auto read = [](void* context, std::uint32_t address, void* out, std::size_t size) noexcept {
+    const auto& mem = *static_cast<const Memory*>(context);
+    if (address < mem.base || size > mem.bytes.size() ||
+        address - mem.base > mem.bytes.size() - size)
+      return false;
+    if (mem.blocked_begin < mem.blocked_end && address < mem.blocked_end &&
+        address + size > mem.blocked_begin)
+      return false;
+    std::memcpy(out, mem.bytes.data() + (address - mem.base), size);
+    return true;
+  };
+  // Multi-chunk synthetic bodies matching ScreenInit (3066 B) and Blit (899 B).
+  Memory mem;
+  mem.base = 0x00400000;
+  mem.bytes.resize(4096);
+  for (std::size_t i = 0; i < mem.bytes.size(); ++i)
+    mem.bytes[i] = static_cast<std::uint8_t>((i * 73u + 19u) & 0xffu);
+  const std::vector<std::uint8_t> long_body(mem.bytes.begin(), mem.bytes.begin() + 3066);
+  std::vector<std::uint8_t> alt_body(mem.bytes.begin() + 3100, mem.bytes.begin() + 3100 + 899);
+  const auto orig_alt_digest = hash_bytes(alt_body);
+  alt_body[10] ^= 0x55u;
+  alt_body[898] ^= 0xaau;
+  const auto patched_alt_digest = hash_bytes(alt_body);
+  const std::array<ui::CodeSite, 2> synthetic{{
+      {mem.base, long_body.size(), hash_bytes(long_body), "synthetic_long_mismatch"},
+      {mem.base + 3100, 899, orig_alt_digest, "synthetic_alt_mismatch", true, patched_alt_digest},
+  }};
+  const ubc::ReadOnlyMemory view{&mem, read};
+  check(ui::verify_code(view, synthetic) == nullptr,
+        "matching multi-chunk and primary digests pass code verification");
+  for (const std::size_t offset : {std::size_t{0}, std::size_t{255}, std::size_t{256},
+                                   long_body.size() / 2, long_body.size() - 1}) {
+    mem.bytes[offset] ^= 1u;
+    const char* mismatch = ui::verify_code(view, synthetic);
+    check(mismatch && !std::strcmp(mismatch, "synthetic_long_mismatch"),
+          "any modified byte across chunk boundaries fails with that site's mismatch key");
+    mem.bytes[offset] ^= 1u;
+  }
+  mem.bytes[3100 + 10] ^= 0x55u;
+  mem.bytes[3100 + 898] ^= 0xaau;
+  check(ui::verify_code(view, synthetic) == nullptr,
+        "accepted alternative digest passes code verification");
+  mem.bytes[3100 + 400] ^= 1u;
+  const char* alt_mismatch = ui::verify_code(view, synthetic);
+  check(alt_mismatch && !std::strcmp(alt_mismatch, "synthetic_alt_mismatch"),
+        "a byte change outside the accepted alternative fails with that site's mismatch key");
+  mem.bytes[3100 + 400] ^= 1u;
+  mem.blocked_begin = mem.base + 512;
+  mem.blocked_end = mem.base + 516;
+  const char* unreadable = ui::verify_code(view, synthetic);
+  check(unreadable && !std::strcmp(unreadable, "synthetic_long_mismatch"),
+        "an unreadable interior chunk fails with that site's mismatch key");
+  mem.blocked_begin = mem.blocked_end = 0;
+
+  const ui::CodeSite zero_site{mem.base, 0, orig_alt_digest, "zero_mismatch"};
+  const ui::CodeSite overflow_site{0xfffffff0u, 32, orig_alt_digest, "overflow_mismatch"};
+  check(ui::verify_code(view, nullptr, 1) &&
+            !std::strcmp(ui::verify_code(view, nullptr, 1), "ui_code_sites_invalid"),
+        "null site table is rejected");
+  check(ui::verify_code(view, &zero_site, 1) &&
+            !std::strcmp(ui::verify_code(view, &zero_site, 1), "zero_mismatch"),
+        "zero-length site is rejected");
+  check(ui::verify_code(view, &overflow_site, 1) &&
+            !std::strcmp(ui::verify_code(view, &overflow_site, 1), "overflow_mismatch"),
+        "address-overflow site is rejected");
+
+  // Table invariants and unreadable-memory rejection for every real site table.
+  const auto check_table = [](const ui::CodeSite* sites, std::size_t count) {
+    check(count > 0, "code guard table is non-empty");
+    for (std::size_t i = 0; i < count; ++i) {
+      check(sites[i].address >= m::image_base && sites[i].length > 0 &&
+                sites[i].address - m::image_base <= m::image_size - sites[i].length &&
+                sites[i].mismatch && sites[i].mismatch[0] != '\0',
+            "every guarded function lies inside the Gothic2.exe image with a named log key");
+      for (std::size_t j = 0; j < i; ++j)
+        check(std::strcmp(sites[i].mismatch, sites[j].mismatch) != 0,
+              "every guarded function in a table has a distinct mismatch log key");
+    }
+  };
+  check_table(ui::open_sites.data(), ui::open_sites.size());
+  check_table(ui::backdrop_sites.data(), ui::backdrop_sites.size());
+  check_table(ui::string_sites.data(), ui::string_sites.size());
+  check_table(ui::language_sites.data(), ui::language_sites.size());
+  check_table(ui::menu_parser_sites.data(), ui::menu_parser_sites.size());
+
+  const ubc::ReadOnlyMemory empty{
+      nullptr, [](void*, std::uint32_t, void*, std::size_t) noexcept { return false; }};
+  check(!std::strcmp(ui::verify_open(empty), "ui_menu_ctor_mismatch"),
+        "unreadable open sites report the first pre-open mismatch");
+  check(!std::strcmp(ui::verify_backdrop(empty), "ui_backdrop_insert_mismatch"),
+        "unreadable backdrop sites keep their existing mismatch key");
+  check(!std::strcmp(ui::verify_strings(empty), "ui_string_ctor_mismatch"),
+        "unreadable zSTRING sites report ctor mismatch");
+  check(!std::strcmp(ui::verify_language(empty), "ui_string_ctor_mismatch"),
+        "unreadable language sites report zSTRING ctor mismatch");
+  check(!std::strcmp(ui::verify_menu_parser(empty), "ui_menu_get_parser_mismatch"),
+        "unreadable menu parser site reports its mismatch key");
+#ifdef _WIN32
+  const ubc::ReadOnlyMemory host_code{nullptr, ubc::windows_probe::copy_engine_code};
+  check(ui::verify_open(host_code) != nullptr && ui::verify_strings(host_code) != nullptr,
+        "the foreign Windows test host is rejected by live engine code checks");
+#endif
+}
+
+int test_local_exe_code_guards(const char* path) {
+  std::ifstream stream(path, std::ios::binary);
+  std::vector<std::uint8_t> exe{std::istreambuf_iterator<char>(stream), {}};
+  ubc::Sha256 file_hash;
+  file_hash.update(exe.data(), exe.size());
+  check(exe.size() >= 0x4c2000 && file_hash.finish() == m::executable_sha256,
+        "local executable matches the verified Gothic II 2.6fix SHA-256");
+  struct Image {
+    std::vector<std::uint8_t>* bytes;
+    std::uint32_t blocked_begin = 0, blocked_end = 0;
+  } image{&exe};
+  const auto read = [](void* context, std::uint32_t address, void* out, std::size_t size) noexcept {
+    const auto& img = *static_cast<const Image*>(context);
+    if (address < m::image_base)
+      return false;
+    const auto offset = static_cast<std::size_t>(address - m::image_base);
+    if (size > img.bytes->size() || offset > img.bytes->size() - size)
+      return false;
+    if (img.blocked_begin < img.blocked_end && address < img.blocked_end &&
+        address + size > img.blocked_begin)
+      return false;
+    std::memcpy(out, img.bytes->data() + offset, size);
+    return true;
+  };
+  const ubc::ReadOnlyMemory mem{&image, read};
+  check(ui::verify_open(mem) == nullptr, "all pre-open functions match the real Gothic2.exe");
+  check(ui::verify_backdrop(mem) == nullptr, "all backdrop functions match the real Gothic2.exe");
+  check(ui::verify_strings(mem) == nullptr, "both zSTRING functions match the real Gothic2.exe");
+  check(ui::verify_language(mem) == nullptr, "all language functions match the real Gothic2.exe");
+  check(ui::verify_menu_parser(mem) == nullptr, "zCMenu::GetParser matches the real Gothic2.exe");
+
+  // Apply Union 1.0m's six documented Blit patch bytes and verify acceptance + rejection.
+  const std::array<std::pair<std::uint32_t, std::uint8_t>, 6> union_patches{{
+      {0x007a6457, 0x00},
+      {0x007a646a, 0x00},
+      {0x007a64d6, 0x41},
+      {0x007a6512, 0x42},
+      {0x007a668e, 0x90},
+      {0x007a668f, 0x90},
+  }};
+  std::array<std::uint8_t, 6> saved{};
+  for (std::size_t i = 0; i < union_patches.size(); ++i) {
+    const auto off = static_cast<std::size_t>(union_patches[i].first - m::image_base);
+    saved[i] = exe[off];
+    exe[off] = union_patches[i].second;
+  }
+  check(ui::verify_backdrop(mem) == nullptr,
+        "Union 1.0m patched zCView::Blit passes backdrop verification");
+  exe[0x007a63c0 - m::image_base] ^= 1u;
+  check(ui::verify_backdrop(mem) &&
+            !std::strcmp(ui::verify_backdrop(mem), "ui_backdrop_blit_mismatch"),
+        "unexpected mutation on Union-patched Blit is rejected");
+  exe[0x007a63c0 - m::image_base] ^= 1u;
+  for (std::size_t i = 0; i < union_patches.size(); ++i)
+    exe[static_cast<std::size_t>(union_patches[i].first - m::image_base)] = saved[i];
+
+  const auto mutate_table = [&](const ui::CodeSite* sites, std::size_t count) {
+    for (std::size_t i = 0; i < count; ++i) {
+      const auto& site = sites[i];
+      const auto base = static_cast<std::size_t>(site.address - m::image_base);
+      for (const std::size_t delta : {std::size_t{0}, site.length / 2, site.length - 1}) {
+        exe[base + delta] ^= 1u;
+        const char* actual = ui::verify_code(mem, sites, count);
+        check(actual && !std::strcmp(actual, site.mismatch),
+              "1-bit mutation in real Gothic2.exe reports that exact function mismatch");
+        exe[base + delta] ^= 1u;
+      }
+      image.blocked_begin = static_cast<std::uint32_t>(site.address);
+      image.blocked_end = static_cast<std::uint32_t>(site.address + 1);
+      const char* unreadable = ui::verify_code(mem, sites, count);
+      check(unreadable && !std::strcmp(unreadable, site.mismatch),
+            "unreadable entry byte reports that exact function mismatch");
+      image.blocked_begin = image.blocked_end = 0;
+    }
+    check(ui::verify_code(mem, sites, count) == nullptr,
+          "restored Gothic2.exe passes verification again");
+  };
+  mutate_table(ui::open_sites.data(), ui::open_sites.size());
+  mutate_table(ui::backdrop_sites.data(), ui::backdrop_sites.size());
+  mutate_table(ui::string_sites.data(), ui::string_sites.size());
+  mutate_table(ui::language_sites.data(), ui::language_sites.size());
+  mutate_table(ui::menu_parser_sites.data(), ui::menu_parser_sites.size());
+  std::printf("native_crafting_ui local exe code guards: %u checks, %u failures\n", checks,
+              failures);
+  return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
 bool contains(const ui::Frame& f, const char* text) {
@@ -453,6 +657,8 @@ void test_tool_return() {
 
 int main(int argc, [[maybe_unused]] char** argv) {
   if (argc != 1) {
+    if (argc == 3 && std::string_view(argv[1]) == "--local-exe")
+      return test_local_exe_code_guards(argv[2]);
 #ifdef _WIN32
     if (argc == 4 && std::string_view(argv[1]) == "--check-game-ini") {
       const bool german_game = std::string_view(argv[2]) == "de";
@@ -468,6 +674,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
     return EXIT_FAILURE;
   }
   test_menu_view();
+  test_menu_code_guards();
   test_translations();
   test_list_boundaries();
   test_focus_and_controls();
