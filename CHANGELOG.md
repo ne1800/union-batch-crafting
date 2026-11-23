@@ -4,7 +4,7 @@
 
 ## English
 
-- **0.0.66** The grindstone preview now refreshes once when you open the menu and once per recipe, quantity or inventory change. A brief hitch of about 50 ms remains. In 0.0.65, opening the menu could cause repeated pauses, and a refresh could take a quarter of a second. Recipes that need an equipped item now show `[equipped]` and ask you to unequip it.
+- **0.0.66** The grindstone preview now refreshes once when you open the menu and once per recipe, quantity or inventory change. A brief hitch of about 50 ms remains. In 0.0.65, opening the menu could cause repeated pauses, and a refresh could take a quarter of a second. If an ingredient is equipped, the recipe now shows `[equipped]` and asks you to unequip it first.
 
 - **0.0.65** At the grindstone and other stations, the quantity menu reuses the preview while its values stay the same to reduce stutter. The grindstone can still stutter several times as the menu opens. Changing the quantity or recipe can cause a single pause of about a quarter of a second. Each time the menu opens, the plugin checks the game's menu functions. It recognizes the variant seen in the L’Hiver Workshop setup. If the check fails, you can still use the station's original controls.
 
@@ -36,7 +36,7 @@
 
 ## Deutsch
 
-- **0.0.66** Am Schleifstein wird die Vorschau beim Öffnen des Menüs und bei jedem Rezept-, Mengen- oder Bestandswechsel nur noch einmal berechnet. Ein kurzer Hänger von etwa 50 ms bleibt. In 0.0.65 konnte das Menü beim Öffnen mehrmals stocken, und eine Neuberechnung dauerte bis zu einer Viertelsekunde. Brauchst du für ein Rezept einen ausgerüsteten Gegenstand, zeigt das Menü `[ausgerüstet]` und bittet dich, ihn abzulegen.
+- **0.0.66** Am Schleifstein wird die Vorschau beim Öffnen des Menüs und bei jedem Rezept-, Mengen- oder Bestandswechsel nur noch einmal berechnet. Ein kurzer Hänger von etwa 50 ms bleibt. In 0.0.65 konnte das Menü beim Öffnen mehrmals stocken, und eine Neuberechnung dauerte bis zu einer Viertelsekunde. Ist eine Zutat ausgerüstet, zeigt das Rezept jetzt `[ausgerüstet]` und bittet dich, sie zuerst abzulegen.
 
 - **0.0.65** Am Schleifstein und an anderen Stationen verwendet das Mengenmenü die Vorschau weiter, solange ihre Werte gleich bleiben. Das verringert Ruckler. Beim Öffnen kann das Schleifsteinmenü noch mehrmals kurz hängen. Ein Mengen- oder Rezeptwechsel kann einen einzelnen Hänger von etwa einer Viertelsekunde auslösen. Bei jedem Öffnen prüft das Plugin die Menüfunktionen des Spiels. Es erkennt auch die Variante aus der L’Hiver-Workshop-Installation. Schlägt die Prüfung fehl, kannst du die Station wie im Original bedienen.
 
