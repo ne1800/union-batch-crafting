@@ -11,6 +11,8 @@
 
 namespace ubc::crafting_ui {
 
+enum class CodeMatch { mismatch, original, alternative };
+
 // Complete function bodies verified statically against Gothic II AddOn 2.6fix
 // (SHA-256 0655b4811e008a353ce372fde463ef00b6101f3e89be850e2f14980140447c7f).
 // Every engine routine called during menu open, language lookup, backdrop
@@ -22,6 +24,14 @@ struct CodeSite {
   const char* mismatch;
   bool has_alternative = false;
   lhiver::Digest alternative{};
+
+  CodeMatch match_digest(const lhiver::Digest& actual) const noexcept {
+    if (actual == digest)
+      return CodeMatch::original;
+    if (has_alternative && actual == alternative)
+      return CodeMatch::alternative;
+    return CodeMatch::mismatch;
+  }
 };
 
 inline constexpr auto string_ctor_digest =
@@ -44,6 +54,10 @@ inline constexpr auto view_blit_digest =
 // Both complete bodies draw the same tile before the same text call.
 inline constexpr auto union_blit_digest =
     lhiver::digest_literal("996de8ea410b89b6298273c34c0b256ff38aa3275c07f1f6c6de1832b337f2f7");
+// Observed in loaded ScreenInit code with the full L'Hiver Workshop stack.
+// The plugin responsible for the patch still needs to be identified in a live run.
+inline constexpr auto workshop_screen_init_digest =
+    lhiver::digest_literal("866a9f319a041c92bd4f6cf4d59ea5b89c27c558c243a08da8aca7334e785de1");
 
 inline constexpr std::array<CodeSite, 2> string_sites{{
     {native_menu::string_ctor, 127, string_ctor_digest, "ui_string_ctor_mismatch"},
@@ -73,7 +87,7 @@ inline constexpr std::array<CodeSite, 9> open_sites{{
      "ui_menu_dtor_mismatch"},
     {selection_abi::menu_screen_init, 3066,
      lhiver::digest_literal("a4a67a2b4b81506fe0d3e93a85a14abc5f58f082e2751802474730a23d85e86d"),
-     "ui_screen_init_mismatch"},
+     "ui_screen_init_mismatch", true, workshop_screen_init_digest},
     {selection_abi::menu_screen_done, 573,
      lhiver::digest_literal("225dd5b3688330703b26e6f548a60a9845fa757863e52cc5cc05907afa69c0b8"),
      "ui_screen_done_mismatch"},
@@ -92,8 +106,11 @@ inline constexpr std::array<CodeSite, 4> backdrop_sites{{
      union_blit_digest},
 }};
 
-inline const char* verify_code(ReadOnlyMemory memory, const CodeSite* sites,
-                               std::size_t count) noexcept {
+inline const char* verify_code(ReadOnlyMemory memory, const CodeSite* sites, std::size_t count,
+                               bool* workshop_screen_init = nullptr) noexcept {
+  if (workshop_screen_init)
+    *workshop_screen_init = false;
+  bool workshop = false;
   if (!sites && count)
     return "ui_code_sites_invalid";
   for (std::size_t i = 0; i < count; ++i) {
@@ -112,10 +129,14 @@ inline const char* verify_code(ReadOnlyMemory memory, const CodeSite* sites,
       current += static_cast<std::uint32_t>(step);
       remaining -= step;
     }
-    const auto actual = hash.finish();
-    if (actual != site.digest && !(site.has_alternative && actual == site.alternative))
+    const auto match = site.match_digest(hash.finish());
+    if (match == CodeMatch::mismatch)
       return site.mismatch;
+    if (site.address == selection_abi::menu_screen_init)
+      workshop = match == CodeMatch::alternative;
   }
+  if (workshop_screen_init)
+    *workshop_screen_init = workshop;
   return nullptr;
 }
 
@@ -125,8 +146,9 @@ inline const char* verify_code(ReadOnlyMemory memory,
   return verify_code(memory, sites.data(), sites.size());
 }
 
-inline const char* verify_open(ReadOnlyMemory memory) noexcept {
-  return verify_code(memory, open_sites);
+inline const char* verify_open(ReadOnlyMemory memory,
+                               bool* workshop_screen_init = nullptr) noexcept {
+  return verify_code(memory, open_sites.data(), open_sites.size(), workshop_screen_init);
 }
 
 inline const char* verify_backdrop(ReadOnlyMemory memory) noexcept {

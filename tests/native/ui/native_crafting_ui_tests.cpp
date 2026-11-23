@@ -81,6 +81,36 @@ void test_menu_view() {
   rejected("ui_backdrop_window_closed", "a closed window cannot draw");
 }
 
+void test_screen_init_digests() {
+  // Check the production table against independently recorded hashes. The portable
+  // test does not need a game executable or a copy of the patched function body.
+  const auto screen_init =
+      std::find_if(ui::open_sites.begin(), ui::open_sites.end(),
+                   [](const ui::CodeSite& s) { return s.address == 0x004dcde0; });
+  check(screen_init != ui::open_sites.end(), "the pre-open guard checks zCMenu::ScreenInit");
+  if (screen_init == ui::open_sites.end())
+    return;
+  check(screen_init->length == 3066 &&
+            !std::strcmp(screen_init->mismatch, "ui_screen_init_mismatch"),
+        "ScreenInit keeps its full function length and mismatch key");
+  constexpr auto original = ubc::lhiver::digest_literal(
+      "a4a67a2b4b81506fe0d3e93a85a14abc5f58f082e2751802474730a23d85e86d");
+  constexpr auto workshop = ubc::lhiver::digest_literal(
+      "866a9f319a041c92bd4f6cf4d59ea5b89c27c558c243a08da8aca7334e785de1");
+  check(screen_init->match_digest(original) == ui::CodeMatch::original,
+        "ScreenInit accepts the original Gothic II 2.6fix digest");
+  check(screen_init->match_digest(workshop) == ui::CodeMatch::alternative,
+        "ScreenInit recognizes the observed L'Hiver Workshop digest");
+  auto foreign = workshop;
+  foreign.back() ^= 1u;
+  check(screen_init->match_digest(foreign) == ui::CodeMatch::mismatch,
+        "a one-bit difference from the Workshop digest is rejected");
+  for (const auto& site : ui::open_sites)
+    if (site.address != screen_init->address)
+      check(!site.has_alternative && site.match_digest(workshop) == ui::CodeMatch::mismatch,
+            "other pre-open functions still require their original digest");
+}
+
 void test_menu_code_guards() {
   const auto hash_bytes = [](const std::vector<std::uint8_t>& bytes) {
     ubc::Sha256 hash;
@@ -105,44 +135,54 @@ void test_menu_code_guards() {
   };
   // Multi-chunk synthetic bodies matching ScreenInit (3066 B) and Blit (899 B).
   Memory mem;
-  mem.base = 0x00400000;
+  mem.base = ubc::selection_abi::menu_screen_init;
   mem.bytes.resize(4096);
   for (std::size_t i = 0; i < mem.bytes.size(); ++i)
     mem.bytes[i] = static_cast<std::uint8_t>((i * 73u + 19u) & 0xffu);
-  const std::vector<std::uint8_t> long_body(mem.bytes.begin(), mem.bytes.begin() + 3066);
+  std::vector<std::uint8_t> long_body(mem.bytes.begin(), mem.bytes.begin() + 3066);
+  const auto original_screen_digest = hash_bytes(long_body);
+  long_body.back() ^= 2u;
   std::vector<std::uint8_t> alt_body(mem.bytes.begin() + 3100, mem.bytes.begin() + 3100 + 899);
   const auto orig_alt_digest = hash_bytes(alt_body);
   alt_body[10] ^= 0x55u;
   alt_body[898] ^= 0xaau;
   const auto patched_alt_digest = hash_bytes(alt_body);
   const std::array<ui::CodeSite, 2> synthetic{{
-      {mem.base, long_body.size(), hash_bytes(long_body), "synthetic_long_mismatch"},
+      {mem.base, long_body.size(), original_screen_digest, "ui_screen_init_mismatch", true,
+       hash_bytes(long_body)},
       {mem.base + 3100, 899, orig_alt_digest, "synthetic_alt_mismatch", true, patched_alt_digest},
   }};
   const ubc::ReadOnlyMemory view{&mem, read};
-  check(ui::verify_code(view, synthetic) == nullptr,
-        "matching multi-chunk and primary digests pass code verification");
+  bool workshop = true;
+  const auto verify = [&] {
+    return ui::verify_code(view, synthetic.data(), synthetic.size(), &workshop);
+  };
+  check(verify() == nullptr && !workshop,
+        "matching primary digests pass without identifying the Workshop variant");
   for (const std::size_t offset : {std::size_t{0}, std::size_t{255}, std::size_t{256},
                                    long_body.size() / 2, long_body.size() - 1}) {
     mem.bytes[offset] ^= 1u;
-    const char* mismatch = ui::verify_code(view, synthetic);
-    check(mismatch && !std::strcmp(mismatch, "synthetic_long_mismatch"),
+    const char* mismatch = verify();
+    check(mismatch && !std::strcmp(mismatch, "ui_screen_init_mismatch") && !workshop,
           "any modified byte across chunk boundaries fails with that site's mismatch key");
     mem.bytes[offset] ^= 1u;
   }
   mem.bytes[3100 + 10] ^= 0x55u;
   mem.bytes[3100 + 898] ^= 0xaau;
-  check(ui::verify_code(view, synthetic) == nullptr,
-        "accepted alternative digest passes code verification");
+  check(verify() == nullptr && !workshop,
+        "an alternative Blit alone does not identify a Workshop ScreenInit");
+  mem.bytes[long_body.size() - 1] ^= 2u;
+  check(verify() == nullptr && workshop,
+        "the accepted alternative ScreenInit is identified after all checks pass");
   mem.bytes[3100 + 400] ^= 1u;
-  const char* alt_mismatch = ui::verify_code(view, synthetic);
-  check(alt_mismatch && !std::strcmp(alt_mismatch, "synthetic_alt_mismatch"),
-        "a byte change outside the accepted alternative fails with that site's mismatch key");
+  const char* alt_mismatch = verify();
+  check(alt_mismatch && !std::strcmp(alt_mismatch, "synthetic_alt_mismatch") && !workshop,
+        "a later mismatch rejects the guard and clears the previous Workshop match");
   mem.bytes[3100 + 400] ^= 1u;
   mem.blocked_begin = mem.base + 512;
   mem.blocked_end = mem.base + 516;
-  const char* unreadable = ui::verify_code(view, synthetic);
-  check(unreadable && !std::strcmp(unreadable, "synthetic_long_mismatch"),
+  const char* unreadable = verify();
+  check(unreadable && !std::strcmp(unreadable, "ui_screen_init_mismatch") && !workshop,
         "an unreadable interior chunk fails with that site's mismatch key");
   mem.blocked_begin = mem.blocked_end = 0;
 
@@ -674,6 +714,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
     return EXIT_FAILURE;
   }
   test_menu_view();
+  test_screen_init_digests();
   test_menu_code_guards();
   test_translations();
   test_list_boundaries();

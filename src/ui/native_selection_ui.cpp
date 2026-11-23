@@ -125,7 +125,7 @@ bool NativeSelectionUi::open(BowMenuTrace* trace, BowMenuTrace* opened_trace) no
   if (!can_open(trace))
     return false;
   const ReadOnlyMemory code{nullptr, w::copy_engine_code};
-  if (const char* mismatch = crafting_ui::verify_open(code)) {
+  if (const char* mismatch = crafting_ui::verify_open(code, &workshop_screen_init_)) {
     open_rejection_ = mismatch;
     return false;
   }
@@ -169,6 +169,7 @@ bool NativeSelectionUi::open(BowMenuTrace* trace, BowMenuTrace* opened_trace) no
 }
 void NativeSelectionUi::close() noexcept {
   open_rejection_ = nullptr;
+  workshop_screen_init_ = false;
   if (!created_)
     return;
   if (initialized_)
