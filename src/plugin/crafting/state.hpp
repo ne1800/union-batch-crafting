@@ -248,22 +248,35 @@ struct GrindPreviewDiagnostic {
 };
 extern std::array<GrindPreviewDiagnostic, shcat::recipes.size()> grind_preview_diagnostic;
 extern std::optional<shitem::Reader> grind_item_reader;
+inline ULONGLONG grind_counter() noexcept {
+  LARGE_INTEGER ticks{};
+  QueryPerformanceCounter(&ticks);
+  return static_cast<ULONGLONG>(ticks.QuadPart);
+}
+inline ULONGLONG grind_microseconds(ULONGLONG first, ULONGLONG last) noexcept {
+  static const auto frequency = []() noexcept {
+    LARGE_INTEGER value{};
+    QueryPerformanceFrequency(&value);
+    return static_cast<ULONGLONG>(value.QuadPart);
+  }();
+  return (last - first) * 1000000u / frequency;
+}
 class TimedGrindReadSet : public shpreview::detail::ReadSet {
 public:
   bool begin(const ubc::ReadOnlyMemory& original, shpreview::FrameSource frames,
              const shpreview::FrameObservation& expected, std::uint32_t owner) noexcept {
-    start = GetTickCount64();
+    start = grind_counter();
     return ReadSet::begin(original, frames, expected, owner);
   }
   bool freeze() noexcept {
     const bool ok = ReadSet::freeze();
-    frozen = GetTickCount64();
+    frozen = grind_counter();
     return ok;
   }
   bool seal() noexcept {
-    replayed = GetTickCount64();
+    replayed = grind_counter();
     const bool ok = ReadSet::seal();
-    sealed = GetTickCount64();
+    sealed = grind_counter();
     return ok;
   }
   ULONGLONG start = 0, frozen = 0, replayed = 0, sealed = 0;

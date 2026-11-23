@@ -109,6 +109,7 @@ private:
   Snapshot capture_bound(const ReadOnlyMemory& memory, const GrindRecipeCatalogueCapture& catalogue,
                          std::uint32_t callback, std::uint32_t quantity, const Boundary& boundary,
                          const GrindGuildSnapshot* physical) noexcept {
+    ReadOrigin origin("inventory");
     Snapshot out;
     out.quantity = quantity;
     out.scope = physical ? Scope::preview : Scope::writer;

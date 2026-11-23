@@ -220,7 +220,14 @@ inline Issue read_layout(const ReadOnlyMemory& memory, std::uint32_t parser,
   if (parser != profile.parser_address)
     return Issue::wrong_parser;
   std::array<std::uint8_t, 0x58> bytes{};
-  if (!memory.copy(parser, bytes.data(), bytes.size()))
+  if (memory.precise_parser_reads && memory.precise_parser_reads()) {
+    // The VM advances its instruction pointer at +0x4c independently of
+    // the code allocation. Only these six words enter the layout contract.
+    if (!range(parser, bytes.size()) || !memory.copy(parser + 0x18, bytes.data() + 0x18, 12) ||
+        !memory.copy(parser + 0x48, bytes.data() + 0x48, 4) ||
+        !memory.copy(parser + 0x50, bytes.data() + 0x50, 8))
+      return Issue::parser_unreadable;
+  } else if (!memory.copy(parser, bytes.data(), bytes.size()))
     return Issue::parser_unreadable;
   layout.table = u32(bytes.data() + 0x18);
   layout.table_capacity = u32(bytes.data() + 0x1c);
@@ -261,8 +268,10 @@ struct Symbol {
   std::uint32_t parent = 0;
 };
 
+enum class SymbolFields { all, signature_without_offset, name };
+
 inline Issue lookup(const ReadOnlyMemory& memory, const Layout& layout, std::uint32_t index,
-                    Symbol& symbol) noexcept {
+                    Symbol& symbol, SymbolFields fields = SymbolFields::all) noexcept {
   if (index >= layout.count)
     return Issue::symbol_index;
   const auto slot =
@@ -271,10 +280,22 @@ inline Issue lookup(const ReadOnlyMemory& memory, const Layout& layout, std::uin
   if (!range(slot, pointer.size()) ||
       !memory.copy(static_cast<std::uint32_t>(slot), pointer.data(), pointer.size()))
     return Issue::symbol_unreadable;
+  ReadOrigin origin("parser.symbol", index);
   symbol.address = u32(pointer.data());
   std::array<std::uint8_t, 0x3c> bytes{};
-  if (symbol.address % 4u != 0 || !range(symbol.address, bytes.size()) ||
-      !memory.copy(symbol.address, bytes.data(), bytes.size()))
+  if (symbol.address % 4u != 0 || !range(symbol.address, bytes.size()))
+    return Issue::symbol_unreadable;
+  const bool precise =
+      fields != SymbolFields::all && memory.precise_parser_reads && memory.precise_parser_reads();
+  if (precise) {
+    if (!memory.copy(symbol.address + 8, bytes.data() + 8, 8))
+      return Issue::symbol_unreadable;
+    if (fields != SymbolFields::name &&
+        (!memory.copy(symbol.address + 0x18, bytes.data() + 0x18, 4) ||
+         !memory.copy(symbol.address + 0x20, bytes.data() + 0x20, 4) ||
+         !memory.copy(symbol.address + 0x38, bytes.data() + 0x38, 4)))
+      return Issue::symbol_unreadable;
+  } else if (!memory.copy(symbol.address, bytes.data(), bytes.size()))
     return Issue::symbol_unreadable;
   symbol.name_data = u32(bytes.data() + 8);
   symbol.name_length = u32(bytes.data() + 0xc);
@@ -339,8 +360,13 @@ inline bool hash_range(const ReadOnlyMemory& memory, std::uint32_t address, std:
 
 inline Issue check_function(const ReadOnlyMemory& memory, const Layout& layout,
                             const lhiver::Function& function) noexcept {
+  const bool instance_constructor = function.type == 7 && function.flags == 1 &&
+                                    function.argc == 0 && function.return_type == 0 &&
+                                    function.parent_index >= 0;
   Symbol symbol{};
-  auto issue = lookup(memory, layout, function.symbol, symbol);
+  auto issue =
+      lookup(memory, layout, function.symbol, symbol,
+             instance_constructor ? SymbolFields::signature_without_offset : SymbolFields::all);
   if (issue != Issue::none)
     return issue;
   issue = name_matches(memory, symbol, function.name);
@@ -350,9 +376,6 @@ inline Issue check_function(const ReadOnlyMemory& memory, const Layout& layout,
   // SetInstance(adr) occupies the same field with the running object address.
   // The constructor remains bound via data/Parent/Signature/Bodyhash; its
   // current C_INFO object is checked separately by the native selection adapter.
-  const bool instance_constructor = function.type == 7 && function.flags == 1 &&
-                                    function.argc == 0 && function.return_type == 0 &&
-                                    function.parent_index >= 0;
   if (symbol.type != function.type || symbol.flags != function.flags ||
       symbol.elements != function.argc ||
       (!instance_constructor && symbol.offset != function.return_type))

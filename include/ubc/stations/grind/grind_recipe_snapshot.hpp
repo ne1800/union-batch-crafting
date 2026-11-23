@@ -118,6 +118,7 @@ public:
   GrindRecipeCatalogueCapture capture(const ReadOnlyMemory& memory, std::uint32_t parser,
                                       const GrindRecipeKey& key,
                                       bool stable_boundary_verified) noexcept {
+    ReadOrigin origin("catalogue");
     namespace rt = grind_recipe_runtime;
     namespace hand = station_recipe_snapshot_detail;
     namespace word = alchemy_flask_runtime::detail;

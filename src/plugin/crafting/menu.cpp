@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 #include "runtime.hpp"
+#include "ubc/stations/grind/grind_preview_stability.hpp"
 
 namespace ubc_native {
 namespace {
 // A rejected view also defers notices until the player leaves this station.
 std::uint32_t rejected_view_station = 0;
 ubc::CraftingPreviewCache preview_cache;
+ubc::GrindPreviewStability grind_stability;
+constexpr auto grind_pool_head = ubc::bow_item_native::node_pool + 12;
 
 const char* menu_open_fields() noexcept {
   return ui.uses_workshop_screen_init()
@@ -25,28 +28,51 @@ ubc::CraftingPreviewKey preview_key(const Context& c) noexcept {
           rows.valid};
 }
 
-bool can_reuse_preview(const Context& c) noexcept {
-  if (!ubc::CraftingPreviewCache::allows(session.phase()) || !same_context(c, borrowed_context) ||
-      !(key(c) == session.preview().key) || !ui.owns_input() || !grind_frame_capture_quiet() ||
-      native_update || disabled || adapter_failed() || grind_preview_input_depth ||
-      grind_preview_overflow || grind_capture_leased || grind_preview_scope.active)
-    return false;
+const char* preview_gate(const Context& c) noexcept {
+  if (!ubc::CraftingPreviewCache::allows(session.phase()))
+    return "phase";
+  if (!same_context(c, borrowed_context))
+    return "context";
+  if (!(key(c) == session.preview().key))
+    return "owner";
+  if (!ui.owns_input())
+    return "input_owner";
+  if (!grind_frame_capture_quiet())
+    return "frame_quiet";
+  if (native_update)
+    return "native_update";
+  if (disabled)
+    return "disabled";
+  if (adapter_failed())
+    return "adapter";
+  if (grind_preview_input_depth)
+    return "input_depth";
+  if (grind_preview_overflow)
+    return "overflow";
+  if (grind_capture_leased)
+    return "capture_lease";
+  if (grind_preview_scope.active)
+    return "active_scope";
   switch (c.kind) {
   case cat::Station::alchemy:
     return extra_catalogue_reader && spirit_catalogue_reader && tobacco_list &&
-           extra_serial != UINT64_MAX;
+                   extra_serial != UINT64_MAX
+               ? nullptr
+               : "alchemy_reader";
   case cat::Station::bow:
-    return bow_initialized && bow_item_reader;
+    return bow_initialized && bow_item_reader ? nullptr : "bow_reader";
   case cat::Station::grind:
     if (!grind_preview_reader || !grind_item_reader || grind_preview_serial == UINT64_MAX)
-      return false;
+      return "grind_reader";
     [[fallthrough]];
   case cat::Station::cool:
-    return cool_ready && cool_destroy_installed && cool_remove_observer.owns_patch();
+    return cool_ready && cool_destroy_installed && cool_remove_observer.owns_patch()
+               ? nullptr
+               : "remove_observer";
   case cat::Station::saw:
-    return ammo::permits_next();
+    return ammo::permits_next() ? nullptr : "ammo";
   default:
-    return true;
+    return nullptr;
   }
 }
 
@@ -79,24 +105,58 @@ verified_units(const Context& c, const GrindPreviewLease& lease,
   return units;
 }
 
-void report_grind_recompute(ULONGLONG started, std::uint32_t quantity, bool sealed) noexcept {
-  const auto elapsed = GetTickCount64() - started;
-  char fields[160]{};
+using PreviewMiss = ubc::CraftingPreviewCache::Miss;
+
+// Every cold frame points to its reason. Emit the address and classification
+// once per run of identical misses, with a periodic refresh for long runs.
+std::uint64_t report_grind_miss(const PreviewMiss& miss) noexcept {
+  static PreviewMiss previous;
+  static std::uint64_t first = 0;
+  if (!first || frame - first >= 60 || std::strcmp(previous.reason, miss.reason) ||
+      std::strcmp(previous.field, miss.field) || previous.address != miss.address ||
+      previous.length != miss.length || previous.offset != miss.offset ||
+      previous.subject != miss.subject) {
+    char fields[224]{};
+    std::snprintf(
+        fields, sizeof(fields),
+        R"(,"reason":"%s","field":"%s","address":%u,"length":%u,"offset":%u,"before":%llu,"after":%llu,"subject":%u)",
+        miss.reason, miss.field, static_cast<unsigned>(miss.address), miss.length, miss.offset,
+        static_cast<ULONGLONG>(miss.before), static_cast<ULONGLONG>(miss.after), miss.subject);
+    event("grind_preview_cache_miss", 0, 0, fields);
+    first = frame;
+    previous = miss;
+  }
+  return first;
+}
+
+void report_grind_recompute(ULONGLONG started, std::uint32_t quantity, bool sealed,
+                            const PreviewMiss& miss) noexcept {
+  const auto elapsed = grind_microseconds(started, grind_counter());
+  const auto miss_frame = report_grind_miss(miss);
+  char fields[256]{};
+  const auto prefix =
+      std::snprintf(fields, sizeof(fields), R"(,"elapsed_us":%llu,"miss_frame":%llu)", elapsed,
+                    static_cast<ULONGLONG>(miss_frame));
   if (sealed && grind_preview_reader) {
     const auto& timing = grind_preview_reader->read_set();
-    std::snprintf(fields, sizeof(fields),
-                  R"(,"record_ms":%llu,"replay_ms":%llu,"seal_ms":%llu,"spans":%u,"calls":%llu)",
-                  timing.frozen - timing.start, timing.replayed - timing.frozen,
-                  timing.sealed - timing.replayed, static_cast<unsigned>(timing.statistics().spans),
-                  timing.statistics().recording_calls);
+    const auto record = grind_microseconds(timing.start, timing.frozen);
+    const auto replay = grind_microseconds(timing.frozen, timing.replayed);
+    const auto seal = grind_microseconds(timing.replayed, timing.sealed);
+    std::snprintf(
+        fields + prefix, sizeof(fields) - prefix,
+        R"(,"record_ms":%llu,"replay_ms":%llu,"seal_ms":%llu,"spans":%u,"calls":%llu,"record_us":%llu,"replay_us":%llu,"seal_us":%llu)",
+        record / 1000, replay / 1000, seal / 1000, static_cast<unsigned>(timing.statistics().spans),
+        timing.statistics().recording_calls, record, replay, seal);
   }
-  event("grind_preview_recompute", static_cast<int>(elapsed), static_cast<int>(quantity), fields);
+  event("grind_preview_recompute", static_cast<int>(elapsed / 1000), static_cast<int>(quantity),
+        fields);
 }
 
 Capture capture_opening(const Context& c, ubc::BowMenuTrace* trace) noexcept {
   if (c.kind != cat::Station::grind)
     return capture(c, nullptr, trace);
-  const auto started = GetTickCount64();
+  grind_stability.reset();
+  const auto started = grind_counter();
   auto inputs = preview_key(c);
   // A new generation has no selected recipe until session.open() chooses one.
   inputs.selection = UINT32_MAX;
@@ -107,26 +167,63 @@ Capture capture_opening(const Context& c, ubc::BowMenuTrace* trace) noexcept {
   report_grind_preview_failure(opening);
   auto result = capture(c, &opening);
   const auto portions = verified_units(c, opening, result.snapshot);
-  if (recording.consistent && serial == grind_preview_input_serial && opening.ready)
+  if (!recording.dialog_change && serial == grind_preview_input_serial && opening.ready)
     preview_cache.finish(inputs, false, portions);
+  else if (serial != grind_preview_input_serial)
+    preview_cache.invalidate({"input", "serial", 0, 0, 0, serial, grind_preview_input_serial});
   else
-    preview_cache.invalidate();
-  report_grind_recompute(started, 1, opening.ready);
+    preview_cache.invalidate(
+        {"capture", recording.dialog_change ? recording.dialog_change : "publication"});
+  report_grind_recompute(started, 1, opening.ready, {"key", "opening"});
   return result;
 }
 
 void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept {
+  const auto started = c.kind == cat::Station::grind ? grind_counter() : 0;
   const auto before = preview_key(c);
   const auto input = grind_preview_input_serial;
   const auto still_current = [&]() {
     const auto after = context();
-    return input == grind_preview_input_serial && same_context(c, after) &&
-           before == preview_key(after) && can_reuse_preview(after);
+    if (input != grind_preview_input_serial)
+      preview_cache.invalidate({"input", "serial", 0, 0, 0, input, grind_preview_input_serial});
+    else if (const auto* field = before.difference(preview_key(after)))
+      preview_cache.invalidate({"key", field});
+    else if (!same_context(c, after))
+      preview_cache.invalidate({"gate", "context"});
+    else if (const auto* gate = preview_gate(after))
+      preview_cache.invalidate({"gate", gate});
+    else
+      return true;
+    return false;
   };
-  const bool cacheable = can_reuse_preview(c);
-  if (cacheable && preview_cache.reuse(session.phase(), before, live_memory) && still_current()) {
+  const auto* gate = preview_gate(c);
+  const bool cacheable = !gate;
+  const bool can_wait =
+      cacheable && before.owner.kind == cat::Station::grind && session.phase() == Phase::selecting;
+  const bool resuming = can_wait && grind_stability.active();
+  if (!can_wait)
+    grind_stability.reset();
+  if (resuming &&
+      grind_stability.waiting(before.owner, live_memory, grind_pool_head, frame, input)) {
+    session.set_preview_pending(true);
+    diagnostic.captured = GetTickCount64();
+    return;
+  }
+  session.set_preview_pending(false);
+  if (gate)
+    preview_cache.invalidate({"gate", gate});
+  if (cacheable && !resuming && preview_cache.reuse(session.phase(), before, live_memory) &&
+      still_current()) {
     diagnostic.captured = GetTickCount64();
     observe_cached_quantity(c);
+    return;
+  }
+  const auto miss = resuming ? grind_stability.reason() : preview_cache.miss();
+  if (can_wait && !resuming &&
+      grind_stability.start(miss, before.owner, live_memory, grind_pool_head, frame, input)) {
+    report_grind_miss(miss);
+    session.set_preview_pending(true);
+    diagnostic.captured = GetTickCount64();
     return;
   }
   preview_cache.invalidate();
@@ -156,14 +253,14 @@ void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept 
   }
   // Neither recording nor a frame-bound grind publication survives into a
   // restored-view capture, the handoff, or an effect callback.
-  const bool consistent = recording && recording->consistent;
+  const auto* dialog_change = recording ? recording->dialog_change : nullptr;
   recording.reset();
-  if (consistent && still_current())
+  if (cacheable && !dialog_change && still_current())
     preview_cache.finish(before, session.can_confirm(), units);
-  else
-    preview_cache.invalidate();
+  else if (dialog_change)
+    preview_cache.invalidate({"capture", dialog_change});
   if (c.kind == cat::Station::grind && session.phase() != Phase::original)
-    report_grind_recompute(diagnostic.capturing, session.quantity(), grind_sealed);
+    report_grind_recompute(started, session.quantity(), grind_sealed, miss);
 }
 }
 
@@ -646,8 +743,12 @@ void __fastcall after_frame(void* game, void* manager) {
           } else if (show_selection_view(c, borrow_view)) {
             if (c.kind == cat::Station::grind) {
               const auto borrowed = context();
-              if (grind_preview_input_serial != opening_serial || !can_reuse_preview(borrowed) ||
-                  !preview_cache.bind_open_grind(preview_key(borrowed)))
+              if (grind_preview_input_serial != opening_serial)
+                preview_cache.invalidate(
+                    {"input", "serial", 0, 0, 0, opening_serial, grind_preview_input_serial});
+              else if (const auto* gate = preview_gate(borrowed))
+                preview_cache.invalidate({"gate", gate});
+              else if (!preview_cache.bind_open_grind(preview_key(borrowed)))
                 preview_cache.invalidate();
             }
             event("ui_open", static_cast<int>(c.kind), static_cast<int>(session.visible_count()),

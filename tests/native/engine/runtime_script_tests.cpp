@@ -308,6 +308,32 @@ void test_symbol_and_name_ranges() {
   }
 }
 
+void test_display_layout_fields() {
+  Fixture f;
+  auto memory = f.image.memory();
+  memory.precise_parser_reads = []() noexcept { return true; };
+  rs::detail::Layout initial{}, current{};
+  require(rs::detail::read_layout(memory, parser, f.expected, initial) == rs::Issue::none,
+          "read precise display layout");
+  f.image.denied = parser + 0x4c;
+  f.image.denied_size = 4;
+  for (unsigned frame = 1; frame <= 8; ++frame) {
+    f.image.put(parser + 0x4c, code + frame);
+    require(rs::detail::read_layout(memory, parser, f.expected, current) == rs::Issue::none &&
+                rs::detail::same_layout(initial, current),
+            "moving instruction pointer is outside the display layout");
+  }
+  require(rs::detail::read_layout(f.image.memory(), parser, f.expected, current) ==
+              rs::Issue::parser_unreadable,
+          "full reader still requires the contiguous header");
+  for (const unsigned offset : {0x18, 0x1c, 0x20, 0x48, 0x50, 0x54}) {
+    f.image.denied = parser + offset;
+    require(rs::detail::read_layout(memory, parser, f.expected, current) ==
+                rs::Issue::parser_unreadable,
+            "every consumed layout field must remain readable");
+  }
+}
+
 void test_instance_constructor_identity() {
   for (const auto instance : {0u, 0x12345678u, 0xfedcba98u}) {
     Fixture f;
@@ -815,6 +841,7 @@ int main() {
   test_parser_ranges();
   test_symbol_and_name_ranges();
   test_signatures_and_hashes();
+  test_display_layout_fields();
   test_instance_constructor_identity();
   test_bindings_and_dynamic_values();
   test_invalid_profile();
