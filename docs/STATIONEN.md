@@ -23,6 +23,9 @@ Die Weltvergleiche gelten für Gothic II DNdR, Marcello L’Hiver DE 2.0.4 und d
 | Union 1.0m · Shw32.dll | `78d9312f07ebdf978d301fde63841ddcbe265b59cb7c2753e01d2dbdc5742888` |
 | zBugFixes.dll | `50c3dc669a451dc084c4691b6e6fb7a39838d40627629e59e884579873811963` |
 | New Vob Locator · UNION_VOB_LOCATOR.DLL | `72fc040ffe3d9ee6995493d4e5879336bbccf2f2301f5daa4578ff8f31b234fc` |
+| Screen Info · UNION_GOTHIC_SCREEN_INFO.DLL | `c311eb0e3ef2416f4ba6f9c7beed7d1e01692622cdaa97e0ee0120ee086fc236` |
+
+`UNION_GOTHIC_SCREEN_INFO.DLL` patcht `zCMenu::ScreenInit`. Das Plugin lässt die getestete Variante beim Öffnen des Mengenmenüs und der Herstellungsquittung zu.
 
 <a id="controls"></a>
 
