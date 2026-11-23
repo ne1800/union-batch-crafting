@@ -11,6 +11,74 @@
 #include "../catalogs/crafting_catalog_tests.cpp"
 using namespace crafting_test;
 namespace ui = ubc::crafting_ui;
+namespace m = ubc::native_menu;
+
+void test_menu_view() {
+  constexpr std::uint32_t parent = 0x1000, inner = 0x2000;
+  struct Memory {
+    std::array<std::uint8_t, m::view_size> view{};
+    std::uint32_t blit = m::view_blit;
+  } memory;
+  const auto read = [](void* context, std::uint32_t address, void* out, std::size_t size) noexcept {
+    const auto& image = *static_cast<const Memory*>(context);
+    if (address == inner && size == image.view.size())
+      std::memcpy(out, image.view.data(), size);
+    else if (address == m::menu_view_vtable + m::view_blit_slot * sizeof(image.blit) &&
+             size == sizeof(image.blit))
+      std::memcpy(out, &image.blit, size);
+    else
+      return false;
+    return true;
+  };
+  m::MenuStorage menu{};
+  m::write(menu.bytes.data(), m::menu_window, parent);
+  m::write(menu.bytes.data(), m::menu_inner_window, inner);
+  m::write(memory.view.data(), m::view_id, m::view_item);
+  m::write(memory.view.data(), m::view_owner, parent);
+  m::write<std::uint32_t>(memory.view.data(), m::vptr_offset, m::menu_view_vtable);
+  ui::MenuView target{menu.bytes.data(), {&memory, read}};
+  unsigned surface_calls = 0, text_calls = 0;
+  const auto missing_texture = [&](void* view) {
+    check(reinterpret_cast<std::uintptr_t>(view) == inner, "backdrop receives the checked view");
+    ++surface_calls;
+    return "ui_backdrop_texture_missing";
+  };
+  const auto draw = [&](void* view) {
+    check(reinterpret_cast<std::uintptr_t>(view) == inner, "text receives the checked view");
+    ++text_calls;
+  };
+  const auto backdrop = target.backdrop(missing_texture);
+  check(backdrop.view_valid && !std::strcmp(backdrop.event, "ui_backdrop_texture_missing") &&
+            target.submit(draw) && text_calls == 1 && surface_calls == 1,
+        "a missing backdrop keeps text on the valid view");
+
+  const auto rejected = [&](const char* reason, const char* message) {
+    const auto result = target.backdrop(missing_texture);
+    check(!result.view_valid && !std::strcmp(result.event, reason) && !target.submit(draw) &&
+              text_calls == 1 && surface_calls == 1,
+          message);
+  };
+  m::write(memory.view.data(), m::view_owner, parent + 1);
+  rejected("ui_backdrop_view_mismatch", "the next frame rejects a changed owner before text");
+  m::write(memory.view.data(), m::view_owner, parent);
+  m::write<std::uint32_t>(memory.view.data(), m::vptr_offset, 0);
+  rejected("ui_backdrop_view_mismatch", "readable item view with foreign vtable cannot draw");
+  m::write<std::uint32_t>(memory.view.data(), m::vptr_offset, m::menu_view_vtable);
+  memory.blit = 0;
+  rejected("ui_backdrop_view_mismatch", "a changed blit slot rejects the view");
+  memory.blit = m::view_blit;
+  m::write(memory.view.data(), m::view_id, m::view_item + 1);
+  rejected("ui_backdrop_view_mismatch", "a different item ID rejects the view");
+  m::write(memory.view.data(), m::view_id, m::view_item);
+  m::write(menu.bytes.data(), m::menu_window, 0u);
+  rejected("ui_backdrop_view_mismatch", "missing parent rejects the view");
+  m::write(menu.bytes.data(), m::menu_window, parent);
+  m::write(menu.bytes.data(), m::menu_inner_window, inner + 1);
+  rejected("ui_backdrop_view_mismatch", "an unreadable replacement view cannot draw");
+  target.menu = nullptr;
+  rejected("ui_backdrop_window_closed", "a closed window cannot draw");
+}
+
 bool contains(const ui::Frame& f, const char* text) {
   for (std::size_t i = 0; i < f.count; ++i)
     if (std::strstr(f.lines[i].text.data(), text))
@@ -399,6 +467,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
 #endif
     return EXIT_FAILURE;
   }
+  test_menu_view();
   test_translations();
   test_list_boundaries();
   test_focus_and_controls();

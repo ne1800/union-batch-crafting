@@ -643,18 +643,11 @@ bool NativeCraftingUi::open(BowMenuTrace* trace, BowMenuTrace* opened_trace) noe
   submitted_receipt_ = 0;
   return true;
 }
-const char* NativeCraftingUi::apply_backdrop() noexcept {
-  if (!opened())
-    return "ui_backdrop_window_closed";
-  const auto parent = m::read<std::uint32_t>(object(), m::menu_window);
-  auto* view = reinterpret_cast<void*>(m::read<std::uint32_t>(object(), m::menu_inner_window));
-  if (!parent || !w::readable(view, m::view_size) ||
-      m::read<std::uint32_t>(view, m::view_owner) != parent ||
-      m::read<std::int32_t>(view, m::view_id) != m::view_item ||
-      m::read<std::uintptr_t>(view, 0) != m::menu_view_vtable ||
-      pointer(m::menu_view_vtable + m::view_blit_slot * sizeof(void*)) !=
-          reinterpret_cast<void*>(m::view_blit))
-    return "ui_backdrop_view_mismatch";
+crafting_ui::MenuView NativeCraftingUi::menu_view() noexcept {
+  return {opened() ? object() : nullptr, {nullptr, w::copy_memory}};
+}
+namespace {
+const char* apply_view_backdrop(void* view) noexcept {
   if (m::read<std::uintptr_t>(view, m::view_back_texture))
     return "ui_backdrop_texture_in_use";
   for (const auto& function : backdrop_functions) {
@@ -675,6 +668,10 @@ const char* NativeCraftingUi::apply_backdrop() noexcept {
   reinterpret_cast<m::ViewSetBlend>(m::view_set_blend)(view, m::alpha_blend);
   reinterpret_cast<m::ViewSetAlpha>(m::view_set_alpha)(view, m::backdrop_opacity);
   return "ui_backdrop_ready";
+}
+} // namespace
+crafting_ui::BackdropResult NativeCraftingUi::apply_backdrop() noexcept {
+  return menu_view().backdrop(apply_view_backdrop);
 }
 bool NativeCraftingUi::update_size() noexcept {
   unsigned width = 0, height = 0;
@@ -744,20 +741,16 @@ int NativeCraftingUi::handle(CraftingSession& session, int key,
   return 1;
 }
 bool NativeCraftingUi::submit() noexcept {
-  if (!opened() || !frame_.valid)
-    return false;
-  auto* view = reinterpret_cast<void*>(m::read<std::uint32_t>(object(), m::menu_inner_window));
-  if (!w::readable(view, m::view_size) || m::read<std::int32_t>(view, m::view_id) != m::view_item)
-    return false;
-  reinterpret_cast<m::ObjectFunction>(m::view_clear_printwin)(view);
-  Text font("FONT_OLD_10_WHITE.TGA");
-  reinterpret_cast<m::ViewSetFont>(m::view_set_font)(view, font.get());
-  for (std::size_t i = 0; i < frame_.count; ++i) {
-    const auto& line = frame_.lines[i];
-    Text text(line.text.data());
-    reinterpret_cast<m::ViewPrint>(m::view_print)(view, line.x, line.y, text.get());
-  }
-  return true;
+  return frame_.valid && menu_view().submit([this](void* view) {
+    reinterpret_cast<m::ObjectFunction>(m::view_clear_printwin)(view);
+    Text font("FONT_OLD_10_WHITE.TGA");
+    reinterpret_cast<m::ViewSetFont>(m::view_set_font)(view, font.get());
+    for (std::size_t i = 0; i < frame_.count; ++i) {
+      const auto& line = frame_.lines[i];
+      Text text(line.text.data());
+      reinterpret_cast<m::ViewPrint>(m::view_print)(view, line.x, line.y, text.get());
+    }
+  });
 }
 bool NativeCraftingUi::render(const CraftingSession& session, bool execution_enabled) noexcept {
   if (mode_ == Mode::failure)

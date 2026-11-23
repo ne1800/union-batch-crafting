@@ -2,6 +2,11 @@
 #include "runtime.hpp"
 
 namespace ubc_native {
+namespace {
+// A rejected view also defers notices until the player leaves this station.
+std::uint32_t rejected_view_station = 0;
+}
+
 bool render_selection(const Context* observed = nullptr, const uidiag::Frame* poll = nullptr,
                       bool poll_known = false) noexcept {
   const bool witness = grind_ui_trace_active && observed && poll;
@@ -38,8 +43,43 @@ bool render_selection(const Context* observed = nullptr, const uidiag::Frame* po
   return rendered;
 }
 
-bool open_failure_notice() noexcept {
-  if (ui.open_failure()) {
+void close_rejected_view(const Context& c) noexcept {
+  session.original(ubc::SelectionIssue::invalid_snapshot);
+  rendered_generation = 0;
+  original_station = rejected_view_station = c.station;
+  close_ui(c);
+}
+
+bool prepare_selection_view(const Context& c) noexcept {
+  const auto backdrop = ui.apply_backdrop();
+  event(backdrop.event, static_cast<int>(c.kind));
+  if (backdrop.view_valid) {
+    if (render_selection())
+      return true;
+    event("ui_initial_frame_rejected", static_cast<int>(c.kind));
+  }
+  close_rejected_view(c);
+  return false;
+}
+
+void reject_text_view(const Context& c) noexcept {
+  event("ui_text_view_mismatch", static_cast<int>(c.kind));
+  if (ui.success_notice()) {
+    success_pending = false;
+    result_guard.fail(ubc::CraftingResultIssue::contract);
+  }
+  close_rejected_view(c);
+}
+
+bool notice_view_valid(const Context& c) noexcept {
+  if (ui.has_valid_view())
+    return true;
+  reject_text_view(c);
+  return false;
+}
+
+bool open_failure_notice(const Context& c) noexcept {
+  if (ui.open_failure() && notice_view_valid(c)) {
     event("failure_notice_opened");
     return true;
   }
@@ -221,14 +261,19 @@ void __fastcall after_frame(void* game, void* manager) {
         event("failure_notice_state", failed, static_cast<int>(result_guard.issue()));
       }
     }
-    if (original_station && (!c.station_known || c.station != original_station))
+    if (original_station && (!c.station_known || c.station != original_station)) {
       original_station = 0;
+      rejected_view_station = 0;
+    }
+    const bool allow_notice = !rejected_view_station;
     const bool bow_at_station = bow_candidate(c);
     observe_bow_entry(c, bow_at_station);
     ubc::BowMenuTrace rejection{bow_menu_rejected, false};
     auto* bow_trace = bow_at_station ? &rejection : nullptr;
     const bool bow_can_open = bow_at_station && !ui.opened() && bow_entry(c, rejection);
-    if (ui.opened()) {
+    if (ui.opened() && !ui.has_valid_view()) {
+      reject_text_view(c);
+    } else if (ui.opened()) {
       if (ui.failure_notice() || ui.success_notice()) {
         observe_result_notice(c);
       } else {
@@ -327,23 +372,24 @@ void __fastcall after_frame(void* game, void* manager) {
         } else if (!render_selection(&c, &diagnostic, poll_known))
           session.original(ubc::SelectionIssue::invalid_snapshot);
       }
-    } else if (success_pending && !adapter_failed()) {
+    } else if (success_pending && !adapter_failed() && allow_notice) {
       if (c.identity_known && c.world == pending_success.key.world &&
           c.hero == pending_success.key.hero && integer(0x8d1e38, 8) == 0 &&
-          (!ammo_job || ammo_notice_ready) && ui.open_success(pending_success)) {
+          (!ammo_job || ammo_notice_ready) && ui.open_success(pending_success) &&
+          notice_view_valid(c)) {
         if (c.valid && c.dialog.waiting && c.dialog.open)
           borrow_view(c);
         event("success_notice_opened", static_cast<int>(pending_success.id),
               static_cast<int>(pending_success.quantity));
       }
-    } else if (tobacco_clean_rejection && c.valid && !ui.opened() && open_failure_notice()) {
+    } else if (tobacco_clean_rejection && c.valid && allow_notice && open_failure_notice(c)) {
       tobacco_clean_rejection = false;
       original_station = c.station;
       borrow_view(c);
       ui.render_failure();
-    } else if (!failure_notified && c.identity_known && c.world && c.hero &&
+    } else if (!failure_notified && allow_notice && c.identity_known && c.world && c.hero &&
                integer(0x8d1e38, 8) == 0 && (adapter_failed())) {
-      if (open_failure_notice()) {
+      if (open_failure_notice(c)) {
         failure_notified = true;
         if (c.valid && c.dialog.waiting && c.dialog.open)
           borrow_view(c);
@@ -361,7 +407,7 @@ void __fastcall after_frame(void* game, void* manager) {
                       integer(0x8d1e38, 8) == 0)) {
       const bool failure = adapter_failed();
       if (failure && !failure_notified) {
-        if (open_failure_notice()) {
+        if (open_failure_notice(c)) {
           failure_notified = true;
           borrow_view(c);
           ui.render_failure();
@@ -402,8 +448,13 @@ void __fastcall after_frame(void* game, void* manager) {
                                                                ? remembered_recipe
                                                                : UINT32_MAX);
           ubc::BowMenuTrace window_trace{bow_menu_window, true};
-          if (session_open && ui.open(bow_trace, compare ? &window_trace : nullptr)) {
-            event(ui.apply_backdrop(), static_cast<int>(c.kind));
+          if (!session_open || !ui.open(bow_trace, compare ? &window_trace : nullptr)) {
+            const int issue = captured.issue;
+            if (issue != last_capture_issue) {
+              last_capture_issue = issue;
+              event("catalogue_unavailable", issue);
+            }
+          } else if (prepare_selection_view(c)) {
             borrow_view(c);
             event("ui_open", static_cast<int>(c.kind), static_cast<int>(session.visible_count()));
             ui_diagnostic_events(
@@ -421,13 +472,6 @@ void __fastcall after_frame(void* game, void* manager) {
                   event("recipe_contract_unverified", static_cast<int>(r.id), 0);
                 event("recipe_available", static_cast<int>(r.id), static_cast<int>(r.maximum));
               }
-            render_selection();
-          } else {
-            const int issue = captured.issue;
-            if (issue != last_capture_issue) {
-              last_capture_issue = issue;
-              event("catalogue_unavailable", issue);
-            }
           }
         }
       }

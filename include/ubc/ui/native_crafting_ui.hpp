@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 #pragma once
 #include "ubc/ui/crafting_menu.hpp"
+#include "ubc/ui/crafting_menu_view.hpp"
 #include "ubc/ui/crafting_ui_diagnostics.hpp"
 #include "ubc/stations/grind/grind_ui_readiness.hpp"
 #include "ubc/ui/native_selection_ui.hpp"
@@ -64,7 +65,8 @@ class NativeCraftingUi {
 public:
   void inspect_open(BowMenuTrace&) const noexcept;
   bool open(BowMenuTrace* trace = nullptr, BowMenuTrace* opened_trace = nullptr) noexcept;
-  const char* apply_backdrop() noexcept;
+  crafting_ui::BackdropResult apply_backdrop() noexcept;
+  bool has_valid_view() noexcept { return menu_view().get() != nullptr; }
   bool open_failure() noexcept;
   bool open_success(const NativeCraftingSuccess&) noexcept;
   void close() noexcept;
@@ -113,6 +115,7 @@ public:
 
 private:
   enum class Mode { selection, failure, success };
+  crafting_ui::MenuView menu_view() noexcept;
   bool notice_window() noexcept;
   bool update_size() noexcept;
   bool submit() noexcept;
