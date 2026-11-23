@@ -60,23 +60,23 @@ With `auto`, a blank value or a missing entry, the plugin detects German game te
 
 ## Which quantities have been tested in the game?
 
-The quantity menu offers 1, 5, 10, maximum and custom steps up to the material limit. In-game orders through 0.0.63 cover 38 of the 98 profiles, including all nine at the leather bench and 11 of the 20 at the bow bench.
+The quantity menu offers 1, 5, 10, maximum and custom steps up to the material limit. In-game orders through 0.0.64 cover 45 of the 98 profiles, including all nine at the leather bench, all five at the saw, 11 of the 20 at the bow bench and four of the 22 at the grindstone.
 
 | Station (profiles) | Recipe families | Examples crafted in the game |
 | --- | --- | --- |
 | Stove (3) | Meat, molerat dish and mushroom stew | Meat ×7, mushroom stew ×2 |
 | Alchemy table (23) | Healing and mana potions, additional recipes including swampweed rolls, spirit potion, refined tobacco | Healing essence ×2, healing extract ×2, healing elixir ×7, compound healing potion ×2, simple roll ×1/2/MAX 15, Green Novice ×2, enriched spirit ×1. Honey/swampweed/mushroom tobacco ×1/2/MAX 3 |
 | Leather bench (9) | Leather from hides and skins | With two hides per order, sheep, lurker, boar and warg each yielded 2 leather, swampshark 4, shadowbeast 6 and troll 8. Earlier orders yielded 5 leather from 5 wolf skins and 12 from 2 black troll hides. |
-| Saw (5) | Arrows and bolts, including special ammunition | 2 lots of ordinary arrows yielded 60 arrows |
+| Saw (5) | Arrows and bolts, including special ammunition | 2 lots each of ordinary arrows (60), fire arrows (20), magic arrows (20), bolts (60) and magic bolts (20) |
 | Forge (2) | Heat raw steel, form hot blades | Raw steel ×2/5, hot blades ×6 |
 | Anvil (13) | Ordinary and ore weapons | Ordinary sword ×1/2 |
 | Bow bench (20) | Bow and crossbow upgrades | One each of the willow bow, composite bow, ash bow, longbow and light crossbow. Two each of the shortbow, fine bow, hunting bow, crossbow and fine crossbow. Hunting crossbow at MAX 2. |
 | Cooling tub (1) | Cool hot blades | ×2/1/MAX 3, including the last two stored blades together |
-| Grindstone (22) | Grind weapons | Rough sword ×1/2/5/MAX 3 |
+| Grindstone (22) | Grind weapons | Rough sword ×1/2/5/MAX 3. Two each of the rough two-hander, rough bastard sword and two-hander. |
 
 The campfire also offers the original 1/5/10/all choices for ordinary meat. Choosing END before selecting a quantity preserves stock. This dialogue is separate from the nine stations with a quantity menu.
 
-**Untested profiles.** The 60 profiles awaiting an in-game order include weapons, ammunition, meals and potions. For the spirit potion the enriched branch was active and only one pepper was available. Of the nine remaining bow-bench upgrades, six lacked the base weapon. The other three needed more than the eight leather in the save. The oak bow also failed its material check in an earlier run. The other 21 grinding profiles await individual world comparisons.
+**Untested profiles.** The 53 profiles awaiting an in-game order include weapons, meals and potions. For the spirit potion the enriched branch was active and only one pepper was available. Of the nine remaining bow-bench upgrades, six lacked the base weapon. The other three needed more than the eight leather in the save. The oak bow also failed its material check in an earlier run. The other 18 grinding profiles await individual world comparisons.
 
 **Outside the quantity menu.** One rune per spell suffices. Rune upgrades spend learning points once and change learned abilities. Armour exchanges and water mage robes concern individual equipment pieces, and the Eye of Innos is a one-off quest item. Four sharpening attempts remain deferred because each rolls its own outcome and advances proficiency individually.
 
