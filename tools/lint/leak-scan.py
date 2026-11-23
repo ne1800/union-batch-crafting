@@ -18,7 +18,31 @@ RULES = {
 }
 
 
+# README screenshots are the only binary content. Each must be one still WebP
+# image without an extended header, so it cannot carry EXIF, XMP or ICC data.
+IMAGE_PATH = re.compile(r"docs/images/[a-z0-9-]+[.]webp")
+IMAGE_LIMIT = 300_000
+
+
+def plain_webp(data):
+    if (
+        not 20 <= len(data) <= IMAGE_LIMIT
+        or data[:4] != b"RIFF"
+        or data[8:12] != b"WEBP"
+    ):
+        return False
+    size = int.from_bytes(data[16:20], "little")
+    return (
+        int.from_bytes(data[4:8], "little") == len(data) - 8
+        and data[12:16] in (b"VP8 ", b"VP8L")
+        and 20 + size + (size & 1) == len(data)
+    )
+
+
 def findings(name, data, patterns, *, commit=False):
+    # Git objects have no name here; the tree scan checks their paths separately.
+    if plain_webp(data) and (not name or IMAGE_PATH.fullmatch(name)):
+        return findings(name, b"", patterns)
     try:
         body = data.decode("utf-8")
     except UnicodeError:

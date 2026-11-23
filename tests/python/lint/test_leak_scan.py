@@ -66,3 +66,33 @@ class LeakScanTests(unittest.TestCase):
         self.assertNotEqual(self.scan().returncode, 0)
         self.config.write_text(json.dumps(["(" + self.sample]))
         self.assertIn("Cannot load local scan patterns", self.scan().stdout)
+
+    def test_plain_webp_screenshots_only(self):
+        def webp(*chunks):
+            body = b"WEBP" + b"".join(
+                kind + len(data).to_bytes(4, "little") + data + b"\0" * (len(data) & 1)
+                for kind, data in chunks
+            )
+            return b"RIFF" + len(body).to_bytes(4, "little") + body
+
+        images = self.root / "docs" / "images"
+        images.mkdir(parents=True)
+        plain = images / "menu-en.webp"
+        plain.write_bytes(webp((b"VP8 ", b"\x00\x01pixels\x7f")))
+        self.git("add", "docs")
+        self.assertEqual(self.scan().returncode, 0)
+        elsewhere = self.root / "menu.webp"
+        elsewhere.write_bytes(plain.read_bytes())
+        self.git("add", "menu.webp")
+        self.assertIn("binary", self.scan().stdout)
+        self.git("rm", "-q", "--cached", "menu.webp")
+        elsewhere.unlink()
+        plain.write_bytes(
+            webp(
+                (b"VP8X", b"\x08" + b"\0" * 9),
+                (b"EXIF", b"camera\0"),
+                (b"VP8 ", b"\x00"),
+            )
+        )
+        self.git("add", "docs")
+        self.assertIn("binary", self.scan().stdout)
