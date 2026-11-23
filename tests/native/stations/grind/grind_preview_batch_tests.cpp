@@ -6,6 +6,7 @@
 #include "ubc/core/crafting_session.hpp"
 #include "ubc/ui/crafting_preview_cache.hpp"
 #include "../../helpers/grind_preview_capacity_fixture.hpp"
+#include "../../helpers/equipped_ingredient.hpp"
 #include <chrono>
 #include <memory>
 #include <optional>
@@ -862,6 +863,8 @@ void files(char** argv) {
               !batch::find(*out, g::recipes[0].function.symbol, 3),
           "missing ingredient knowledge or bound station never manufactures an item or amount proof");
       if (mode == 3) {
+        check(equipped_test::localized(row),
+              "the sealed preview explains the active input weapon in every language");
         check(out->count == 1 && out->blocked[0].blocked && !out->items[0].item_path_verified &&
                   out->items[0].key.hero == 0 && row.known,
               "same negative item phase publishes only blocked row, no partial evidence");

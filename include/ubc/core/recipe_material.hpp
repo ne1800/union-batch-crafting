@@ -8,12 +8,15 @@
 
 namespace ubc {
 
+enum class IngredientProblem { none, equipped, unclear };
+
 // Copies from ONE fully verified inventory snapshot. The symbol
 // belongs to the respective target list; the order may differ.
 struct RecipeInventoryItem {
   std::int32_t symbol = -1, listed = -1, packed = -1, total = -1;
   std::uint32_t listed_occurrences = 0, packed_occurrences = 0;
   bool duplicate_packed_target = false, has_active_marker = false, mixed_representation = false;
+  IngredientProblem listed_problem = IngredientProblem::none;
 };
 struct RecipeInventory {
   bool header_known = false, listed_known = false, packed_known = false;
@@ -54,6 +57,7 @@ struct RecipeMaterialRow {
 struct RecipeMaterial {
   RecipeMaterialIssue issue = RecipeMaterialIssue::none;
   bool inventory_known = false, hand_known = false, craftable = false;
+  bool equipped_ingredient = false;
   std::uint32_t maximum = 0, quantity = 0;
   std::size_t count = 0;
   bool known() const noexcept {
@@ -62,12 +66,55 @@ struct RecipeMaterial {
 };
 
 namespace recipe_material_detail {
+// Equipped objects can also carry ITEM_NFOCUS while attached to an equipment slot.
+inline IngredientProblem listed_ingredient_problem(bool known_type, std::uint32_t flags,
+                                                   std::uint32_t native_flags,
+                                                   bool alias) noexcept {
+  constexpr std::uint32_t active = 0x40000000u, no_focus = 0x00800000u;
+  if (!known_type)
+    return IngredientProblem::unclear;
+  if (flags == native_flags && !(flags & active) && !alias)
+    return IngredientProblem::none;
+  if (flags == (native_flags | active) || flags == (native_flags | active | no_focus))
+    return IngredientProblem::equipped;
+  return IngredientProblem::unclear;
+}
+
+inline IngredientProblem ingredient_problem(const RecipeInventoryItem& stock) noexcept {
+  if (stock.duplicate_packed_target || stock.mixed_representation || stock.listed_occurrences > 1 ||
+      stock.packed_occurrences > 1 || (stock.listed_occurrences && stock.packed_occurrences))
+    return IngredientProblem::unclear;
+  // The packer appends E for ITEM_ACTIVE. It only identifies an ingredient in a unique entry.
+  if (stock.has_active_marker)
+    return stock.packed_occurrences == 1 && stock.packed > 0 ? IngredientProblem::equipped
+                                                             : IngredientProblem::unclear;
+  if (stock.listed_problem != IngredientProblem::none &&
+      (stock.listed_occurrences != 1 || stock.listed <= 0))
+    return IngredientProblem::unclear;
+  return stock.listed_problem;
+}
+
 inline std::uint32_t units(recipe_catalog::View<recipe_catalog::ItemAmount> list,
                            std::int32_t symbol) noexcept {
   for (const auto& item : list)
     if (item.symbol == symbol)
       return item.units;
   return 0;
+}
+inline bool
+equipped_ingredient(const RecipeInventory& inventory,
+                    recipe_catalog::View<recipe_catalog::ItemAmount> costs,
+                    recipe_catalog::View<recipe_catalog::ItemAmount> minima = {}) noexcept {
+  bool equipped = false;
+  for (const auto& stock : inventory.items) {
+    if (!units(costs, stock.symbol) && !units(minima, stock.symbol))
+      continue;
+    const auto problem = ingredient_problem(stock);
+    if (problem == IngredientProblem::unclear)
+      return false;
+    equipped = equipped || problem == IngredientProblem::equipped;
+  }
+  return equipped;
 }
 inline const RecipeInventoryItem* item(const RecipeInventory& inventory,
                                        std::int32_t symbol) noexcept {
@@ -211,6 +258,8 @@ inline RecipeMaterial recipe_material(const recipe_catalog::Descriptor& descript
          (entry.listed > 0 && entry.packed > 0)))
       result.issue = Issue::ambiguous_ingredient;
   }
+  result.equipped_ingredient = result.issue == Issue::ambiguous_ingredient &&
+                               detail::equipped_ingredient(inventory, descriptor.costs);
   Issue hand_issue = Issue::none;
   if (!hand_contract_verified)
     hand_issue = Issue::hand_contract_unverified;

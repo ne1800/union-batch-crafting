@@ -382,6 +382,8 @@ struct CraftingState {
   bool evaluated = false, knowledge_read_valid = false, known = false, contract = false;
   bool actor_known = false, actor_matches = false, hand_known = false, material_known = false,
        material_verified = false;
+  // Display evidence only. Admission, diagnostic codes and quantity receipts use the original gates.
+  bool equipped_ingredient = false;
   // Additional routes bind physical station/production/start. Categories
   // and owner conditions remain mutable under original navigation.
   bool context_known = false, context_matches = false;
@@ -474,8 +476,15 @@ enum class CraftingBlockReason {
   output_capacity,
   tool_return_capacity,
   unavailable,
-  quantity_unsupported
+  quantity_unsupported,
+  equipped_ingredient
 };
+inline CraftingBlockReason crafting_display_reason(CraftingBlockReason reason,
+                                                   const CraftingState* state) noexcept {
+  return reason == CraftingBlockReason::material_unverified && state && state->equipped_ingredient
+             ? CraftingBlockReason::equipped_ingredient
+             : reason;
+}
 struct CraftingAmountPreview {
   bool available_known = false, ready_known = false, end_known = false;
   std::int64_t available = -1, required = 0, produced = 0, missing = -1, ready_storage = -1,
@@ -909,6 +918,7 @@ inline CraftingSnapshot project_capture(const RecipeCatalogueCapture& source) no
     out.hand_known = s.hand_known && out.material_known && source.diagnostic.hands_read_valid;
     out.material_verified =
         out.material_known && out.hand_known && diag.material_issue == RecipeMaterialIssue::none;
+    out.equipped_ingredient = out.material_known && diag.equipped_ingredient;
     out.maximum = s.maximum;
     for (std::size_t j = 0; j < out.target_count; ++j) {
       auto& row = out.materials[j];
@@ -988,6 +998,7 @@ inline CraftingSnapshot project_capture(const StationRecipeCatalogueCapture& sou
     out.material_verified = out.material_known && out.hand_known &&
                             s.material.issue == StationRecipeMaterialIssue::none &&
                             s.material.hand_issue == StationRecipeHandIssue::none;
+    out.equipped_ingredient = out.material_known && s.material.equipped_ingredient;
     out.maximum = s.material.maximum;
     for (std::size_t j = 0; j < out.target_count; ++j) {
       auto& row = out.materials[j];
@@ -1150,6 +1161,7 @@ inline CraftingSnapshot project_anvil(const Source& source, const Recipes& recip
     out.material_verified = out.material_known && out.hand_known &&
                             s.material.issue == StationRecipeMaterialIssue::none &&
                             s.material.hand_issue == StationRecipeHandIssue::none;
+    out.equipped_ingredient = out.material_known && s.material.equipped_ingredient;
     out.maximum = s.material.maximum;
     if (!project_station_rows(d, s.rows, s.target_count, out)) {
       result.issue = CraftingProjectionIssue::source;
@@ -1277,6 +1289,7 @@ inline CraftingSnapshot project_capture(const AlchemyExtraCatalogueCapture& sour
                      crafting_detail::bound_hands(d, result.hands);
     out.material_verified =
         out.material_known && out.hand_known && s.material.issue == RecipeMaterialIssue::none;
+    out.equipped_ingredient = out.material_known && s.material.equipped_ingredient;
     out.maximum = s.maximum_executable;
     if (!crafting_detail::project_extra_rows(d, s, out)) {
       result.issue = CraftingProjectionIssue::source;

@@ -2,6 +2,7 @@
 #define UBC_ALCHEMY_EXTRA_EXECUTION_TEST_EMBEDDED
 #include "alchemy_extra_execution_tests.cpp"
 #include "ubc/stations/alchemy/crafting_alchemy_extra_reader.hpp"
+#include "../../helpers/equipped_ingredient.hpp"
 
 namespace catalogue_test {
 namespace detail = ubc::crafting_alchemy_extra_detail;
@@ -120,6 +121,16 @@ void boundary_cases() {
 }
 void reader_cases(const LocalFacts* facts = nullptr,
                   const std::array<std::string, 4>* strings_ptr = nullptr) {
+  {
+    AllFixture marked;
+    const auto& recipe = cat::recipes[0];
+    marked.storage({{16604, 5}}, std::string(recipe.targets[0].name) + ":10E");
+    auto raw = reader.capture(marked.image.memory(), marked.input).capture;
+    raw.recipes[0].profile_verified = raw.recipes[0].native_debit_verified = true;
+    const auto projected = ubc::project_capture(raw);
+    CHECK(ubc::valid_crafting_snapshot(projected) &&
+          equipped_test::localized(projected.recipes[ubc::crafting_catalog::alchemy_extra_begin]));
+  }
   AllFixture f(facts, strings_ptr);
   auto out = reader.capture(f.image.memory(), f.input);
   CHECK(ubc::crafting_alchemy_extra_target_capacity == 31 && out.diagnostic.target_count == 31);

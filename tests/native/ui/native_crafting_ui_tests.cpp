@@ -508,6 +508,41 @@ void test_translations() {
   }
 }
 
+void test_equipped_ingredient_layout() {
+  auto snapshot = example(Kind::bow);
+  auto& oak = state(snapshot, 0x800b);
+  oak.equipped_ingredient = true;
+  oak.material_verified = false;
+  oak.maximum = 0;
+  ubc::CraftingSession session;
+  ubc::CraftingMenu menu;
+  check(session.open(snapshot, oak.id) && !session.can_confirm(),
+        "the equipped recipe stays locked");
+  for (const auto* text : {&ubc::ui_text::de::table, &ubc::ui_text::en::table}) {
+    const bool german = text == &ubc::ui_text::de::table;
+    const std::string_view hint = german ? "[ausger\xfcstet]" : "[equipped]";
+    const std::string_view detail = german ? "Lege die ausger\xfcstete Zutat zuerst ab."
+                                           : "Unequip the ingredient before crafting.";
+    const auto action = std::string((*text)[L::craft]) + " " + std::string(hint);
+    for (const auto size :
+         {std::array{640u, 480u}, std::array{1600u, 900u}, std::array{1920u, 1080u}}) {
+      ui::Frame frame;
+      check(ui::compose(frame, session, menu, true, size[0], size[1], *text),
+            "equipped recipe layout");
+      bool list = false, instruction = false, craft = false;
+      for (std::size_t i = 0; i < frame.count; ++i) {
+        const std::string_view line = frame.lines[i].text.data();
+        list |= line.substr(0, hint.size()) == hint;
+        instruction |= line == detail;
+        craft |= line == action;
+      }
+      check(list && instruction && craft,
+            "list, detail and craft action fit with the exact game bytes");
+      bounded(frame);
+    }
+  }
+}
+
 // Only the second list entry changes. Keep the range footer and all detail rows byte-identical.
 void test_list_boundaries() {
   auto snapshot = example(Kind::alchemy);
@@ -717,6 +752,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
   test_screen_init_digests();
   test_menu_code_guards();
   test_translations();
+  test_equipped_ingredient_layout();
   test_list_boundaries();
   test_focus_and_controls();
   test_tool_return();

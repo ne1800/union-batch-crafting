@@ -35,7 +35,7 @@ Die Weltvergleiche gelten für Gothic II DNdR, Marcello L’Hiver DE 2.0.4 und d
 
 Der Pfeil `>` zeigt das aktive Feld. Beim Einstellen der Menge markiert `[x]` das gewählte Rezept in der Liste. Bild auf erhöht die Menge um fünf, Bild ab verringert sie um fünf. Eine Zutat aus der Hand zählt zur angezeigten Verbrauchsmenge.
 
-Bei gesperrten Rezepten steht der Grund in eckigen Klammern, etwa „[Zutaten fehlen]“ oder „[Platz fehlt]“. Auch bei „Herstellen“ erscheint der Grund für die gewählte Menge, sobald er bekannt ist. Während der Prüfung steht dort „[gesperrt]“.
+Bei gesperrten Rezepten steht der Grund in eckigen Klammern, etwa „[Zutaten fehlen]“ oder „[Platz fehlt]“. Bei „[ausgerüstet]“ lege die Zutat zuerst ab. Auch bei „Herstellen“ erscheint der Grund für die gewählte Menge, sobald er bekannt ist. Während der Prüfung steht dort „[gesperrt]“.
 
 <a id="configuration"></a>
 

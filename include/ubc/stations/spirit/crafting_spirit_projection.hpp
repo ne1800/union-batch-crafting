@@ -237,6 +237,7 @@ inline CraftingSnapshot project_capture(const SpiritCraftingCapture& source) noe
     return bad(CraftingProjectionIssue::source);
   out.material_verified =
       out.material_known && out.hand_known && s.material.known() && d.ingredient_objects_verified;
+  out.equipped_ingredient = out.material_known && s.material.equipped_ingredient;
   if (!detail::rows(source, out) || !valid_crafting_snapshot(result))
     return bad(CraftingProjectionIssue::source);
   return result;

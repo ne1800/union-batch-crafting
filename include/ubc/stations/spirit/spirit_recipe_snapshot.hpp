@@ -26,6 +26,7 @@ struct SpiritMaterial {
   SpiritMaterialIssue issue = SpiritMaterialIssue::none;
   bool inventory_known = false, hand_known = false, branch_known = false,
        ingredients_verified = false, craftable = false;
+  bool equipped_ingredient = false;
   std::uint32_t maximum = 0, quantity = 0, additional_flasks = 0;
   std::int32_t output = -1;
   std::size_t count = 0;
@@ -114,6 +115,8 @@ inline SpiritMaterial spirit_recipe_material(
     return out;
   }
   out.inventory_known = true;
+  out.equipped_ingredient =
+      out.issue == Issue::ambiguous_ingredient && math::equipped_ingredient(inventory, d.costs);
   auto hand_issue = Issue::none;
   if (!hand_contract_verified || !hands.left_slot_known || !hands.right_slot_known ||
       !hands.interact_item_known)

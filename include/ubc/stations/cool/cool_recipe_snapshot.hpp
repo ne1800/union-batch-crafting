@@ -3,6 +3,7 @@
 #include "ubc/stations/cool/cool_recipe_plan.hpp"
 #include "ubc/stations/cool/cool_recipe_runtime.hpp"
 #include "ubc/stations/station_recipe_snapshot.hpp"
+#include <algorithm>
 namespace ubc {
 struct CoolCaptureProofs {
   bool stable_boundary_verified = false, station_hand_end_verified = false;
@@ -24,6 +25,7 @@ enum class CoolMaterialIssue {
 struct CoolMaterial {
   CoolMaterialIssue issue = CoolMaterialIssue::none;
   bool inventory_known = false, hand_known = false, ingredients_verified = false, eligible = false;
+  bool equipped_ingredient = false;
   std::uint32_t maximum = 0, direct_maximum = 0;
   std::array<RecipeMaterialRow, 2> rows{};
   cool_recipe::Plan numerical{};
@@ -85,8 +87,11 @@ inline CoolMaterial cool_recipe_material(const RecipeInventory& inventory,
                              !s->duplicate_packed_target && !s->has_active_marker &&
                              !s->mixed_representation &&
                              !(s->listed_occurrences && s->packed_occurrences);
-    if (!i && !unambiguous)
-      out.issue = CoolMaterialIssue::ambiguous_ingredient;
+    if (!i) {
+      out.equipped_ingredient = math::ingredient_problem(*s) == IngredientProblem::equipped;
+      if (!unambiguous)
+        out.issue = CoolMaterialIssue::ambiguous_ingredient;
+    }
     values.stocks[i] = {row.symbol, s->total, true, unambiguous};
     row.missing_for_one = math::positive(std::int64_t{row.unit_cost} - row.available);
     row.output_space = INT32_MAX - row.stored;
@@ -230,7 +235,7 @@ public:
     auto inventory = read_packed_inventory(m, key.hero, cat::targets, true, inventory_);
     d.hand_issue = hand::begin_hands(m, key.hero, hands_);
     std::size_t objects = 0;
-    bool ingredient_valid = true;
+    auto listed_problem = IngredientProblem::none;
     const bool class_valid = cool_recipe_snapshot_detail::item_class(m);
     if (inventory.listed_known && inventory.snapshot_unchanged &&
         inventory.listed_nodes <= objects_.size()) {
@@ -249,9 +254,10 @@ public:
         for (std::size_t j = 0; j < hands_.count; ++j)
           if (runtime_script::detail::u32(hands_.records[j].fields.data() + 0x30) == f.object)
             alias = true;
-        ingredient_valid = ingredient_valid && class_valid && f.known &&
-                           f.type == hand_detail::item_vtable && f.mainflag == 1 &&
-                           f.flags == 0x200001 && hands_.captured && !alias;
+        const bool known_type = class_valid && f.known && f.type == hand_detail::item_vtable &&
+                                f.mainflag == 1 && hands_.captured;
+        listed_problem = std::max(listed_problem, recipe_material_detail::listed_ingredient_problem(
+                                                      known_type, f.flags, 0x200001, alias));
       }
     }
     s.evaluated = true;
@@ -315,7 +321,8 @@ public:
                    inventory.packed_occurrences[i],
                    inventory.duplicate_packed_target[i],
                    inventory.has_active_marker[i],
-                   inventory.mixed_representation[i]};
+                   inventory.mixed_representation[i],
+                   i == 0 ? listed_problem : IngredientProblem::none};
     projected.items = {items_.data(), items_.size()};
     s.known = d.knowledge_unchanged && d.knowledge_before.known;
     s.contract = d.profile.valid;
@@ -325,8 +332,8 @@ public:
     s.context_matches =
         s.context_known && d.context_before.station_matches() && d.context_after.station_matches();
     s.material = cool_recipe_material(projected, out.hands, 0, proof,
-                                      ingredient_valid && class_valid && d.inventory_unchanged &&
-                                          d.hands_unchanged);
+                                      listed_problem == IngredientProblem::none && class_valid &&
+                                          d.inventory_unchanged && d.hands_unchanged);
     return out;
   }
 

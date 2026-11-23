@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "ubc/stations/ore/ore_recipe_snapshot.hpp"
+#include "../../helpers/equipped_ingredient.hpp"
 #define UBC_ORE_RUNTIME_FIXTURE_ONLY
 #include "ore_recipe_runtime_tests.cpp"
 #include <type_traits>
@@ -173,6 +174,16 @@ struct MaterialFixture {
 int main() {
   static_assert(!std::is_copy_constructible<ubc::OreRecipeCatalogueReader>::value,
                 "persistent reader cannot alias copied workspaces");
+  {
+    CaptureFixture f;
+    f.stock({}, entry(16611, 7) + "E");
+    auto raw = capture(f);
+    raw.recipes[0].contract = raw.diagnostic.recipes[0].profile.matches = true;
+    const auto snapshot = ubc::project_capture(raw);
+    check(ubc::valid_crafting_snapshot(snapshot) &&
+              equipped_test::localized(snapshot.recipes[ubc::crafting_catalog::ore_begin]),
+          "the ore recipe identifies marked hot steel independently of the held tools");
+  }
   CaptureFixture baseline;
   const auto first = capture(baseline);
   check(first.diagnostic.target_count == 13,

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "ubc/ui/native_crafting_ui.hpp"
+#include "ubc/ui/crafting_block_text.hpp"
 #include "ubc/stations/bow/bow_menu_trace.hpp"
 #include "ubc/core/crafting_result.hpp"
 #include <algorithm>
@@ -46,41 +47,6 @@ bool wrapped(Frame& frame, int x, int y, const char* text, std::size_t limit,
   while (text[split] == ' ')
     ++split;
   return append(frame, x, y + step, text + split, limit);
-}
-struct BlockText {
-  const char* detail;
-  const char* hint;
-};
-BlockText blocked(CraftingBlockReason reason, const Table& text) noexcept {
-  switch (reason) {
-  case CraftingBlockReason::none:
-    return {"", ""};
-  case CraftingBlockReason::no_known_recipes:
-    return {text[L::no_recipes], text[L::hint_no_known_recipes]};
-  case CraftingBlockReason::contract_unverified:
-    return {text[L::unverified], text[L::hint_contract_unverified]};
-  case CraftingBlockReason::actor_unknown:
-    return {text[L::no_actor], text[L::hint_actor_unknown]};
-  case CraftingBlockReason::actor_changed:
-    return {text[L::wrong_actor], text[L::hint_actor_changed]};
-  case CraftingBlockReason::hand_unknown:
-    return {text[L::hand_not_ready], text[L::hint_hand_unknown]};
-  case CraftingBlockReason::material_unknown:
-    return {text[L::stock_unreadable], text[L::hint_material_unknown]};
-  case CraftingBlockReason::material_unverified:
-    return {text[L::stock_unverified], text[L::hint_material_unknown]};
-  case CraftingBlockReason::missing_material:
-    return {text[L::missing_material], text[L::hint_missing_material]};
-  case CraftingBlockReason::output_capacity:
-    return {text[L::output_full], text[L::hint_output_capacity]};
-  case CraftingBlockReason::tool_return_capacity:
-    return {text[L::tool_full], text[L::hint_output_capacity]};
-  case CraftingBlockReason::unavailable:
-    return {text[L::unavailable], text[L::hint_unavailable]};
-  case CraftingBlockReason::quantity_unsupported:
-    return {text[L::unsupported_amount], text[L::hint_quantity_unsupported]};
-  }
-  return {text[L::unavailable], text[L::hint_unavailable]};
 }
 bool relevant(const CraftingMaterialValue& row, const crafting_catalog::Descriptor& d) noexcept {
   return row.fixed_minimum || row.unit_cost || row.unit_output ||
@@ -211,7 +177,8 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
       const auto* entry = session.visible(view.first + i);
       if (!entry)
         return false;
-      const char* hint = blocked(crafting_block_reason(*entry), text).hint;
+      const char* hint =
+          block_text(crafting_display_reason(crafting_block_reason(*entry), entry), text).hint;
       std::snprintf(line, sizeof(line), "%s%s%s", hint, *hint ? " " : "", text.recipe(entry->id));
       std::string_view rest(line);
       const char* marker = entry == selected ? (recipe_focus ? ">" : "[x]") : nullptr;
@@ -378,8 +345,8 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
         return false;
       y += material_step + extra_name_line;
     }
-  const auto action_reason = session.reason();
-  const auto action_text = blocked(action_reason, text);
+  const auto action_reason = crafting_display_reason(session.reason(), session.selected());
+  const auto action_text = block_text(action_reason, text);
   const char* reason = action_text.detail;
   if (!session.quantity() && session.selected() && action_reason == CraftingBlockReason::none)
     reason = text[L::one_batch];

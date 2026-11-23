@@ -6,6 +6,7 @@
 #include "bow_recipe_snapshot_tests.cpp"
 #undef main
 #include "ubc/stations/bow/crafting_bow_projection.hpp"
+#include "../../helpers/equipped_ingredient.hpp"
 
 namespace {
 void synthetic_profiles(ubc::BowRecipeCatalogueCapture& value) {
@@ -18,9 +19,68 @@ void synthetic_profiles(ubc::BowRecipeCatalogueCapture& value) {
     p.string_issue = ubc::alchemy_flask_runtime::Issue::none;
   }
 }
+
+void equipped_oak_bow() {
+  using Reason = ubc::CraftingBlockReason;
+  namespace c = ubc::crafting_catalog;
+  CaptureFixture f;
+  f.stock({{16828, 1}}, materials(0, 28, 72));
+  f.image.put(object(0) + 0x158, 0x40880004u);
+  f.image.block(extra_slot, 0x38);
+  text_at(f.image, extra_name, "ZS_BOW");
+  f.image.put(extra_slot + 8, extra_name);
+  f.image.put(extra_slot + 12, 6);
+  f.image.put(extra_slot + 0x30, object(0));
+  f.image.put(slots + 8, extra_slot);
+  f.image.put(hero + 0x9b8, 3);
+  const auto read = [&] {
+    auto raw = capture(f);
+    synthetic_profiles(raw);
+    return raw;
+  };
+  auto raw = read();
+  auto snapshot = ubc::project_capture(raw);
+  auto row = snapshot.recipes[c::bow_begin + 10];
+  check(row.id == 0x800b && static_cast<int>(raw.recipes[10].material.issue) == 10 &&
+            ubc::valid_crafting_snapshot(snapshot) && equipped_test::localized(row),
+        "the equipped oak bow keeps material issue 10 and explains the lock in every locale");
+  check(!snapshot.recipes[c::bow_begin].equipped_ingredient,
+        "a different recipe does not inherit the oak bow's equipment slot");
+  row.hand_known = false;
+  check(ubc::crafting_display_reason(ubc::crafting_block_reason(row), &row) == Reason::hand_unknown,
+        "an unverified station hand still takes precedence over its equipped ingredient");
+  row.contract = false;
+  check(ubc::crafting_display_reason(ubc::crafting_block_reason(row), &row) ==
+            Reason::contract_unverified,
+        "an unverified contract still precedes both hand and ingredient problems");
+
+  f.stock({{16828, 1}, {16610, 1}}, materials(0, 28, 72));
+  f.image.put(object(0) + 0x158, 0x40880004u);
+  row = ubc::project_capture(read()).recipes[c::bow_begin + 10];
+  check(ubc::crafting_display_reason(ubc::crafting_block_reason(row), &row) ==
+            Reason::material_unverified,
+        "an equipped bow plus mixed steel retains the ambiguous stock message");
+  f.stock({{16828, 1}}, materials(0, 28, 72));
+  row = ubc::project_capture(read()).recipes[c::bow_begin + 10];
+  check(!row.equipped_ingredient && ubc::crafting_block_reason(row) == Reason::material_unverified,
+        "a slot alias without ITEM_ACTIVE stays unclear");
+  f.image.put(extra_slot + 0x30, 0);
+  for (const auto flags : {0x00880004u, 0x40880005u}) {
+    f.image.put(object(0) + 0x158, flags);
+    row = ubc::project_capture(read()).recipes[c::bow_begin + 10];
+    check(ubc::crafting_display_reason(ubc::crafting_block_reason(row), &row) ==
+              Reason::material_unverified,
+          "ITEM_NFOCUS alone or additional unexpected flags keep the stock warning");
+  }
+  f.image.put(object(0) + 0x158, 0x00080004u);
+  row = ubc::project_capture(read()).recipes[c::bow_begin + 10];
+  check(ubc::crafting_block_reason(row) == Reason::none && row.maximum == 1,
+        "unequipping the oak bow restores the original maximum");
+}
 }
 int main() {
   namespace c = ubc::crafting_catalog;
+  equipped_oak_bow();
   CaptureFixture fixture;
   const auto actual = capture(fixture);
   auto projected = ubc::project_capture(actual);

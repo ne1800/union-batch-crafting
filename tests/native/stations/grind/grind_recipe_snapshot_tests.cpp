@@ -199,8 +199,10 @@ int main() {
     CaptureFixture f;
     f.image.put(object(0) + 0x158, 0x40004002);
     const auto c = capture(f);
-    check(c.recipes[0].binding_request.input.active_bit_seen && !c.recipes[0].material.maximum,
-          "aktive Waffenbits werden beobachtet, nicht freigegeben");
+    check(c.recipes[0].binding_request.input.active_bit_seen && !c.recipes[0].material.maximum &&
+              ubc::recipe_material_detail::ingredient_problem(stock(c, g::recipes[0].input)) ==
+                  ubc::IngredientProblem::equipped,
+          "ITEM_ACTIVE on the listed input weapon identifies the blocked ingredient");
   }
   {
     CaptureFixture f;

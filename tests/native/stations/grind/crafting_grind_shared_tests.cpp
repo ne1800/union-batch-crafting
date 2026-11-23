@@ -3,6 +3,7 @@
 #include "ubc/core/crafting_handoff.hpp"
 #include "ubc/core/crafting_result.hpp"
 #include "ubc/ui/native_crafting_ui.hpp"
+#include "../../helpers/equipped_ingredient.hpp"
 #include "ubc/stations/cool/cool_predebit_checks.hpp"
 #include <cstdio>
 #include <cstring>
@@ -197,6 +198,15 @@ struct EndObservation {
   }
 };
 void catalogue_and_projection() {
+  {
+    Fixture f;
+    f.input.materials[0] = {};
+    for (auto& stock : f.source.stocks)
+      if (stock.symbol == g::recipes[0].input)
+        stock = {stock.symbol, 0, 7, 7, 0, 1, false, true, false};
+    check(equipped_test::localized(f.snapshot().recipes[cat::grind_begin]),
+          "a single E-marked input weapon stays blocked with its localized reason");
+  }
   check(cat::tobacco_begin == 95 && cat::recipe_count == 98 && cat::cool_begin == 72 &&
             cat::grind_begin == 73,
         "22 recipes append without moving Cool or any existing index");

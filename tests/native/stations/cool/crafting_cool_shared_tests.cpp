@@ -8,6 +8,7 @@
 #include "ubc/core/crafting_handoff.hpp"
 #include "ubc/core/crafting_result.hpp"
 #include "ubc/ui/native_crafting_ui.hpp"
+#include "../../helpers/equipped_ingredient.hpp"
 
 namespace shared_cool_test {
 namespace cat = ubc::crafting_catalog;
@@ -90,6 +91,15 @@ void profiles() {
             blocked.recipes[cat::cool_begin].material_verified &&
             !blocked.recipes[cat::cool_begin].contract,
         "real reader fixture projects stock but keeps bad script bodies closed");
+  f.stock({{16612, 5}}, "ITMISWORDBLADE:2");
+  f.image.put(object(0) + 0x158, 0x40200001u);
+  auto equipped = capture(f);
+  equipped.recipe.contract = true;
+  equipped.diagnostic.profile.valid = equipped.diagnostic.profile.local.matches = true;
+  check(
+      listed_input(f, equipped) &&
+          equipped_test::localized(ubc::project_capture(equipped).recipes[cat::cool_begin]),
+      "ITEM_ACTIVE on the stored hot blade explains the lock independently of the generated hand blade");
   const auto foreign = source(7, 2, 0x3000);
   const auto strict = ubc::project_capture(foreign),
              preview = ubc::project_capture(foreign, P::hero_preview, true);

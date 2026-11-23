@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "ubc/stations/station_recipe_snapshot.hpp"
+#include "../helpers/equipped_ingredient.hpp"
 // Our shared synthetic memory image. No test seam in production,
 // original script bytes or additional runtime dependency.
 #define UBC_STATION_RECIPE_FIXTURE_ONLY
@@ -207,6 +208,15 @@ int main() {
                   !foreign.actor_known,
               "foreign station recipes are populated but never evaluated");
       }
+    f.stock({}, entry(recipe.costs[0].symbol, 7) + "E");
+    auto marked = capture(f);
+    const auto index = index_of(recipe.id);
+    marked.recipes[index].contract = marked.diagnostic.recipes[index].profile.matches = true;
+    const auto snapshot = ubc::project_capture(marked);
+    check(ubc::valid_crafting_snapshot(snapshot) &&
+              equipped_test::localized(
+                  snapshot.recipes[ubc::crafting_catalog::station_begin + index]),
+          "a marked input at the leather bench, saw or forge has a localized equipment reason");
     f.stock({}, "");
     const auto empty = capture(f);
     check(state(empty, recipe.id).material.maximum == 0 && s.material.maximum == 7,

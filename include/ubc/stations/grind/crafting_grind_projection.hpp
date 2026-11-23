@@ -201,6 +201,9 @@ inline CraftingSnapshot project_capture(const GrindRecipeCatalogueCapture& sourc
       }
       if (value.material_known)
         row.stored = stock->total;
+      if (j == 0 && value.material_known && !bound.valid)
+        value.equipped_ingredient =
+            recipe_material_detail::ingredient_problem(*stock) == IngredientProblem::equipped;
       if (value.hand_known)
         row.generated_prop = j == 2 ? 1 : 0;
     }

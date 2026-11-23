@@ -133,6 +133,8 @@ ore_recipe_material(const ore_recipe_catalog::Descriptor& recipe, const RecipeIn
          (item.listed_occurrences && item.packed_occurrences)))
       out.issue = Issue::ambiguous_ingredient;
   }
+  out.equipped_ingredient = out.issue == Issue::ambiguous_ingredient &&
+                            common::equipped_ingredient(inventory, recipe.costs);
   out.hand_issue =
       ore_recipe_snapshot_detail::hands(recipe, inventory, observed, station_hand_end_verified);
   out.hand_known = out.hand_issue == StationRecipeHandIssue::none;

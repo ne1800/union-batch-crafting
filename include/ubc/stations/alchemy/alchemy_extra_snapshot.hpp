@@ -207,6 +207,8 @@ inline RecipeMaterial material(const alchemy_recipe_catalog::Descriptor& recipe,
     return result;
   }
   result.inventory_known = true;
+  result.equipped_ingredient = result.issue == RecipeMaterialIssue::ambiguous_ingredient &&
+                               detail::equipped_ingredient(inventory, recipe.costs);
   auto hand_issue = RecipeMaterialIssue::none;
   if (!input.hand_contract_verified || !input.interact_item_known)
     hand_issue = RecipeMaterialIssue::hand_contract_unverified;
