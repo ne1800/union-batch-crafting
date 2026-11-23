@@ -1,6 +1,6 @@
 <a id="player"></a>
 
-# Union Batch Crafting 0.0.63 for players
+# Union Batch Crafting 0.0.64 for players
 
 [English](INSTALL.md) · [Deutsch](INSTALL.de.md) · [Tested with](TESTED-WITH.md)
 
@@ -9,7 +9,7 @@
 ## Install
 
 1. Use Gothic II: Night of the Raven with Union already installed and Marcello L’Hiver DE selected. Close the game and the Workshop launcher. In Steam, open the game's **Properties → Installed Files → Browse**. The right folder contains `system/Gothic2.exe`.
-2. Open `union-batch-crafting-player-0.0.63.zip`. Copy its `system/autorun/UnionBatchCraftingExtended.dll` into the matching folder in the game. Use the existing spelling of the autorun folder on Linux/Proton. The final path, relative to the game folder, is `system/autorun/UnionBatchCraftingExtended.dll`. If that DLL already exists, move it outside the game first and keep it for rollback. Keep the guides and licences wherever you like.
+2. Open `union-batch-crafting-player-0.0.64.zip`. Copy its `system/autorun/UnionBatchCraftingExtended.dll` into the matching folder in the game. Use the existing spelling of the autorun folder on Linux/Proton. The final path, relative to the game folder, is `system/autorun/UnionBatchCraftingExtended.dll`. If that DLL already exists, move it outside the game first and keep it for rollback. Keep the guides and licences wherever you like.
 3. Start Gothic as usual, select Marcello L’Hiver and load a save. At a supported station with a learned recipe, choose the recipe and quantity and confirm Craft. The DLL stays enabled on subsequent starts. Union loads it from the autorun directory.
 
 For a first check, take two pieces of raw meat to a stove and select meat at quantity 2. A campfire uses the game’s own meat choices.

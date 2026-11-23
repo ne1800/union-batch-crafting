@@ -4,6 +4,8 @@
 
 ## English
 
+- **0.0.64** TODO: describe the change for players.
+
 - **0.0.63** A translucent black background makes the recipe list and quantity details easier to read. If the drawing code is unrecognized, the menu uses its text-only layout and logs the reason.
 
 - **0.0.62** The quantity menu keeps one focus arrow. On wide screens, more recipes fit on a page, and `[x]` identifies the selected recipe while you adjust its quantity. The preview shows starting stock, output and final stock. The footer lists the keys for the active control.
@@ -29,6 +31,8 @@
 - **0.0.30–0.0.35** measured and bounded the grinding preview. Rough swords passed the in-game comparison at 1, 2, 5 and maximum 3 in 0.0.35.
 
 ## Deutsch
+
+- **0.0.64** TODO: die Änderung für Spieler beschreiben.
 
 - **0.0.63** Ein halbtransparenter schwarzer Hintergrund macht die Rezeptliste und die Mengendetails besser lesbar. Bei einer unbekannten Zeichenroutine zeigt das Menü die bisherige Textansicht und protokolliert den Grund.
 
