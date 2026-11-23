@@ -71,7 +71,19 @@ class Release(unittest.TestCase):
         return path
 
     def test_repository_names_one_version(self):
-        self.assertEqual(release["consistency_errors"](ROOT), [])
+        current = release["version"](ROOT)
+        stubs = prepare["STUBS"]
+        expected = []
+        if release["tested_dll"](ROOT, current) is None and all(
+            release["changelog_entry"](ROOT, current, language) == stub
+            for language, stub in stubs.items()
+        ):
+            # An untested version prepared locally must still fail the release check.
+            expected = [
+                f"CHANGELOG.md: describe {current} in the {language} section"
+                for language in stubs
+            ]
+        self.assertEqual(release["consistency_errors"](ROOT), expected)
 
     def test_new_version_waits_for_changelog_and_test(self):
         self.start()
