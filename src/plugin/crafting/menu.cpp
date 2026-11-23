@@ -26,7 +26,7 @@ ubc::CraftingPreviewKey preview_key(const Context& c) noexcept {
 }
 
 bool can_reuse_preview(const Context& c) noexcept {
-  if (session.phase() != Phase::selecting || !same_context(c, borrowed_context) ||
+  if (!ubc::CraftingPreviewCache::allows(session.phase()) || !same_context(c, borrowed_context) ||
       !(key(c) == session.preview().key) || !ui.owns_input() || !grind_frame_capture_quiet() ||
       native_update || disabled || adapter_failed() || grind_preview_input_depth ||
       grind_preview_overflow || grind_capture_leased || grind_preview_scope.active)
@@ -80,7 +80,7 @@ void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept 
   preview_cache.invalidate();
   std::optional<PreviewRecording> recording;
   if (cacheable)
-    recording.emplace(preview_cache);
+    recording.emplace(preview_cache, before);
   {
     std::optional<GrindPreviewLease> shared_grind;
     if (session.phase() != Phase::original && c.kind == cat::Station::grind) {
@@ -99,8 +99,9 @@ void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept 
   }
   // Neither recording nor a frame-bound grind publication survives into a
   // restored-view capture, the handoff, or an effect callback.
+  const bool consistent = recording && recording->consistent;
   recording.reset();
-  if (cacheable && still_current())
+  if (consistent && still_current())
     preview_cache.finish(before, session.can_confirm());
   else
     preview_cache.invalidate();

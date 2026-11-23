@@ -61,6 +61,7 @@ Context context() noexcept {
   // The display key compares the parsed dialog fields. Animation and layout
   // bytes elsewhere in the view do not affect the catalogue.
   c.dialog = ubc::read_selection_dialog(live_memory, s::information_manager);
+  PreviewRecording::observe_dialog(c.dialog);
   if (!c.station_known || !c.station || !c.dialog.valid || c.dialog.npc != c.hero ||
       c.dialog.player != c.hero || !station_owns(c.station, c.hero) ||
       integer(c.station, 0x1f4) != 1 || integer(c.station, 0x1f8) != 1)
