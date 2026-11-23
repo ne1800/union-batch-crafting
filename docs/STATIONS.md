@@ -63,7 +63,7 @@ With `auto`, a blank value or a missing entry, the plugin detects German game te
 
 ## Which quantities have been tested in the game?
 
-The quantity menu offers 1, 5, 10, maximum and custom steps up to the material limit. In-game orders through 0.0.65 cover 80 of the 98 profiles, including all three at the stove, all 23 at the alchemy table (with both spirit potion branches), all 20 at the bow bench, all 13 at the anvil, all nine at the leather bench, all five at the saw and four of the 22 at the grindstone.
+The quantity menu offers 1, 5, 10, maximum and custom steps up to the material limit. In-game orders through 0.0.65 cover all 98 of the 98 profiles across all nine stations: all three at the stove, all 23 at the alchemy table (with both spirit potion branches), all nine at the leather bench, all five at the saw, both at the forge, all 13 at the anvil, all 20 at the bow bench, the cooling tub profile and all 22 at the grindstone.
 
 | Station (profiles) | Recipe families | Examples crafted in the game |
 | --- | --- | --- |
@@ -75,11 +75,11 @@ The quantity menu offers 1, 5, 10, maximum and custom steps up to the material l
 | Anvil (13) | Ordinary and ore weapons | Ordinary sword ×1/2; fine sword, fine longsword, ruby blade, El Bastardo and all eight ore weapons (ore longsword through great ore dragon slayer) ×2 each |
 | Bow bench (20) | Bow and crossbow upgrades | All 20 profiles: willow bow, composite bow, ash bow, longbow and light crossbow ×1; shortbow, fine bow, hunting bow, elm bow, beech bow, bone bow, oak bow, war bow, dragon bow, crossbow, fine crossbow, war crossbow, heavy crossbow and dragon hunter’s crossbow ×2; hunting crossbow at MAX 2. |
 | Cooling tub (1) | Cool hot blades | ×2/1/MAX 3, including the last two stored blades together |
-| Grindstone (22) | Grind weapons | Rough sword ×1/2/5/MAX 3. Two each of the rough two-hander, rough bastard sword and two-hander. |
+| Grindstone (22) | Grind weapons | All 22 profiles: rough sword ×1/2/5/MAX 3; fine sword, ruby blade and paladin’s two-hander ×1; paladin’s sword, all six blessed ore blades (1H/2H raw, blessed/order, Innos’ Wrath, Holy Executioner), rough two-hander, rough bastard sword, two-hander and all eight dragon hunter’s ore weapons (ore longsword through great ore dragon slayer) ×2 each. |
 
 The campfire also offers the original 1/5/10/all choices for ordinary meat. Choosing END before selecting a quantity preserves stock. This dialogue is separate from the nine stations with a quantity menu.
 
-**Untested profiles.** The 18 profiles awaiting an in-game order are the remaining 18 grindstone weapons.
+**Untested profiles.** None. All 98 integrated profiles across all nine stations have been verified with in-game orders.
 
 **Outside the quantity menu.** One rune per spell suffices. Rune upgrades spend learning points once and change learned abilities. Armour exchanges and water mage robes concern individual equipment pieces, and the Eye of Innos is a one-off quest item. Four sharpening attempts remain deferred because each rolls its own outcome and advances proficiency individually.
 
@@ -113,6 +113,6 @@ The bow bench supports 20 upgrades. “parts for” is the material limit. The m
 
 ## Test coverage and limits
 
-In-game tests covered the orders in the [station table](#coverage). At the alchemy table, the tests confirmed the German recipe text and the reasons shown for blocked recipes. Crafting two portions of swamp tobacco consumed two apple tobaccos and two laboratory flasks. Some recipes and physical controller input at stations still need testing.
+In-game tests covered all 98 profiles in the [station table](#coverage). At the alchemy table, the tests confirmed the German recipe text and the reasons shown for blocked recipes. Crafting two portions of swamp tobacco consumed two apple tobaccos and two laboratory flasks. Physical controller input at stations still needs testing.
 
 [In-game test details](../TESTED-WITH.md) · [Changes by version](../CHANGELOG.md#english) · [Project overview](../README.md)
