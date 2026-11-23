@@ -39,7 +39,7 @@ class LanguageTables(unittest.TestCase):
             """abgeschlossen aktuell ergebnisse essenz feuer feuerkraut
             feuerkräuter feuernessel feuernesseln feuerpfeil feuerpfeile feuerwurzel
             feuerwurzeln heilessenzen laborwasserflasche loslassen manaelixiere
-            manaessenzen manaextrakte neue ordensschwert verbessert wasser""".split()
+            manaessenzen manaextrakte neue ordensschwert verbessert verlassen wasser""".split()
         )
         for file in (TEXT / "locales").glob("*.hpp"):
             source = file.read_text(encoding="utf-8")
