@@ -711,6 +711,7 @@ bool NativeCraftingUi::open_success(const NativeCraftingSuccess& value) noexcept
 }
 void NativeCraftingUi::close() noexcept {
   window_.close();
+  text_view_rejected_ = false;
   mode_ = Mode::selection;
   success_ = {};
   submitted_receipt_ = 0;
@@ -741,7 +742,9 @@ int NativeCraftingUi::handle(CraftingSession& session, int key,
   return 1;
 }
 bool NativeCraftingUi::submit() noexcept {
-  return frame_.valid && menu_view().submit([this](void* view) {
+  if (!opened() || !frame_.valid || text_view_rejected_)
+    return false;
+  text_view_rejected_ = !menu_view().submit([this](void* view) {
     reinterpret_cast<m::ObjectFunction>(m::view_clear_printwin)(view);
     Text font("FONT_OLD_10_WHITE.TGA");
     reinterpret_cast<m::ViewSetFont>(m::view_set_font)(view, font.get());
@@ -751,6 +754,7 @@ bool NativeCraftingUi::submit() noexcept {
       reinterpret_cast<m::ViewPrint>(m::view_print)(view, line.x, line.y, text.get());
     }
   });
+  return !text_view_rejected_;
 }
 bool NativeCraftingUi::render(const CraftingSession& session, bool execution_enabled) noexcept {
   if (mode_ == Mode::failure)

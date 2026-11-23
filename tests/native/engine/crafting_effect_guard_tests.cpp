@@ -1138,24 +1138,38 @@ void render_proof(Fixture& f, bool valid = true) {
 }
 
 void selection_view_cases(Fixture& f) {
-  for (const bool valid : {false, true}) {
+  struct Case {
+    bool valid_view, can_render;
+  };
+  for (const auto test : {Case{false, true}, Case{true, false}, Case{true, true}}) {
     check(f.reset(0x2001) && f.native_phase() && session.open(injected),
           "selection starts with a valid saw snapshot");
     handoff = {};
     const auto c = context();
     original_station = 0;
     selection_renders = 0;
-    ui_created = ui_owned = ui_render_ok = true;
-    ui_view_valid = valid;
-    check(prepare_selection_view(c) == valid, "only a drawable view admits dialog takeover");
-    if (valid) {
+    ui_created = ui_owned = true;
+    ui_render_ok = test.can_render;
+    ui_view_valid = test.valid_view;
+    unsigned borrows = 0;
+    const auto borrow = [&](const Context& dialog) {
+      ++borrows;
+      check(dialog.dialog.view == c.dialog.view && selection_renders == 1 &&
+                rendered_generation == session.preview().key.generation,
+            "only the submitted first frame may hide the original dialog");
+    };
+    const bool shown = test.valid_view && test.can_render;
+    check(show_selection_view(c, borrow) == shown && borrows == (shown ? 1u : 0u) &&
+              selection_renders == (test.valid_view ? 1u : 0u),
+          "rejected views skip text and failed submissions keep original controls");
+    if (shown) {
       check(ui.opened() && ui.owns_input() && selection_renders == 1 && !original_station &&
                 rendered_generation == session.preview().key.generation,
             "missing texture still submits and registers the first selection frame");
       close_ui(c);
     } else {
-      check(!ui.opened() && !ui.owns_input() && !selection_renders && !rendered_generation &&
-                c.station && original_station == c.station && !borrowed_view &&
+      check(!ui.opened() && !ui.owns_input() && !rendered_generation && c.station &&
+                original_station == c.station && !borrowed_view &&
                 session.phase() == Phase::original,
             "view rejection relinquishes the callback and keeps the original station active");
       check(observe_choice_event(f.view.data() + a::view_callback, nullptr, m::key_return) == 73 &&

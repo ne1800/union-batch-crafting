@@ -50,13 +50,16 @@ void close_rejected_view(const Context& c) noexcept {
   close_ui(c);
 }
 
-bool prepare_selection_view(const Context& c) noexcept {
+template <class Borrow> bool show_selection_view(const Context& c, Borrow borrow) noexcept {
   const auto backdrop = ui.apply_backdrop();
   event(backdrop.event, static_cast<int>(c.kind));
   if (backdrop.view_valid) {
-    if (render_selection())
+    if (render_selection()) {
+      borrow(c);
       return true;
-    event("ui_initial_frame_rejected", static_cast<int>(c.kind));
+    }
+    event(ui.text_view_rejected() ? "ui_text_view_mismatch" : "ui_initial_frame_rejected",
+          static_cast<int>(c.kind));
   }
   close_rejected_view(c);
   return false;
@@ -454,8 +457,7 @@ void __fastcall after_frame(void* game, void* manager) {
               last_capture_issue = issue;
               event("catalogue_unavailable", issue);
             }
-          } else if (prepare_selection_view(c)) {
-            borrow_view(c);
+          } else if (show_selection_view(c, borrow_view)) {
             event("ui_open", static_cast<int>(c.kind), static_cast<int>(session.visible_count()));
             ui_diagnostic_events(
                 ui_diagnostic.begin(session.preview().key.generation, GetTickCount64()));
@@ -476,6 +478,9 @@ void __fastcall after_frame(void* game, void* manager) {
         }
       }
     }
+    // Capture and engine callbacks can change the view between the frame check and submission.
+    if (ui.opened() && ui.text_view_rejected())
+      reject_text_view(c);
     const int handoff_state = static_cast<int>(handoff.state());
     if (handoff_state != last_handoff_state) {
       if (handoff.state() == ubc::CraftingHandoffState::cancelled)
