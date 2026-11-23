@@ -4,7 +4,9 @@
 #include "ubc/stations/grind/grind_preview_batch.hpp"
 #include "ubc/stations/grind/grind_preview_measurement.hpp"
 #include "ubc/core/crafting_session.hpp"
+#include "ubc/ui/crafting_preview_cache.hpp"
 #include "../../helpers/grind_preview_capacity_fixture.hpp"
+#include <chrono>
 #include <memory>
 #include <optional>
 
@@ -141,9 +143,12 @@ void measured_capacity() {
         append(12);
       fill(image, 0x10000, address - 0x10000);
       auto ledger = std::make_unique<Ledger>();
+      auto display = !extra && !changed ? std::make_unique<ubc::CraftingPreviewCache>() : nullptr;
+      const auto start = std::chrono::steady_clock::now();
       check(ranges.size() == 10967 + extra && bytes == 205195 + 12 * extra,
             "measured footprint plus explicit disjoint world-node reserve");
-      check(ledger->begin(image.memory(), frame.source(), frame.value, 7),
+      check(ledger->begin(display ? display->begin(image.memory()) : image.memory(), frame.source(),
+                          frame.value, 7),
             "measured capacity frame begins");
       std::array<std::uint8_t, batch::max_span_bytes> value{};
       const auto memory = ledger->memory();
@@ -169,6 +174,30 @@ void measured_capacity() {
             "last measured or reserve byte is mandatory at final verification");
       check(image.reads == ranges.size() * 2,
             "all measured and reserve spans are read twice, including the last span");
+      if (display) {
+        const ubc::CraftingPreviewKey key{
+            {1, 7, 1, 2, 3, 4, ubc::crafting_catalog::Station::grind}};
+        display->finish(key, true);
+        const auto cold = std::chrono::steady_clock::now() - start;
+        const auto cold_reads = image.reads;
+        const auto warm_start = std::chrono::steady_clock::now();
+        constexpr unsigned frames = 32;
+        for (unsigned i = 0; i < frames; ++i)
+          check(display->reuse(ubc::SelectionPhase::selecting, key, image.memory()),
+                "the complete measured footprint stays current without replay");
+        const auto warm = (std::chrono::steady_clock::now() - warm_start) / frames;
+        const auto page_reads = (image.reads - cold_reads) / frames;
+        check(page_reads == (address - 0x10000 + 4095u) / 4096u && page_reads < ranges.size(),
+              "steady frames read each touched page once across the whole measured fixture");
+        std::printf(
+            "preview_shape spans=%zu cold_reads=%zu warm_reads=%zu cold_us=%lld warm_us=%lld\n",
+            ranges.size(), static_cast<std::size_t>(cold_reads),
+            static_cast<std::size_t>(page_reads),
+            static_cast<long long>(
+                std::chrono::duration_cast<std::chrono::microseconds>(cold).count()),
+            static_cast<long long>(
+                std::chrono::duration_cast<std::chrono::microseconds>(warm).count()));
+      }
     }
 }
 void low_level() {
