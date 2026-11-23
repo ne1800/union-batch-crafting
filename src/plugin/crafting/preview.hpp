@@ -10,11 +10,14 @@ inline constexpr ubc::ReadOnlyMemory live_memory{nullptr, ubc::windows_probe::co
 // there, callbacks and readers receive the real bytes and real probe results.
 struct PreviewRecording {
   ubc::CraftingPreviewCache& cache;
+  const ubc::CraftingPreviewKey& key;
   ubc::ReadOnlyMemory reads;
+  bool consistent = true;
   inline static thread_local PreviewRecording* active = nullptr;
 
-  explicit PreviewRecording(ubc::CraftingPreviewCache& target) noexcept
-      : cache(target), reads(cache.begin(live_memory)) {
+  PreviewRecording(ubc::CraftingPreviewCache& target,
+                   const ubc::CraftingPreviewKey& inputs) noexcept
+      : cache(target), key(inputs), reads(cache.begin(live_memory)) {
     active = this;
   }
   ~PreviewRecording() { active = nullptr; }
@@ -23,6 +26,10 @@ struct PreviewRecording {
 
   static bool copy(void*, std::uint32_t address, void* output, std::size_t size) noexcept {
     return (active ? active->reads : live_memory).copy(address, output, size);
+  }
+  static void observe_dialog(const ubc::SelectionDialog& dialog) noexcept {
+    if (active && !active->key.matches_dialog(dialog))
+      active->consistent = false;
   }
   static bool probe(ubc::CraftingPreviewCache::Probe read, std::uintptr_t a = 0,
                     std::uintptr_t b = 0) noexcept {

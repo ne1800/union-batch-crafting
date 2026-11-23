@@ -732,8 +732,12 @@ void capacity_shapes(const PE& exe, const Dat& dat, const PE& zbug, const PE& co
             "diagnostic range demand equals independent complete source-reader trace");
       check(!measured->publish(*publication) && !publication->count,
             "diagnostic cannot publish into the regular preview path");
-      const bool captured = bounded->capture_selection(f.image.memory(), frame.source(),
-                                                       frame.value, input, selection);
+      auto display = world_nodes == 3835 && scenario == 1
+                         ? std::make_unique<ubc::CraftingPreviewCache>()
+                         : nullptr;
+      const bool captured =
+          bounded->capture_selection(display ? display->begin(f.image.memory()) : f.image.memory(),
+                                     frame.source(), frame.value, input, selection);
       if (world_nodes < 12000)
         check(
             captured && bounded->publish(*publication) &&
@@ -746,6 +750,19 @@ void capacity_shapes(const PE& exe, const Dat& dat, const PE& zbug, const PE& co
                  bounded->issue() == batch::Issue::span_limit) &&
                 !bounded->publish(*publication) && publication->count == 0,
             "same inventory totals with another valid world list exceed byte budget and publish nothing");
+      if (display && captured) {
+        const ubc::CraftingPreviewKey key{
+            publication->snapshot.key, 1, 1,
+            ubc::crafting_catalog::recipes[ubc::crafting_catalog::grind_begin].id,
+            quantities[scenario]};
+        bounded->close();
+        display->finish(key, true);
+        check(display->reuse(ubc::SelectionPhase::selecting, key, f.image.memory()),
+              "display survives closing the production reader with 430 items and 3835 world nodes");
+        f.image.put(input_object + 0x32c, stocks[scenario] - 1);
+        check(!display->reuse(ubc::SelectionPhase::selecting, key, f.image.memory()),
+              "a changed weapon stack invalidates the display with every list link unchanged");
+      }
       std::printf(
           "capacity_shape=synthetic quantity=%u inventory=430 world_nodes=%u spans=%zu stored=%zu largest=%zu calls=%zu logical_bytes=%zu\n",
           quantities[scenario], world_nodes, source.spans.size(), bytes, largest, source.calls,

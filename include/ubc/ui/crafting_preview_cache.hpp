@@ -19,17 +19,17 @@ struct CraftingPreviewKey {
   std::size_t rows = 0;
   bool rows_valid = false;
 
+  bool matches_dialog(const SelectionDialog& b) const noexcept {
+    return dialog.view == b.view && dialog.npc == b.npc && dialog.player == b.player &&
+           dialog.info == b.info && dialog.mode == b.mode && dialog.selected == b.selected &&
+           dialog.count == b.count && dialog.valid == b.valid && dialog.waiting == b.waiting &&
+           dialog.open == b.open && dialog.hidden == b.hidden && dialog.done == b.done &&
+           dialog.rejected_info_transition == b.rejected_info_transition;
+  }
   bool operator==(const CraftingPreviewKey& b) const noexcept {
     return owner == b.owner && world_epoch == b.world_epoch && collection == b.collection &&
            selection == b.selection && quantity == b.quantity && rows == b.rows &&
-           rows_valid == b.rows_valid && dialog.view == b.dialog.view &&
-           dialog.npc == b.dialog.npc && dialog.player == b.dialog.player &&
-           dialog.info == b.dialog.info && dialog.mode == b.dialog.mode &&
-           dialog.selected == b.dialog.selected && dialog.count == b.dialog.count &&
-           dialog.valid == b.dialog.valid && dialog.waiting == b.dialog.waiting &&
-           dialog.open == b.dialog.open && dialog.hidden == b.dialog.hidden &&
-           dialog.done == b.dialog.done &&
-           dialog.rejected_info_transition == b.dialog.rejected_info_transition;
+           rows_valid == b.rows_valid && matches_dialog(b.dialog);
   }
 };
 
@@ -68,6 +68,9 @@ public:
   }
 
   bool quantity_available() const noexcept { return ready_ && available_; }
+  static bool allows(SelectionPhase phase) noexcept {
+    return phase == SelectionPhase::selecting || phase == SelectionPhase::releasing;
+  }
 
   // Module leases, executable-page protections and adapter state have inputs
   // outside ReadOnlyMemory. Recheck each distinct query once on a cache hit.
@@ -89,7 +92,7 @@ public:
 
   bool reuse(SelectionPhase phase, const CraftingPreviewKey& key,
              const ReadOnlyMemory& live) noexcept {
-    if (phase == SelectionPhase::selecting && ready_ && key == key_ && unchanged(live))
+    if (allows(phase) && ready_ && key == key_ && unchanged(live))
       return true;
     invalidate();
     return false;
@@ -153,12 +156,17 @@ private:
     return true;
   }
 
-  bool unchanged(const ReadOnlyMemory& live) const noexcept {
+  bool probes_current() const noexcept {
     for (std::size_t i = 0; i < probe_count_; ++i) {
       const auto& p = probes_[i];
       if (p.read(p.a, p.b) != p.result)
         return false;
     }
+    return true;
+  }
+  bool unchanged(const ReadOnlyMemory& live) const noexcept {
+    if (!probes_current())
+      return false;
     std::array<std::uint8_t, page_size> scratch;
     for (std::size_t first = 0; first < count_;) {
       const auto start = spans_[first].address;
@@ -170,16 +178,18 @@ private:
       } while (next < count_ && spans_[next].address / page_size == page);
       // One protected process read per touched page. Unused bytes between
       // spans can change freely and never enter the comparison.
-      if (!live.copy(start, scratch.data(), length))
-        return false;
+      const bool grouped = live.copy(start, scratch.data(), length);
       for (; first < next; ++first) {
         const auto& span = spans_[first];
-        if (std::memcmp(scratch.data() + (span.address - start), bytes_.data() + span.offset,
-                        span.length))
+        // A sparse reader may reject a gap. Every originally observed span
+        // must still be readable and equal in its entirety.
+        auto* actual = scratch.data() + (span.address - start);
+        if ((!grouped && !live.copy(span.address, actual, span.length)) ||
+            std::memcmp(actual, bytes_.data() + span.offset, span.length))
           return false;
       }
     }
-    return true;
+    return probes_current();
   }
 };
 } // namespace ubc
