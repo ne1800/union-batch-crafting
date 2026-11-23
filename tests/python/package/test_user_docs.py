@@ -14,6 +14,10 @@ PAIRS = (
     ("docs/STRUCTURE.md", "docs/STRUKTUR.md"),
 )
 CANONICAL = {de: en for en, de in PAIRS}
+# Screenshots show the menu in the language of the document that embeds them.
+LOCALIZED_ASSETS = (
+    ("docs/images/quantity-menu-en.webp", "docs/images/quantity-menu-de.webp"),
+)
 HEADING = re.compile(r"^(#{1,6}) (.+)$", re.M)
 ANCHOR = re.compile(r'<a id="([\w-]+)"></a>')
 LINK = re.compile(r"\]\(([^)\s]+)\)")
@@ -51,6 +55,13 @@ def structure(root, filename):
             if not dest.is_file():
                 raise ValueError(f"{filename}: broken link {target}")
             relative = dest.relative_to(root).as_posix()
+            for en_asset, de_asset in LOCALIZED_ASSETS:
+                if relative == (en_asset if is_german else de_asset):
+                    raise ValueError(
+                        f"{filename}: image in the wrong language: {target}"
+                    )
+                if relative == de_asset:
+                    relative = en_asset
             fragment = unquote(url.fragment)
             if fragment:
                 body = dest.read_text()
