@@ -14,6 +14,8 @@ public:
   const ui_text::Table& texts() const noexcept { return ui_text::table(language_); }
   bool can_open(BowMenuTrace* trace) const noexcept;
   bool open(BowMenuTrace* trace = nullptr, BowMenuTrace* opened_trace = nullptr) noexcept;
+  const char* open_rejection() const noexcept { return open_rejection_; }
+  void clear_open_rejection() noexcept { open_rejection_ = nullptr; }
   void close() noexcept;
   bool render(const SelectionSession&, OriginalRecipe, bool execution_enabled) noexcept;
   int handle(SelectionSession&, int key) noexcept;
@@ -28,6 +30,7 @@ public:
 private:
   native_menu::MenuStorage storage_{};
   bool created_ = false, initialized_ = false;
+  const char* open_rejection_ = nullptr;
   ui_text::Language language_ = &ui_text::en::table;
   unsigned row_ = 0;
 };

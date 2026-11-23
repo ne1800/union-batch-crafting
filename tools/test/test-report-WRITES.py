@@ -230,6 +230,19 @@ def main(argv=None) -> int:
                         args.timeout_seconds,
                     )
                 )
+            if args.local_facts:
+                steps.append(
+                    run_step(
+                        "menu-local-contracts",
+                        [
+                            str(build_dir / "ubc_native_crafting_ui_tests"),
+                            "--local-exe",
+                            str(args.local_facts[0]),
+                        ],
+                        run_dir,
+                        args.timeout_seconds,
+                    )
+                )
         # Evaluate the independent Python tests even if C++ fails.
         helpers = run_step(
             "tools", ["mise", "run", "test:tools"], run_dir, args.timeout_seconds

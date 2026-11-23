@@ -58,6 +58,16 @@ inline bool copy_memory(void*, std::uint32_t address, void* output, std::size_t 
          copied == size;
 }
 
+inline bool copy_engine_code(void*, std::uint32_t address, void* output,
+                             std::size_t size) noexcept {
+  if (!readable(reinterpret_cast<const void*>(address), size, true, true))
+    return false;
+  SIZE_T copied = 0;
+  return ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<const void*>(address), output,
+                           size, &copied) &&
+         copied == size;
+}
+
 inline bool player_image_header() noexcept {
   const auto* base = reinterpret_cast<const std::uint8_t*>(GetModuleHandleW(nullptr));
   return reinterpret_cast<std::uintptr_t>(base) == 0x00400000u &&

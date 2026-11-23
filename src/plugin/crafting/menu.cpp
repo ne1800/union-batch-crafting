@@ -50,6 +50,17 @@ void close_rejected_view(const Context& c) noexcept {
   close_ui(c);
 }
 
+bool open_selection_ui(const Context& c, ubc::BowMenuTrace* trace = nullptr,
+                       ubc::BowMenuTrace* opened_trace = nullptr) noexcept {
+  if (ui.open(trace, opened_trace))
+    return true;
+  if (const char* reason = ui.open_rejection()) {
+    event(reason, static_cast<int>(c.kind));
+    close_rejected_view(c);
+  }
+  return false;
+}
+
 template <class Borrow> bool show_selection_view(const Context& c, Borrow borrow) noexcept {
   const auto backdrop = ui.apply_backdrop();
   event(backdrop.event, static_cast<int>(c.kind));
@@ -58,15 +69,18 @@ template <class Borrow> bool show_selection_view(const Context& c, Borrow borrow
       borrow(c);
       return true;
     }
-    event(ui.text_view_rejected() ? "ui_text_view_mismatch" : "ui_initial_frame_rejected",
-          static_cast<int>(c.kind));
+    const char* reason = ui.text_rejection();
+    if (!reason)
+      reason = ui.text_view_rejected() ? "ui_text_view_mismatch" : "ui_initial_frame_rejected";
+    event(reason, static_cast<int>(c.kind));
   }
   close_rejected_view(c);
   return false;
 }
 
 void reject_text_view(const Context& c) noexcept {
-  event("ui_text_view_mismatch", static_cast<int>(c.kind));
+  const char* reason = ui.text_rejection();
+  event(reason ? reason : "ui_text_view_mismatch", static_cast<int>(c.kind));
   if (ui.success_notice()) {
     success_pending = false;
     result_guard.fail(ubc::CraftingResultIssue::contract);
@@ -81,10 +95,34 @@ bool notice_view_valid(const Context& c) noexcept {
   return false;
 }
 
+bool open_success_notice(const Context& c) noexcept {
+  if (ui.open_success(pending_success)) {
+    if (!notice_view_valid(c))
+      return false;
+    if (c.valid && c.dialog.waiting && c.dialog.open)
+      borrow_view(c);
+    event("success_notice_opened", static_cast<int>(pending_success.id),
+          static_cast<int>(pending_success.quantity));
+    return true;
+  }
+  if (const char* reason = ui.open_rejection()) {
+    event(reason, static_cast<int>(c.kind));
+    success_pending = false;
+    result_guard.fail(ubc::CraftingResultIssue::contract);
+    close_rejected_view(c);
+  }
+  return false;
+}
+
 bool open_failure_notice(const Context& c) noexcept {
   if (ui.open_failure() && notice_view_valid(c)) {
     event("failure_notice_opened");
     return true;
+  }
+  if (const char* reason = ui.open_rejection()) {
+    if (!failure_open_rejected_logged)
+      event(reason, static_cast<int>(c.kind));
+    close_rejected_view(c);
   }
   if (!failure_open_rejected_logged) {
     failure_open_rejected_logged = true;
@@ -378,13 +416,8 @@ void __fastcall after_frame(void* game, void* manager) {
     } else if (success_pending && !adapter_failed() && allow_notice) {
       if (c.identity_known && c.world == pending_success.key.world &&
           c.hero == pending_success.key.hero && integer(0x8d1e38, 8) == 0 &&
-          (!ammo_job || ammo_notice_ready) && ui.open_success(pending_success) &&
-          notice_view_valid(c)) {
-        if (c.valid && c.dialog.waiting && c.dialog.open)
-          borrow_view(c);
-        event("success_notice_opened", static_cast<int>(pending_success.id),
-              static_cast<int>(pending_success.quantity));
-      }
+          (!ammo_job || ammo_notice_ready))
+        open_success_notice(c);
     } else if (tobacco_clean_rejection && c.valid && allow_notice && open_failure_notice(c)) {
       tobacco_clean_rejection = false;
       original_station = c.station;
@@ -451,11 +484,19 @@ void __fastcall after_frame(void* game, void* manager) {
                                                                ? remembered_recipe
                                                                : UINT32_MAX);
           ubc::BowMenuTrace window_trace{bow_menu_window, true};
-          if (!session_open || !ui.open(bow_trace, compare ? &window_trace : nullptr)) {
+          if (!session_open) {
             const int issue = captured.issue;
             if (issue != last_capture_issue) {
               last_capture_issue = issue;
               event("catalogue_unavailable", issue);
+            }
+          } else if (!open_selection_ui(c, bow_trace, compare ? &window_trace : nullptr)) {
+            if (!rejected_view_station) {
+              const int issue = captured.issue;
+              if (issue != last_capture_issue) {
+                last_capture_issue = issue;
+                event("catalogue_unavailable", issue);
+              }
             }
           } else if (show_selection_view(c, borrow_view)) {
             event("ui_open", static_cast<int>(c.kind), static_cast<int>(session.visible_count()));
