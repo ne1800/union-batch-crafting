@@ -326,7 +326,7 @@ void test_display_layout_fields() {
   require(rs::detail::read_layout(f.image.memory(), parser, f.expected, current) ==
               rs::Issue::parser_unreadable,
           "full reader still requires the contiguous header");
-  for (const unsigned offset : {0x18, 0x1c, 0x20, 0x48, 0x50, 0x54}) {
+  for (const auto offset : {0x18u, 0x1cu, 0x20u, 0x48u, 0x50u, 0x54u}) {
     f.image.denied = parser + offset;
     require(rs::detail::read_layout(memory, parser, f.expected, current) ==
                 rs::Issue::parser_unreadable,
