@@ -35,6 +35,8 @@ namespace crafting_guard_test {
 std::uintptr_t caller = 0;
 std::uint8_t *globals = nullptr, *manager_bytes = nullptr, *parser_bytes = nullptr;
 bool inject_contracts = false, ui_created = false, ui_owned = false, ui_render_ok = false;
+bool ui_view_valid = true;
+unsigned selection_renders = 0;
 bool test_notice = false, lose_input_on_submit = false;
 unsigned notice_renders = 0, notice_receipt_reads = 0;
 bool ammo_available = true, ammo_armed = false, ammo_accept = true, damage_after_admit = false;
@@ -190,7 +192,15 @@ public:
   bool opened() const noexcept { return crafting_guard_test::ui_created; }
   void* object() noexcept { return crafting_guard_test::ui_created ? this : nullptr; }
   bool owns_input() const noexcept { return crafting_guard_test::ui_owned; }
-  bool render(const CraftingSession&, bool) noexcept { return crafting_guard_test::ui_render_ok; }
+  crafting_ui::BackdropResult apply_backdrop() noexcept {
+    return crafting_guard_test::ui_view_valid
+               ? crafting_ui::BackdropResult{"ui_backdrop_texture_missing", true}
+               : crafting_ui::BackdropResult{"ui_backdrop_view_mismatch", false};
+  }
+  bool render(const CraftingSession&, bool) noexcept {
+    ++crafting_guard_test::selection_renders;
+    return crafting_guard_test::ui_render_ok;
+  }
   bool success_notice() const noexcept {
     return crafting_guard_test::test_notice || NativeCraftingUi::success_notice();
   }
@@ -1125,6 +1135,34 @@ void render_proof(Fixture& f, bool valid = true) {
   request_ui_generation = registered ? shown.generation : 0;
   request_ui_key = shown;
   check(!ui.object(), "effect starts after real close_ui, with no remaining native menu object");
+}
+
+void selection_view_cases(Fixture& f) {
+  for (const bool valid : {false, true}) {
+    check(f.reset(0x2001) && f.native_phase() && session.open(injected),
+          "selection starts with a valid saw snapshot");
+    handoff = {};
+    const auto c = context();
+    original_station = 0;
+    selection_renders = 0;
+    ui_created = ui_owned = ui_render_ok = true;
+    ui_view_valid = valid;
+    check(prepare_selection_view(c) == valid, "only a drawable view admits dialog takeover");
+    if (valid) {
+      check(ui.opened() && ui.owns_input() && selection_renders == 1 && !original_station &&
+                rendered_generation == session.preview().key.generation,
+            "missing texture still submits and registers the first selection frame");
+      close_ui(c);
+    } else {
+      check(!ui.opened() && !ui.owns_input() && !selection_renders && !rendered_generation &&
+                c.station && original_station == c.station && !borrowed_view &&
+                session.phase() == Phase::original,
+            "view rejection relinquishes the callback and keeps the original station active");
+      check(observe_choice_event(f.view.data() + a::view_callback, nullptr, m::key_return) == 73 &&
+                input_calls == 1,
+            "original choice callback receives the next input after rejection");
+    }
+  }
 }
 
 bool installation_fixture(Fixture& f, cat::RecipeId recipe = 0x2001, bool info_page = false) {
@@ -3654,6 +3692,7 @@ int main(int argc, char** argv) {
   original_choice = counted_choice;
   original_resolve = counted_resolve;
   original_choice_event = counted_input;
+  selection_view_cases(f);
   install_gate_cases(f);
   original_three_cases(f);
   tobacco_guard_cases(f);
