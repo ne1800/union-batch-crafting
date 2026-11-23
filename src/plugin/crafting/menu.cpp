@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT
 #include "runtime.hpp"
-#include "ubc/stations/grind/grind_preview_stability.hpp"
 
 namespace ubc_native {
 namespace {
 // A rejected view also defers notices until the player leaves this station.
 std::uint32_t rejected_view_station = 0;
 ubc::CraftingPreviewCache preview_cache;
-ubc::GrindPreviewStability grind_stability;
-constexpr auto grind_pool_head = ubc::bow_item_native::node_pool + 12;
 
 const char* menu_open_fields() noexcept {
   return ui.uses_workshop_screen_init()
@@ -155,7 +152,6 @@ void report_grind_recompute(ULONGLONG started, std::uint32_t quantity, bool seal
 Capture capture_opening(const Context& c, ubc::BowMenuTrace* trace) noexcept {
   if (c.kind != cat::Station::grind)
     return capture(c, nullptr, trace);
-  grind_stability.reset();
   const auto started = grind_counter();
   auto inputs = preview_key(c);
   // A new generation has no selected recipe until session.open() chooses one.
@@ -197,70 +193,47 @@ void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept 
     return false;
   };
   const auto* gate = preview_gate(c);
-  const bool cacheable = !gate;
-  const bool can_wait =
-      cacheable && before.owner.kind == cat::Station::grind && session.phase() == Phase::selecting;
-  const bool resuming = can_wait && grind_stability.active();
-  if (!can_wait)
-    grind_stability.reset();
-  if (resuming &&
-      grind_stability.waiting(before.owner, live_memory, grind_pool_head, frame, input)) {
-    session.set_preview_pending(true);
-    diagnostic.captured = GetTickCount64();
-    return;
-  }
-  session.set_preview_pending(false);
-  if (gate)
-    preview_cache.invalidate({"gate", gate});
-  if (cacheable && !resuming && preview_cache.reuse(session.phase(), before, live_memory) &&
-      still_current()) {
+  const auto recapture = [&](const PreviewMiss& miss) {
+    ubc::CraftingPreviewCache::GrindUnits units{};
+    bool grind_sealed = false;
+    std::optional<PreviewRecording> recording;
+    if (!gate)
+      recording.emplace(preview_cache, before);
+    {
+      std::optional<GrindPreviewLease> shared_grind;
+      if (session.phase() != Phase::original && c.kind == cat::Station::grind) {
+        shared_grind.emplace(c);
+        report_grind_preview_failure(*shared_grind);
+        grind_sealed = shared_grind->ready;
+      }
+      const auto* shared = shared_grind ? &*shared_grind : nullptr;
+      if (session.phase() != Phase::original)
+        session.refresh(capture(c, shared).snapshot);
+      diagnostic.captured = GetTickCount64();
+      if (session.phase() != Phase::original) {
+        observe_bow_quantity(c);
+        observe_cool_quantity(c);
+        observe_grind_quantity(c, shared);
+        if (recording && shared)
+          units = verified_units(c, *shared, session.preview());
+      }
+    }
+    // Neither recording nor a frame-bound grind publication survives into a
+    // restored-view capture, the handoff, or an effect callback.
+    const auto* dialog_change = recording ? recording->dialog_change : nullptr;
+    recording.reset();
+    if (!gate && !dialog_change && still_current())
+      preview_cache.finish(before, session.can_confirm(), units);
+    else if (dialog_change)
+      preview_cache.invalidate({"capture", dialog_change});
+    if (c.kind == cat::Station::grind && session.phase() != Phase::original)
+      report_grind_recompute(started, session.quantity(), grind_sealed, miss);
+  };
+  if (preview_cache.reuse_or_capture(session.phase(), before, live_memory, gate, still_current,
+                                     recapture)) {
     diagnostic.captured = GetTickCount64();
     observe_cached_quantity(c);
-    return;
   }
-  const auto miss = resuming ? grind_stability.reason() : preview_cache.miss();
-  if (can_wait && !resuming &&
-      grind_stability.start(miss, before.owner, live_memory, grind_pool_head, frame, input)) {
-    report_grind_miss(miss);
-    session.set_preview_pending(true);
-    diagnostic.captured = GetTickCount64();
-    return;
-  }
-  preview_cache.invalidate();
-  ubc::CraftingPreviewCache::GrindUnits units{};
-  bool grind_sealed = false;
-  std::optional<PreviewRecording> recording;
-  if (cacheable)
-    recording.emplace(preview_cache, before);
-  {
-    std::optional<GrindPreviewLease> shared_grind;
-    if (session.phase() != Phase::original && c.kind == cat::Station::grind) {
-      shared_grind.emplace(c);
-      report_grind_preview_failure(*shared_grind);
-      grind_sealed = shared_grind->ready;
-    }
-    const auto* shared = shared_grind ? &*shared_grind : nullptr;
-    if (session.phase() != Phase::original)
-      session.refresh(capture(c, shared).snapshot);
-    diagnostic.captured = GetTickCount64();
-    if (session.phase() != Phase::original) {
-      observe_bow_quantity(c);
-      observe_cool_quantity(c);
-      observe_grind_quantity(c, shared);
-      if (recording && shared)
-        units = verified_units(c, *shared, session.preview());
-    }
-  }
-  // Neither recording nor a frame-bound grind publication survives into a
-  // restored-view capture, the handoff, or an effect callback.
-  const auto* dialog_change = recording ? recording->dialog_change : nullptr;
-  recording.reset();
-  if (cacheable && !dialog_change && still_current())
-    preview_cache.finish(before, session.can_confirm(), units);
-  else if (dialog_change)
-    preview_cache.invalidate({"capture", dialog_change});
-  if (c.kind == cat::Station::grind && session.phase() != Phase::original)
-    report_grind_recompute(started, session.quantity(), grind_sealed, miss);
 }
 }
 

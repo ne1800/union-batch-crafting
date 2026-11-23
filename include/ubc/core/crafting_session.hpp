@@ -138,7 +138,7 @@ public:
   }
   bool can_confirm() const noexcept {
     const auto* state = selected();
-    return !preview_pending_ && state &&
+    return state &&
            crafting_quantity_block_reason(*state, quantity()) == CraftingBlockReason::none &&
            quantity() && quantity() <= maximum() && quantity_ready();
   }
@@ -281,13 +281,7 @@ public:
   const CraftingSnapshot& preview() const noexcept { return snapshot_; }
   SelectionPhase phase() const noexcept { return phase_; }
   SelectionIssue issue() const noexcept { return issue_; }
-  bool armed() const noexcept { return !preview_pending_ && input_.armed(); }
-  bool preview_pending() const noexcept { return preview_pending_; }
-  void set_preview_pending(bool pending) noexcept {
-    preview_pending_ = pending;
-    if (pending)
-      quantity_checked_ = false;
-  }
+  bool armed() const noexcept { return input_.armed(); }
   bool return_ready() const noexcept {
     return phase_ == SelectionPhase::original && input_.armed();
   }
@@ -308,7 +302,7 @@ private:
   CraftingRequest pending_{};
   crafting_catalog::RecipeId selected_id_ = 0;
   bool have_selection_ = false;
-  bool quantity_checked_ = false, preview_pending_ = false;
+  bool quantity_checked_ = false;
   bool observed_frame_valid_ = false;
   crafting_catalog::RecipeId checked_id_ = UINT32_MAX;
   std::uint32_t checked_quantity_ = 0;

@@ -147,11 +147,6 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
   frame = {};
   if (!dimensions(width, height) || !valid_crafting_snapshot(session.preview()))
     return false;
-  if (session.preview_pending()) {
-    frame.valid = append(frame, 300, 280, text[L::title], 40) &&
-                  append(frame, 520, 800, text[L::tool_stock_unknown], 40);
-    return frame.valid;
-  }
   const bool narrow = width < 1600 || height < 900;
   constexpr int left = 300 + marker_gap;
   constexpr int wide_right = 4860;

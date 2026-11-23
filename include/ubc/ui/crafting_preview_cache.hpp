@@ -214,6 +214,22 @@ public:
     return false;
   }
 
+  // A miss must refresh the session before this frame is drawn. Preserve its
+  // reason across begin(), which starts recording the new dependencies.
+  template <class Current, class Capture>
+  bool reuse_or_capture(SelectionPhase phase, const CraftingPreviewKey& key,
+                        const ReadOnlyMemory& live, const char* gate, Current current,
+                        Capture capture) noexcept {
+    if (gate)
+      invalidate({"gate", gate});
+    else if (reuse(phase, key, live) && current())
+      return true;
+    const auto miss = miss_;
+    invalidate();
+    capture(miss);
+    return false;
+  }
+
 private:
   bool unit_verified(const CraftingPreviewKey& key) const noexcept {
     if (key.owner.kind != crafting_catalog::Station::grind || key.quantity != 1)
