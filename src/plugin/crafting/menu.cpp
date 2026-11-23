@@ -5,6 +5,12 @@ namespace ubc_native {
 namespace {
 // A rejected view also defers notices until the player leaves this station.
 std::uint32_t rejected_view_station = 0;
+
+const char* menu_open_fields() noexcept {
+  return ui.uses_workshop_screen_init()
+             ? R"(,"field":"zCMenu::ScreenInit","status":"L'Hiver Workshop stack, patch source pending live identification")"
+             : "";
+}
 }
 
 bool render_selection(const Context* observed = nullptr, const uidiag::Frame* poll = nullptr,
@@ -102,7 +108,7 @@ bool open_success_notice(const Context& c) noexcept {
     if (c.valid && c.dialog.waiting && c.dialog.open)
       borrow_view(c);
     event("success_notice_opened", static_cast<int>(pending_success.id),
-          static_cast<int>(pending_success.quantity));
+          static_cast<int>(pending_success.quantity), menu_open_fields());
     return true;
   }
   if (const char* reason = ui.open_rejection()) {
@@ -116,7 +122,7 @@ bool open_success_notice(const Context& c) noexcept {
 
 bool open_failure_notice(const Context& c) noexcept {
   if (ui.open_failure() && notice_view_valid(c)) {
-    event("failure_notice_opened");
+    event("failure_notice_opened", 0, 0, menu_open_fields());
     return true;
   }
   if (const char* reason = ui.open_rejection()) {
@@ -499,7 +505,8 @@ void __fastcall after_frame(void* game, void* manager) {
               }
             }
           } else if (show_selection_view(c, borrow_view)) {
-            event("ui_open", static_cast<int>(c.kind), static_cast<int>(session.visible_count()));
+            event("ui_open", static_cast<int>(c.kind), static_cast<int>(session.visible_count()),
+                  menu_open_fields());
             ui_diagnostic_events(
                 ui_diagnostic.begin(session.preview().key.generation, GetTickCount64()));
             if (c.kind == cat::Station::grind || c.kind == cat::Station::bow) {

@@ -67,6 +67,7 @@ public:
   void inspect_open(BowMenuTrace&) const noexcept;
   bool open(BowMenuTrace* trace = nullptr, BowMenuTrace* opened_trace = nullptr) noexcept;
   const char* open_rejection() const noexcept { return window_.open_rejection(); }
+  bool uses_workshop_screen_init() const noexcept { return window_.uses_workshop_screen_init(); }
   crafting_ui::BackdropResult apply_backdrop() noexcept;
   bool has_valid_view() noexcept { return menu_view().get() != nullptr; }
   bool text_view_rejected() const noexcept { return text_view_rejected_; }

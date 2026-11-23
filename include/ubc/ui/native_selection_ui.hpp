@@ -15,6 +15,7 @@ public:
   bool can_open(BowMenuTrace* trace) const noexcept;
   bool open(BowMenuTrace* trace = nullptr, BowMenuTrace* opened_trace = nullptr) noexcept;
   const char* open_rejection() const noexcept { return open_rejection_; }
+  bool uses_workshop_screen_init() const noexcept { return workshop_screen_init_; }
   void clear_open_rejection() noexcept { open_rejection_ = nullptr; }
   void close() noexcept;
   bool render(const SelectionSession&, OriginalRecipe, bool execution_enabled) noexcept;
@@ -30,6 +31,7 @@ public:
 private:
   native_menu::MenuStorage storage_{};
   bool created_ = false, initialized_ = false;
+  bool workshop_screen_init_ = false;
   const char* open_rejection_ = nullptr;
   ui_text::Language language_ = &ui_text::en::table;
   unsigned row_ = 0;
