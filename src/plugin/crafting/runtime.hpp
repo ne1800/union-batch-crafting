@@ -49,7 +49,7 @@ struct GrindPreviewLease {
   int failure_stage = 1, read_issue = -1;
   ubc::GrindCheck check{};
   shpreview::Statistics statistics{};
-  explicit GrindPreviewLease(const Context& c) noexcept;
+  explicit GrindPreviewLease(const Context& c, bool include_selection = true) noexcept;
   ~GrindPreviewLease();
   GrindPreviewLease(const GrindPreviewLease&) = delete;
   GrindPreviewLease& operator=(const GrindPreviewLease&) = delete;

@@ -63,6 +63,58 @@ void observe_cached_quantity(const Context& c) noexcept {
                                   request.quantity};
 }
 
+ubc::CraftingPreviewCache::GrindUnits
+verified_units(const Context& c, const GrindPreviewLease& lease,
+               const ubc::CraftingSnapshot& snapshot) noexcept {
+  ubc::CraftingPreviewCache::GrindUnits units{};
+  const auto* published = lease.view(grind_key(c));
+  if (published && ubc::valid_crafting_snapshot(snapshot)) {
+    for (std::size_t i = 0; i < units.size(); ++i) {
+      const auto& row = snapshot.recipes[cat::grind_begin + i];
+      const ubc::CraftingRequest request{row.id, 1, snapshot.key, row, snapshot.hands};
+      units[i] = ubc::crafting_handoff_detail::valid_request(request) &&
+                 shpreview::quantity_matches(*published, request);
+    }
+  }
+  return units;
+}
+
+void report_grind_recompute(ULONGLONG started, std::uint32_t quantity, bool sealed) noexcept {
+  const auto elapsed = GetTickCount64() - started;
+  char fields[160]{};
+  if (sealed && grind_preview_reader) {
+    const auto& timing = grind_preview_reader->read_set();
+    std::snprintf(fields, sizeof(fields),
+                  R"(,"record_ms":%llu,"replay_ms":%llu,"seal_ms":%llu,"spans":%u,"calls":%llu)",
+                  timing.frozen - timing.start, timing.replayed - timing.frozen,
+                  timing.sealed - timing.replayed, static_cast<unsigned>(timing.statistics().spans),
+                  timing.statistics().recording_calls);
+  }
+  event("grind_preview_recompute", static_cast<int>(elapsed), static_cast<int>(quantity), fields);
+}
+
+Capture capture_opening(const Context& c, ubc::BowMenuTrace* trace) noexcept {
+  if (c.kind != cat::Station::grind)
+    return capture(c, nullptr, trace);
+  const auto started = GetTickCount64();
+  auto inputs = preview_key(c);
+  // A new generation has no selected recipe until session.open() chooses one.
+  inputs.selection = UINT32_MAX;
+  inputs.quantity = 0;
+  const auto serial = grind_preview_input_serial;
+  PreviewRecording recording(preview_cache, inputs);
+  GrindPreviewLease opening(c, false);
+  report_grind_preview_failure(opening);
+  auto result = capture(c, &opening);
+  const auto portions = verified_units(c, opening, result.snapshot);
+  if (recording.consistent && serial == grind_preview_input_serial && opening.ready)
+    preview_cache.finish(inputs, false, portions);
+  else
+    preview_cache.invalidate();
+  report_grind_recompute(started, 1, opening.ready);
+  return result;
+}
+
 void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept {
   const auto before = preview_key(c);
   const auto input = grind_preview_input_serial;
@@ -78,6 +130,8 @@ void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept 
     return;
   }
   preview_cache.invalidate();
+  ubc::CraftingPreviewCache::GrindUnits units{};
+  bool grind_sealed = false;
   std::optional<PreviewRecording> recording;
   if (cacheable)
     recording.emplace(preview_cache, before);
@@ -86,6 +140,7 @@ void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept 
     if (session.phase() != Phase::original && c.kind == cat::Station::grind) {
       shared_grind.emplace(c);
       report_grind_preview_failure(*shared_grind);
+      grind_sealed = shared_grind->ready;
     }
     const auto* shared = shared_grind ? &*shared_grind : nullptr;
     if (session.phase() != Phase::original)
@@ -95,6 +150,8 @@ void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept 
       observe_bow_quantity(c);
       observe_cool_quantity(c);
       observe_grind_quantity(c, shared);
+      if (recording && shared)
+        units = verified_units(c, *shared, session.preview());
     }
   }
   // Neither recording nor a frame-bound grind publication survives into a
@@ -102,9 +159,11 @@ void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept 
   const bool consistent = recording && recording->consistent;
   recording.reset();
   if (consistent && still_current())
-    preview_cache.finish(before, session.can_confirm());
+    preview_cache.finish(before, session.can_confirm(), units);
   else
     preview_cache.invalidate();
+  if (c.kind == cat::Station::grind && session.phase() != Phase::original)
+    report_grind_recompute(diagnostic.capturing, session.quantity(), grind_sealed);
 }
 }
 
@@ -547,7 +606,8 @@ void __fastcall after_frame(void* game, void* manager) {
           // now exists. The original dialog is still visible.
           if (!disabled)
             initialize_cool(c);
-          const auto captured = capture(c, nullptr, bow_trace);
+          const auto opening_serial = grind_preview_input_serial;
+          const auto captured = capture_opening(c, bow_trace);
           if (bow_trace) {
             bow_trace->equal("session.generation", 1,
                              session.accepts_generation(captured.snapshot.key.generation));
@@ -584,6 +644,12 @@ void __fastcall after_frame(void* game, void* manager) {
               }
             }
           } else if (show_selection_view(c, borrow_view)) {
+            if (c.kind == cat::Station::grind) {
+              const auto borrowed = context();
+              if (grind_preview_input_serial != opening_serial || !can_reuse_preview(borrowed) ||
+                  !preview_cache.bind_open_grind(preview_key(borrowed)))
+                preview_cache.invalidate();
+            }
             event("ui_open", static_cast<int>(c.kind), static_cast<int>(session.visible_count()),
                   menu_open_fields());
             ui_diagnostic_events(

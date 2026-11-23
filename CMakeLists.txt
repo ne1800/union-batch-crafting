@@ -12,6 +12,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 include(cmake/ui_languages.cmake)
 
+add_executable(
+    ubc_grind_preview_benchmark
+    EXCLUDE_FROM_ALL
+    benchmarks/grind_preview.cpp
+)
+target_include_directories(ubc_grind_preview_benchmark PRIVATE include)
+
 add_executable(ubc_core_tests tests/native/core/core_tests.cpp)
 target_include_directories(ubc_core_tests PRIVATE include)
 add_executable(ubc_sha256_tests tests/native/core/sha256_tests.cpp)

@@ -74,9 +74,9 @@ bool configure(const Config& incoming) noexcept {
   return true;
 }
 Diagnostics diagnostics() noexcept {
-  const auto value = atomic_read(gate);
+  const auto value = ReadAcquire(&gate);
   return {value > 0 ? static_cast<std::uint32_t>(value) : 0, value == writer_bit,
-          atomic_read(disabled) != 0};
+          ReadAcquire(&disabled) != 0};
 }
 bool writer_undisturbed(const WriterScope& scope) noexcept {
   if (scope.call.thread != GetCurrentThreadId() || scope.call.parser != config.parser ||

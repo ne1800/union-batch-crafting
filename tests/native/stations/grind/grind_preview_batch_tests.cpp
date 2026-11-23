@@ -383,6 +383,26 @@ void low_level() {
               ledger->memory().copy(UINT32_MAX, &v, 1) && ledger->seal(),
           "last single 32-bit byte is representable without overflow");
   }
+  // Exercise both size classes, their shared boundaries, hash collisions, and
+  // a long containing interval whose start is on the preceding page.
+  for (const bool changed : {false, true}) {
+    Image image;
+    fill(image, 0x1000, 0x41040);
+    Frames frame;
+    auto ledger = std::make_unique<Ledger>();
+    std::array<std::uint8_t, batch::max_span_bytes> buffer{};
+    ledger->begin(image.memory(), frame.source(), frame.value, 7);
+    const auto source = ledger->memory();
+    check(source.copy(0x1fff, buffer.data(), 4096) && source.copy(0x41ffe, buffer.data(), 2) &&
+              source.copy(0x2040, buffer.data(), 64) && source.copy(0x203f, buffer.data(), 65) &&
+              ledger->statistics().overlaps == 3,
+          "indexed intersections count every agreeing pair once");
+    if (changed)
+      *image.at(0x207f, 1) ^= 1;
+    check(source.copy(0x207f, buffer.data(), 1) == !changed &&
+              (changed ? ledger->issue() == Issue::overlap : ledger->statistics().overlaps == 6),
+          "one changed byte in a nested or cross-page overlap rejects immediately");
+  }
   // World run 31: 430 listed objects exhausted 4096 spans. These 5000
   // synthetic reads establish only the limit, NOT the full world requirement.
   for (unsigned changed = 0; changed < 2; ++changed) {

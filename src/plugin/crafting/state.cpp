@@ -116,7 +116,7 @@ alignas(ubc::GrindRecipeCatalogueCapture)
 bool grind_capture_leased = false;
 std::array<GrindPreviewDiagnostic, shcat::recipes.size()> grind_preview_diagnostic{};
 std::optional<shitem::Reader> grind_item_reader;
-std::optional<shpreview::Reader> grind_preview_reader;
+std::optional<GrindMenuReader> grind_preview_reader;
 shpreview::Publication grind_preview_publication;
 std::uint64_t grind_preview_serial = 0, grind_preview_input_serial = 0;
 unsigned grind_preview_input_depth = 0;
