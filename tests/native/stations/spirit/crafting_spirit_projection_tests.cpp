@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "ubc/stations/spirit/crafting_spirit_projection.hpp"
+#include "../../helpers/equipped_ingredient.hpp"
 #define UBC_SPIRIT_EXECUTION_TEST_EMBEDDED
 #include "spirit_execution_tests.cpp"
 #define UBC_CRAFTING_FIXTURE_ONLY
@@ -223,6 +224,15 @@ void effect_entry(ubc::SpiritCraftingCapture& c) {
   e.code_address = e.branch.layout.code + sc::recipes[0].callback->byte_offset;
 }
 void material_and_entry() {
+  {
+    spirit_crafting_test::Fixture marked;
+    marked.storage({{16604, 5}}, "ITAT_STING:20E");
+    auto raw = spirit_crafting_test::reader.capture(marked.image.memory(), marked.input);
+    material_contract(raw);
+    const auto projected = ubc::project_capture(raw);
+    CHECK(ubc::valid_crafting_snapshot(projected) &&
+          equipped_test::localized(projected.recipes[ubc::crafting_catalog::spirit_begin]));
+  }
   spirit_crafting_test::Fixture f;
   auto preview = spirit_crafting_test::reader.capture(f.image.memory(), f.input);
   material_contract(preview);

@@ -105,6 +105,7 @@ inline CraftingSnapshot project_capture(const CoolRecipeCatalogueCapture& source
       m.hand_known && d.hands_unchanged && d.hand_issue == StationHandReadIssue::none;
   value.material_verified =
       value.material_known && value.hand_known && m.known() && m.ingredients_verified;
+  value.equipped_ingredient = value.material_known && m.equipped_ingredient;
   for (std::size_t i = 0; i < value.target_count; ++i) {
     auto& row = value.materials[i];
     const auto& original = m.rows[i];

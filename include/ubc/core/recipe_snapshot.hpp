@@ -34,6 +34,7 @@ struct RecipeReadDiagnostic {
   runtime_script::RuntimeContract profile{};
   recipe_runtime::Knowledge knowledge{};
   RecipeMaterialIssue material_issue = RecipeMaterialIssue::none;
+  bool equipped_ingredient = false;
 };
 struct RecipeCatalogueDiagnostic {
   RecipeCatalogueIssue issue = RecipeCatalogueIssue::none;
@@ -206,6 +207,7 @@ public:
       const auto material = recipe_material(descriptor, projected, result.hands, 0, rows_.data(),
                                             rows_.size(), hand_contract_verified[i]);
       detail.material_issue = material.issue;
+      detail.equipped_ingredient = material.equipped_ingredient;
       state.material_known = material.inventory_known;
       state.hand_known = material.hand_known;
       state.maximum = material.maximum;

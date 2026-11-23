@@ -64,6 +64,7 @@ struct StationRecipeMaterial {
   StationRecipeMaterialIssue issue = StationRecipeMaterialIssue::none;
   StationRecipeHandIssue hand_issue = StationRecipeHandIssue::none;
   bool inventory_known = false, hand_known = false, craftable = false;
+  bool equipped_ingredient = false;
   std::uint32_t maximum = 0, quantity = 0;
   std::size_t count = 0;
   station_recipe_catalog::Completion completion =
@@ -240,6 +241,8 @@ station_recipe_material(const station_recipe_catalog::Descriptor& descriptor,
          (item.listed > 0 && item.packed > 0)))
       result.issue = Issue::ambiguous_ingredient;
   }
+  result.equipped_ingredient = result.issue == Issue::ambiguous_ingredient &&
+                               common::equipped_ingredient(inventory, descriptor.costs);
   result.hand_issue = detail::check_hands(descriptor, inventory, observed, hand_contract_verified);
   result.hand_known = result.hand_issue == StationRecipeHandIssue::none;
   if (!result.hand_known && result.issue == Issue::none)

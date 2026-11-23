@@ -2,6 +2,7 @@
 #pragma once
 
 #include "ubc/stations/grind/grind_recipe_material.hpp"
+#include "ubc/stations/grind/grind_item_shape.hpp"
 #include "ubc/stations/grind/grind_recipe_runtime.hpp"
 #include "ubc/stations/station_recipe_snapshot.hpp"
 
@@ -277,6 +278,14 @@ public:
       // Empty all-quantification would be no type proof here.
       if (!out.items[i].listed_count)
         out.items[i].fields_known = out.items[i].exact_item_type = false;
+      const auto& item = out.items[i];
+      if (item.active_bit_seen && item.listed_count == 1 && item.exact_item_type) {
+        const auto* shape = grind_item_shape::find(static_cast<std::uint32_t>(item.symbol));
+        if (shape)
+          out.stocks[i].listed_problem = recipe_material_detail::listed_ingredient_problem(
+              item.mainflag == shape->mainflag, item.flags, shape->native_flags,
+              item.slot_alias_seen);
+      }
     }
     RecipeInventory projected;
     projected.header_known = inventory.header_known;

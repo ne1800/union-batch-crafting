@@ -35,7 +35,7 @@ Open a supported station. Use Up/Down to select a known recipe, Tab to change fo
 
 The `>` arrow marks the active control. When you edit an amount, `[x]` marks the selected recipe in the list. Page Up adds five and Page Down subtracts five. An ingredient marked as held counts toward the amount used.
 
-Blocked recipes show the reason in brackets, such as “[missing ingredients]” or “[no space]”. The craft action shows the reason for the selected amount when known. While its availability is being checked, it shows “[locked]”.
+Blocked recipes show the reason in brackets, such as “[missing ingredients]” or “[no space]”. If you see “[equipped]”, unequip the ingredient first. The craft action shows the reason for the selected amount when known. While its availability is being checked, it shows “[locked]”.
 
 <a id="configuration"></a>
 

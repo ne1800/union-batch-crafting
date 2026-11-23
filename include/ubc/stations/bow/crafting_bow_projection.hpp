@@ -71,6 +71,7 @@ inline CraftingSnapshot project_capture(const BowRecipeCatalogueCapture& source,
         s.material.hand_known && d.hands_unchanged && d.hand_issue == StationHandReadIssue::none;
     value.material_verified = value.material_known && value.hand_known && s.material.known() &&
                               s.ingredient_objects_verified;
+    value.equipped_ingredient = value.material_known && s.material.equipped_ingredient;
     value.maximum = s.material.maximum;
     for (std::size_t j = 0; j < value.target_count; ++j) {
       auto& row = value.materials[j];

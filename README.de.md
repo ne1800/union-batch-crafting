@@ -13,7 +13,7 @@ Ein Union-Plugin für Gothic II: Die Nacht des Raben mit der Mod Marcello L’Hi
 - Ein Mengenmenü für 98 Rezeptprofile an neun Stationen: Herd, Alchemietisch, Lederbank, Säge, Esse, Amboss, Bogenbank, Kühlbecken und Schleifstein.
 - Vorgaben für 1, 5, 10 und Maximum sowie jede freie Menge bis zur Materialgrenze.
 - Benötigtes Material, aktueller Vorrat und eine Vorschau des Ergebnisses für die gewählte Menge.
-- Gesperrte Rezepte nennen den Grund, etwa „[Zutaten fehlen]“ oder „[Platz fehlt]“.
+- Gesperrte Rezepte nennen den Grund, etwa „[ausgerüstet]“, „[Zutaten fehlen]“ oder „[Platz fehlt]“.
 - Ein Auftrag läuft nur, wenn Material und Stationsbedingungen zum geprüften Rezept passen. Sonst bleibt die Originalauswahl des Spiels verfügbar.
 - Deutsche und englische Menüs, erkannt am Spieltext oder in `Gothic.INI` festgelegt. Weitere Sprachen lassen sich im Quellcode als Texttabelle ergänzen.
 - Bedienung per Tastatur und mit der vorhandenen Controllerbelegung des Spiels.

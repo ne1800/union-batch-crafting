@@ -2,6 +2,7 @@
 #pragma once
 #include "ubc/stations/bow/bow_recipe_runtime.hpp"
 #include "ubc/stations/station_recipe_snapshot.hpp"
+#include <algorithm>
 
 namespace ubc {
 struct BowMaterialRow : RecipeMaterialRow {
@@ -25,6 +26,7 @@ enum class BowMaterialIssue {
 struct BowMaterial {
   BowMaterialIssue issue = BowMaterialIssue::none;
   bool inventory_known = false, hand_known = false, ingredients_verified = false, craftable = false;
+  bool equipped_ingredient = false;
   std::uint32_t maximum = 0, quantity = 0;
   std::size_t count = 0;
   bool known() const noexcept {
@@ -126,6 +128,9 @@ inline BowMaterial bow_recipe_material(const bow_recipe_catalog::Descriptor& des
   out.ingredients_verified = listed_ingredient_contract_verified;
   if (out.issue == Issue::none && !out.ingredients_verified)
     out.issue = Issue::ingredient_objects;
+  out.equipped_ingredient =
+      (out.issue == Issue::ambiguous_ingredient || out.issue == Issue::ingredient_objects) &&
+      math::equipped_ingredient(inventory, d.costs, d.minima);
   std::uint64_t maximum = d.callback.maximum_quantity;
   const bool representable = quantity <= d.callback.maximum_quantity;
   for (std::size_t i = 0; i < out.count; ++i) {
@@ -302,8 +307,7 @@ public:
     auto inventory = read_packed_inventory<bow_recipe_target_capacity>(
         memory, key.hero, targets_.data(), count_, true, inventory_);
     d.hand_issue = hand::begin_hands(memory, key.hero, hands_);
-    std::array<bool, bow_recipe_target_capacity> items_valid{};
-    items_valid.fill(true);
+    std::array<IngredientProblem, bow_recipe_target_capacity> listed_problems{};
     std::size_t objects = 0;
     const bool class_verified =
         !inventory.listed_nodes || bow_recipe_snapshot_detail::item_class(memory);
@@ -332,13 +336,14 @@ public:
         // InitByScript at 711CA0..711CBC combines MainFlag into flags with bitwise OR.
         // MultiSlot at 7125A0 accepts inactive category 4 weapons without ITEM_MULTI.
         // This narrow contract binds the exact canonical flags and all slot aliases.
-        const bool matches =
-            class_verified && field.known && expected && field.type == hand_detail::item_vtable &&
-            field.mainflag == expected->mainflag && field.flags == expected->native_flags &&
-            !(field.flags & 0x40000000u) && !alias && hands_.captured;
+        const bool known_type = class_verified && field.known && expected &&
+                                field.type == hand_detail::item_vtable &&
+                                field.mainflag == expected->mainflag && hands_.captured;
+        const auto problem = recipe_material_detail::listed_ingredient_problem(
+            known_type, field.flags, expected ? expected->native_flags : 0u, alias);
         for (std::size_t j = 0; j < count_; ++j)
           if (targets_[j].symbol == symbol)
-            items_valid[j] = items_valid[j] && matches;
+            listed_problems[j] = std::max(listed_problems[j], problem);
       }
     }
     for (std::size_t i = 0; i < cat::recipes.size(); ++i) {
@@ -426,9 +431,11 @@ public:
                      inventory.packed_occurrences[index],
                      inventory.duplicate_packed_target[index],
                      inventory.has_active_marker[index],
-                     inventory.mixed_representation[index]};
+                     inventory.mixed_representation[index],
+                     listed_problems[index]};
         if (cat::units(r.costs, r.targets[j].symbol) || cat::units(r.minima, r.targets[j].symbol))
-          s.ingredient_objects_verified = s.ingredient_objects_verified && items_valid[index];
+          s.ingredient_objects_verified =
+              s.ingredient_objects_verified && listed_problems[index] == IngredientProblem::none;
       }
       if (!mapped) {
         s.material.issue = BowMaterialIssue::target_mapping;

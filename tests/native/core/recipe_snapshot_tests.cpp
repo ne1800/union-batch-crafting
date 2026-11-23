@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "ubc/core/recipe_snapshot.hpp"
+#include "../helpers/equipped_ingredient.hpp"
 
 #include <array>
 #include <cstdio>
@@ -428,6 +429,18 @@ void alchemy_knowledge_reserve_and_limits() {
 }
 
 void ambiguity_and_hands() {
+  for (const auto station : {c::Station::stove, c::Station::alchemy}) {
+    Fixture fixture(station);
+    const bool stove = station == c::Station::stove;
+    fixture.stock({}, stove ? "ITFOMUTTONRAW:7E,ITMI_PAN:6" : entry(16714, 8) + "E");
+    auto raw = capture(fixture, station);
+    const auto index = index_of(stove ? c::RecipeId::meat : c::RecipeId::health_01);
+    raw.snapshot.recipes[index].contract = raw.diagnostic.recipes[index].profile.matches = true;
+    const auto snapshot = ubc::project_capture(raw);
+    check(ubc::valid_crafting_snapshot(snapshot) &&
+              equipped_test::localized(snapshot.recipes[index]),
+          "the unique packed E marker precedes missing ingredients at the stove and alchemy table");
+  }
   Fixture f(c::Station::alchemy);
   f.stock({{16714, 1}}, alchemy_stock());
   auto value = capture(f, c::Station::alchemy);
@@ -449,6 +462,9 @@ void ambiguity_and_hands() {
               value.diagnostic.recipes[index_of(c::RecipeId::health_01)].material_issue ==
                   ubc::RecipeMaterialIssue::ambiguous_ingredient,
           "duplicate or E-marked ingredient cannot grant production from known numeric totals");
+    check(value.diagnostic.recipes[index_of(c::RecipeId::health_01)].equipped_ingredient ==
+              (suffix == "E"),
+          "only the single E-marked ingredient identifies equipment");
   }
   f.stock({{16775, 1}}, alchemy_stock() + "," + entry(16775, 2));
   value = capture(f, c::Station::alchemy);

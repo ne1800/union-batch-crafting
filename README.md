@@ -13,7 +13,7 @@ A Union plugin for Gothic II: Night of the Raven with the Marcello L’Hiver DE 
 - One quantity menu for 98 recipe profiles at nine stations: stove, alchemy table, leather bench, saw, forge, anvil, bow bench, cooling tub and grindstone.
 - Presets for 1, 5, 10 and maximum, plus any custom amount up to the material limit.
 - Required materials, current stock and a preview of the result for the selected amount.
-- Blocked recipes name the reason, such as “[missing ingredients]” or “[no space]”.
+- Blocked recipes name the reason, such as “[equipped]”, “[missing ingredients]” or “[no space]”.
 - An order only runs when the materials and station conditions match the verified recipe. Otherwise the game’s original selection stays available.
 - German and English menus, detected from the game text or set in `Gothic.INI`. Further languages can be added to the source as text tables.
 - Keyboard controls and the game’s existing controller mapping.
