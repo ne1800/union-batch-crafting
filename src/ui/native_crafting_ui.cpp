@@ -257,12 +257,13 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
   const auto mark = [&](CraftingMenuRow row, unsigned column = 0) -> const char* {
     return menu.row() == row && menu.column() == column ? ">" : nullptr;
   };
-  std::snprintf(line, sizeof(line), text[L::quantity], session.quantity(), session.maximum(),
-                d ? text[ui_text::unit(d->quantity_unit)] : "");
-  if (d && d->bow)
+  if (!d || !session.quantity())
+    std::snprintf(line, sizeof(line), "%s", text[d ? L::zero_quantity : L::no_quantity]);
+  else if (d->bow)
     std::snprintf(line, sizeof(line), text[L::bow_quantity], session.quantity(), session.maximum());
-  if (!session.quantity())
-    std::snprintf(line, sizeof(line), "%s", text[L::zero_quantity]);
+  else
+    std::snprintf(line, sizeof(line), text[L::quantity], session.quantity(), session.maximum(),
+                  text[ui_text::unit(d->quantity_unit)]);
   if (!choice(frame, right, narrow ? 3050 : 1450, line, detail_limit,
               mark(CraftingMenuRow::quantity)))
     return false;
@@ -319,7 +320,7 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
         continue;
       const auto hand = crafting_catalog::hand_amounts(*d, row.symbol);
       const auto p = crafting_amount_preview(row, session.quantity() ? session.quantity() : 1);
-      if (hand.tool)
+      if (hand.tool && p.end_known)
         std::snprintf(line, sizeof(line), text[L::tool_held], text.item(row.symbol));
       else if (hand.consumed) {
         char held[96];
@@ -346,16 +347,17 @@ bool compose(Frame& frame, const CraftingSession& session, CraftingMenu& menu, b
         if (row.stored < 0)
           std::snprintf(line, sizeof(line), "%s", text[L::tool_stock_unknown]);
         else if (!p.end_known)
-          std::snprintf(line, sizeof(line), text[L::return_unknown], row.stored, row.stored);
+          std::snprintf(line, sizeof(line), text[L::return_unknown], row.stored);
         else
-          std::snprintf(line, sizeof(line), text[L::tool_balance],
-                        static_cast<long long>(p.ready_storage),
-                        static_cast<long long>(p.end_storage));
-      } else if (!p.available_known)
+          std::snprintf(
+              line, sizeof(line), text[L::output_balance], static_cast<long long>(p.ready_storage),
+              static_cast<long long>(row.tool_reserve), static_cast<long long>(p.end_storage));
+      } else if (!p.available_known) {
+        const auto needed = row.fixed_minimum ? p.original_minimum : p.required;
         std::snprintf(line, sizeof(line), text[L::stock_unknown],
                       row.unit_output ? text[L::output] : text[L::required],
-                      static_cast<long long>(row.unit_output ? p.produced : p.required));
-      else if (row.unit_output)
+                      static_cast<long long>(row.unit_output ? p.produced : needed));
+      } else if (row.unit_output)
         std::snprintf(line, sizeof(line), text[L::output_balance],
                       static_cast<long long>(p.available - p.required),
                       static_cast<long long>(p.produced), static_cast<long long>(p.ready_storage));

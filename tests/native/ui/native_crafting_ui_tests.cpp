@@ -4,6 +4,7 @@
 #ifdef _WIN32
 #include "../../../src/ui/native_ui_language.hpp"
 #endif
+#include <algorithm>
 #include <string>
 #include <vector>
 #define UBC_CRAFTING_FIXTURE_ONLY
@@ -311,18 +312,72 @@ void test_focus_and_controls() {
         check(menu.on_action(ubc::CraftingMenuAction::next, session),
               "Tab advances to the next control");
       }
-      recipe.material_known = recipe.material_verified = false;
+      recipe.material_known = recipe.material_verified = recipe.hand_known = false;
       recipe.maximum = 0;
-      for (auto& material : recipe.materials)
+      for (auto& material : recipe.materials) {
         if (material.unit_output)
           material.stored = -1;
+        if (material.consumed_reserve)
+          material.consumed_reserve = -1;
+      }
       session.refresh(snapshot);
-      char unknown[96];
-      std::snprintf(unknown, sizeof(unknown), (*text)[L::stock_unknown], (*text)[L::output], 1LL);
+      const bool de = text == &ubc::ui_text::de::table;
       check(ui::compose(frame, session, menu, true, size[0], size[1], *text) &&
-                contains(frame, unknown),
-            "unknown starting stock retains its output-only fallback");
+                contains(frame, de ? "Vorrat unklar. Du erh\xe4ltst 1."
+                                   : "Stock is unknown. You get 1.") &&
+                contains_wrapped(frame, de ? "Laborwasserflasche (Anzahl in der Hand unklar)"
+                                           : "Lab water flask (number held is unknown)") &&
+                contains(frame,
+                         de ? "Vorrat unklar. Du brauchst 1." : "Stock is unknown. You need 1.") &&
+                contains(frame, de ? "Menge 0. Vorschau f\xfcr einen Durchgang."
+                                   : "Amount 0. Preview for one batch."),
+            "unknown stock and held amounts retain the one-batch cost and yield");
+      bounded(frame);
     }
+  }
+}
+
+void test_tool_return() {
+  for (const bool german : {false, true}) {
+    const auto& text = german ? ubc::ui_text::de::table : ubc::ui_text::en::table;
+    auto snapshot = example(Kind::saw);
+    auto& recipe = state(snapshot, 0x2001);
+    const auto saw = std::find_if(recipe.materials.begin(), recipe.materials.end(),
+                                  [](const auto& row) { return row.symbol == 16609; });
+    check(saw != recipe.materials.end(), "the arrow recipe includes its saw");
+    if (saw == recipe.materials.end())
+      continue;
+    saw->stored = 17;
+    ui::Frame frame;
+    ubc::CraftingSession session;
+    ubc::CraftingMenu menu;
+    const char* returned =
+        german ? "S\xe4ge (beim Verlassen zur\374ck)" : "Saw (returned when you leave)";
+    const auto draw = [&] { return ui::compose(frame, session, menu, true, 640, 480, text); };
+    check(session.open(snapshot, recipe.id) && draw() && contains(frame, returned) &&
+              contains(frame, "17 + 1 = 18") && contains(frame, german ? "Lose" : "lots") &&
+              contains(frame, german ? "Pfeil - Ausgabe" : "Arrow - output"),
+          "the held saw returns to inventory once and stays separate from arrow output");
+    bounded(frame);
+    recipe.hand_known = recipe.material_verified = false;
+    recipe.maximum = 0;
+    saw->tool_reserve = -1;
+    session.refresh(snapshot);
+    check(draw() && !contains(frame, returned) &&
+              contains(frame, german ? "17 im Inventar. R\374ckgabe offen."
+                                     : "17 in pack. Return is uncertain.") &&
+              !contains(frame, "17 +"),
+          "an unknown return keeps the known stock without promising a tool or a total");
+    bounded(frame);
+    recipe.material_known = false;
+    saw->stored = -1;
+    session.refresh(snapshot);
+    check(draw() &&
+              contains(frame, german ? "Unklar, wie viele im Inventar sind."
+                                     : "Your inventory count is unknown.") &&
+              !contains(frame, returned) && !contains(frame, "-1"),
+          "unknown tool stock has its own explanation without a fabricated count");
+    bounded(frame);
   }
 }
 
@@ -345,6 +400,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
   test_translations();
   test_list_boundaries();
   test_focus_and_controls();
+  test_tool_return();
   ui::Frame frame;
   std::set<std::int32_t> unknown_names;
   for (const auto& d : c::recipes) {
@@ -373,6 +429,14 @@ int main(int argc, [[maybe_unused]] char** argv) {
                        d.targets.count, dimensions[0], dimensions[1]);
         check(composed, "all canonical recipes compose at narrow and wide resolutions");
         bounded(frame);
+        if (d.grind)
+          check(contains(frame, language == &ubc::ui_text::de::table ? "Schleifkunst 98 auf 99"
+                                                                     : "Honing skill 98 to 99"),
+                "grinding labels the current and projected skill");
+        if (d.bow)
+          check(contains(frame, language == &ubc::ui_text::de::table ? "Wahl 1, Material f\xfcr 7"
+                                                                     : "Upgrade 1, parts for 7"),
+                "bow upgrades label the selected quantity and the material limit");
         if (d.id == 0xb002 && language == &ubc::ui_text::de::table) {
           char expected[64];
           std::snprintf(expected, sizeof(expected), "Menge: %u / %u Durchg\xe4nge",
@@ -540,16 +604,15 @@ int main(int argc, [[maybe_unused]] char** argv) {
     session.open(snapshot);
     neutral(session, f);
     check(ui::compose(frame, session, menu, true, 1280, 720, ubc::ui_text::de::table) &&
-              contains(frame, "Vorschau: 1 Durchgang") && contains(frame, "Bedarf"),
+              contains(frame, "Vorschau f\xfcr einen Durchgang.") && contains(frame, "Bedarf"),
           "known zero maximum labels one-cycle missing-material preview explicitly");
-    snapshot = example(Kind::saw);
-    ubc::CraftingSession saw;
-    saw.open(snapshot);
-    neutral(saw, f);
-    check(ui::compose(frame, saw, menu, true, 1280, 720, ubc::ui_text::de::table) &&
-              contains(frame, "Lose") && contains(frame, "S\xe4ge (Werkzeug") &&
-              contains(frame, "Lager=bereit") && contains(frame, "Pfeil - Ausgabe"),
-          "ammunition UI separates lots output and retained saw");
+    for (auto& recipe : snapshot.recipes)
+      recipe.known = false;
+    ubc::CraftingSession empty;
+    check(empty.open(snapshot) &&
+              ui::compose(frame, empty, menu, true, 640, 480, ubc::ui_text::de::table) &&
+              contains(frame, "Menge 0") && !contains(frame, "Durchgang"),
+          "an empty recipe list has no one-batch preview");
   }
   {
     auto snapshot = example(Kind::bow);
@@ -562,7 +625,7 @@ int main(int argc, [[maybe_unused]] char** argv) {
     neutral(session, f);
     check(
         ui::compose(frame, session, menu, true, 1280, 720, ubc::ui_text::de::table) &&
-            contains(frame, "Vorrat f\xfcr 7") && contains(frame, "Minimum 24") &&
+            contains(frame, "Wahl 2, Material f\xfcr 7") && contains(frame, "Minimum 24") &&
             contains(frame, " - 20 = ") && contains(frame, " - 24 = "),
         "Bow UI separates stock bound, original steel minimum and actual steel/leather consumption");
     check(session.preset(7) &&
