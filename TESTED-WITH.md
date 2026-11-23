@@ -27,6 +27,8 @@ In a separate 0.0.63 run, the same player DLL processed seven orders at the leat
 
 At the bow bench, each order with the 0.0.63 player DLL started from a fresh load of slot 14. Orders of two succeeded for the fine bow, hunting bow, crossbow and fine crossbow. Orders of one succeeded for the composite bow, ash bow and longbow. The two fine crossbows used two base weapons, eight raw steel and all eight leather. The complete inventory matched after every order. All 410 save files matched the backups after exit without saving and removal of the test DLL.
 
+The 0.0.64 acceptance run used a standalone copy of the Steam installation with the same 16 Workshop entries and the same launch command line without Steam. Backdrop code checks passed at the alchemy table and the outdoor saw with 160/255 translucent black opacity. At the alchemy table, Lou’s Booze at quantity zero displayed “Menge: 0. Vorschau für einen Durchgang.”, the held laboratory flask (`26 - 1 = 25`), the missing-ingredients reason and the hanging indent for the wrapped permanent dexterity line. Crafting two swamp tobaccos in slot 14 raised stock from 2 to 4 and consumed two apple tobaccos (6 to 4) and two flasks (26 to 24), while swampweed stayed at 116 and all 418 inventory counts matched. At the outdoor saw, the detail view showed “Säge (beim Verlassen zurück)” with the expected Windows-1252 bytes and `17 + 1 = 18`; returning to the original saw controls preserved all 418 inventory counts. After a normal exit without saving and removal of the player DLL, all 38 save files in the test copy matched the fresh backup, and the Steam installation was verified unchanged before and after.
+
 Die Prüfsummen identifizieren die Referenz früherer Spieltests. Engine-Prüfstellen und Rezeptverträge bestimmen die verfügbaren Mengenpfade. Einzelne native Inventarpfade erfordern außerdem bestimmte Modullayouts.
 
 Die Spieler-DLL aus 0.0.57 lud ohne Marker. Am Alchemietisch verbrauchte die Herstellung von zwei Sumpftabaken zwei Apfeltabake und zwei Laborwasserflaschen. Das Sumpfkraut blieb erhalten. Das Paket 0.0.58 enthält diesen Nachweis und dieselbe DLL.
@@ -45,6 +47,8 @@ In einem weiteren Lauf mit derselben Spieler-DLL 0.0.63 wurden nach einmaligem L
 
 An der Bogenbank begann jeder Auftrag mit der Spieler-DLL 0.0.63 aus einer frischen Ladung von Slot 14. Guter Bogen, Jagdbogen, Armbrust und gute Armbrust gelangen in Menge 2, Komposit-, Eschen- und Langbogen in Menge 1. Die beiden guten Armbrüste verbrauchten zwei Ausgangswaffen, acht Rohstahl und alle acht Leder. Nach jedem Auftrag stimmte die vollständige Inventarbilanz. Nach dem Beenden ohne Speichern und dem Ausbau der Test-DLL waren alle 410 Save-Dateien zur jeweiligen Sicherung bytegleich.
 
+Die Abnahme von 0.0.64 lief in einer Kopie der Steam-Installation mit denselben 16 Workshop-Einträgen und derselben Startzeile ohne Steam. Die Hashprüfungen der Fläche bestanden am Alchemietisch und an der Holzsäge im Freien mit halbtransparentem schwarzem Hintergrund (Deckkraft 160/255). Am Alchemietisch zeigte Lous Schnaps bei Menge null „Menge: 0. Vorschau für einen Durchgang.“, die gehaltene Laborwasserflasche (`26 - 1 = 25`), den Sperrgrund und den eingerückten Umbruch bei permanenter Geschicklichkeit. Zwei Sumpftabake in Slot 14 erhöhten den Bestand von 2 auf 4 und verbrauchten zwei Apfeltabake (6 auf 4) sowie zwei Laborwasserflaschen (26 auf 24); Sumpfkraut blieb bei 116 und alle 418 Inventarbestände stimmten. An der Holzsäge zeigte die Detailansicht „Säge (beim Verlassen zurück)“ mit den erwarteten Windows-1252-Bytes und `17 + 1 = 18`; der Wechsel zur Originalbedienung erhielt alle 418 Inventarbestände. Nach regulärem Beenden ohne Speichern und Ausbau der Spieler-DLL waren alle 38 Save-Dateien der Testkopie zur Sicherung bytegleich, und die Steam-Installation war vorher und nachher unverändert.
+
 | Package component / Paketbestandteil | SHA-256 |
 | --- | --- |
 | Player DLL / Spieler-DLL (0.0.57, 0.0.58) | `54dd22377fc7eb2337fc8243f859666863f060e4f2bbb24a0e65b820ce0c2522` |
@@ -60,5 +64,7 @@ An der Bogenbank begann jeder Auftrag mit der Spieler-DLL 0.0.63 aus einer frisc
 | Player DLL / Spieler-DLL (0.0.63) | `16246460d0e77a66a454e50c6676db94765fdbd3c4d2f27b70f62d80a92e2b6a` |
 | In-game ZIP / ZIP im Weltlauf (0.0.63) | `ff0e3545f377e18b447b4f67e6f979d42b8eb69d850acf34a7412ab53faaf0b4` |
 | Leather and bow bench ZIP / ZIP der Leder- und Bogenbankläufe (0.0.63) | `22595581ecb07cfe5ea48501a09bde00571622a9f0676d9802df70eee1965ccb` |
+| Player DLL / Spieler-DLL (0.0.64) | `bf847190218bf72165e81ce01254611d56e118d5de35e7320d6ed3df0f668d88` |
+| In-game ZIP / ZIP im Weltlauf (0.0.64) | `b802b796bb12e1ab183507ce5294d58cafcc08008b9f300e6b7b00c3728dbeef` |
 
 Each ZIP hash identifies one archive, including its documentation. Use the player DLL hash to match a release to an in-game test. Each release lists both hashes. · Der ZIP-Hash kennzeichnet ein einzelnes Archiv einschließlich seiner Dokumentation. Mit dem Hash der Spieler-DLL lässt sich ein Release einem Weltlauf zuordnen. Jedes Release nennt beide Prüfsummen.

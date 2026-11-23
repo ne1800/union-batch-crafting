@@ -127,7 +127,7 @@ rechnet auch die reservierte Laborflasche und die übrigen benötigten Flaschen
 vollständig ab. Gemischt gelisteter und gepackter heißer Stahl bleibt vorerst
 gesperrt; eine passende Originalauswahl bleibt erreichbar.
 
-An der Bogenbank sind 20 Verbesserungen angebunden. „Vorrat für“ bezeichnet
+An der Bogenbank sind 20 Verbesserungen angebunden. „Teile für“ bezeichnet
 die rechnerische Materialgrenze. Die gewählte Menge wird vor der Bestätigung
 zusätzlich auf ihren tatsächlichen Inventarpfad geprüft. Ein Mengenwechsel
 verlangt eine neue Prüfung; bei fehlendem Beleg bleibt „Herstellen“ gesperrt.
