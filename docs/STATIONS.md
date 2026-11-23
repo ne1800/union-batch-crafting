@@ -63,11 +63,11 @@ With `auto`, a blank value or a missing entry, the plugin detects German game te
 
 ## Which quantities have been tested in the game?
 
-The quantity menu offers 1, 5, 10, maximum and custom steps up to the material limit. In-game orders through 0.0.65 cover 79 of the 98 profiles, including all 23 at the alchemy table (with both spirit potion branches), all 20 at the bow bench, all 13 at the anvil, all nine at the leather bench, all five at the saw and four of the 22 at the grindstone.
+The quantity menu offers 1, 5, 10, maximum and custom steps up to the material limit. In-game orders through 0.0.65 cover 80 of the 98 profiles, including all three at the stove, all 23 at the alchemy table (with both spirit potion branches), all 20 at the bow bench, all 13 at the anvil, all nine at the leather bench, all five at the saw and four of the 22 at the grindstone.
 
 | Station (profiles) | Recipe families | Examples crafted in the game |
 | --- | --- | --- |
-| Stove (3) | Meat, molerat dish and mushroom stew | Meat ×7, mushroom stew ×2 |
+| Stove (3) | Meat, molerat dish and mushroom stew | Meat ×7, molerat dish ×2, mushroom stew ×2 |
 | Alchemy table (23) | Healing and mana potions, additional recipes including swampweed rolls, spirit potion, refined tobacco | Healing essence ×2, healing extract ×2, healing elixir ×7, mana essence/extract/elixir ×2, compound healing/mana potion ×2, Lou’s/sleep/fish booze ×2, permanent health/mana/dexterity/strength ×2, speed potion ×2, dragon egg potion ×2, simple roll ×1/2/MAX 15, Green Novice ×2, enriched spirit ×1 and ordinary spirit ×2, honey/swampweed/mushroom tobacco ×1/2/MAX 3 |
 | Leather bench (9) | Leather from hides and skins | With two hides per order, sheep, lurker, boar and warg each yielded 2 leather, swampshark 4, shadowbeast 6 and troll 8. Earlier orders yielded 5 leather from 5 wolf skins and 12 from 2 black troll hides. |
 | Saw (5) | Arrows and bolts, including special ammunition | 2 lots each of ordinary arrows (60), fire arrows (20), magic arrows (20), bolts (60) and magic bolts (20) |
@@ -79,7 +79,7 @@ The quantity menu offers 1, 5, 10, maximum and custom steps up to the material l
 
 The campfire also offers the original 1/5/10/all choices for ordinary meat. Choosing END before selecting a quantity preserves stock. This dialogue is separate from the nine stations with a quantity menu.
 
-**Untested profiles.** The 19 profiles awaiting an in-game order are 18 grindstone weapons and one stove meal (molerat dish).
+**Untested profiles.** The 18 profiles awaiting an in-game order are the remaining 18 grindstone weapons.
 
 **Outside the quantity menu.** One rune per spell suffices. Rune upgrades spend learning points once and change learned abilities. Armour exchanges and water mage robes concern individual equipment pieces, and the Eye of Innos is a one-off quest item. Four sharpening attempts remain deferred because each rolls its own outcome and advances proficiency individually.
 

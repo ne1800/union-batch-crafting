@@ -63,11 +63,11 @@ Bei `auto`, einem leeren Wert oder einem fehlenden Eintrag erkennt das Plugin de
 
 ## Welche Mengen wurden im Spiel geprüft?
 
-Die Mengenwahl bietet 1, 5, 10, Maximum und freie Schritte bis zur Materialgrenze. Bis einschließlich 0.0.65 sind 79 der 98 Profile durch Aufträge im Spiel belegt, darunter alle 23 am Alchemietisch (mit beiden Geisttrank-Zweigen), alle 20 an der Bogenbank, alle 13 am Amboss, alle neun an der Lederbank, alle fünf an der Säge und vier der 22 am Schleifstein.
+Die Mengenwahl bietet 1, 5, 10, Maximum und freie Schritte bis zur Materialgrenze. Bis einschließlich 0.0.65 sind 80 der 98 Profile durch Aufträge im Spiel belegt, darunter alle drei am Herd, alle 23 am Alchemietisch (mit beiden Geisttrank-Zweigen), alle 20 an der Bogenbank, alle 13 am Amboss, alle neun an der Lederbank, alle fünf an der Säge und vier der 22 am Schleifstein.
 
 | Station (Profile) | Rezeptfamilien | Im Spiel hergestellte Beispiele |
 | --- | --- | --- |
-| Herd (3) | Fleisch, Molerat- und Pilzgericht | Fleisch ×7, Pilzragout ×2 |
+| Herd (3) | Fleisch, Molerat- und Pilzgericht | Fleisch ×7, Moleratgericht ×2, Pilzragout ×2 |
 | Alchemietisch (23) | Heil- und Manatränke, Zusatzrezepte einschließlich Stängeln, Geisttrank, veredelter Tabak | Heilessenz ×2, Heilextrakt ×2, Heilelixier ×7, Manaessenz/-extrakt/-elixier ×2, zusammengesetzter Heil-/Manatrank ×2, Lous/Schlaf-/Fischschnaps ×2, permanente Gesundheit/Mana/Geschicklichkeit/Stärke ×2, Geschwindigkeitstrank ×2, Dracheneiertrank ×2, einfacher Stängel ×1/2/MAX 15, Grüner Novize ×2, angereicherter Geist ×1 und gewöhnlicher Geist ×2, Honig-/Sumpf-/Pilztabak ×1/2/MAX 3 |
 | Lederbank (9) | Leder aus Fellen und Häuten | Bei zwei Fellen oder Häuten pro Auftrag ergaben Schaf, Lurker, Keiler und Warg je 2 Leder, Sumpfhai 4, Schattenläufer 6 und Troll 8. Frühere Aufträge ergaben 5 Leder aus 5 Wolfsfellen und 12 aus 2 schwarzen Trollfellen. |
 | Säge (5) | Pfeile und Bolzen, auch Sondermunition | Je 2 Lose gewöhnliche Pfeile (60), Feuerpfeile (20), Magiepfeile (20), Bolzen (60) und Magiebolzen (20) |
@@ -79,7 +79,7 @@ Die Mengenwahl bietet 1, 5, 10, Maximum und freie Schritte bis zur Materialgrenz
 
 Zusätzlich bietet das Lagerfeuer für gewöhnliches Fleisch den Originaldialog mit 1/5/10/alle. ENDE vor der Auswahl erhält den Bestand. Dieser Originaldialog steht zusätzlich zu den neun Stationen mit Mengenmenü zur Verfügung.
 
-**Offene Profile.** Für 19 Profile steht ein Auftrag im Spiel aus: 18 Schleifprofile und ein Herdgericht (Moleratgericht).
+**Offene Profile.** Für 18 Profile steht ein Auftrag im Spiel aus: die übrigen 18 Schleifprofile.
 
 **Außerhalb der Mengenwahl.** Eine Rune je Zauber genügt. Runenverbesserungen kosten einmalig Lernpunkte und ändern den Lernzustand. Rüstungstausch und Wassermagierroben betreffen Einzelstücke, das Auge Innos ist ein einmaliger Questgegenstand. Vier Schärfversuche bleiben zurückgestellt, da jeder Versuch seinen eigenen Zufall und Fertigkeitsfortschritt hat.
 
