@@ -4,7 +4,7 @@
 
 ## English
 
-- **0.0.65** At the grindstone and other stations, the quantity menu reuses the preview while its values stay the same to reduce stutter. Each time the menu opens, the plugin checks the game's menu functions. It recognizes the variant seen in the L’Hiver Workshop setup. If the check fails, you can still use the station's original controls.
+- **0.0.65** At the grindstone and other stations, the quantity menu reuses the preview while its values stay the same to reduce stutter. The grindstone can still stutter several times as the menu opens. Changing the quantity or recipe can cause a single pause of about a quarter of a second. Each time the menu opens, the plugin checks the game's menu functions. It recognizes the variant seen in the L’Hiver Workshop setup. If the check fails, you can still use the station's original controls.
 
 - **0.0.64** Clearer detail lines explain returned tools, held items, zero-quantity previews, unknown stock counts, honing skill progress and bow material limits. If the menu window is rejected, no text is drawn to it and the original station controls remain usable.
 
@@ -34,7 +34,7 @@
 
 ## Deutsch
 
-- **0.0.65** Am Schleifstein und an anderen Stationen verwendet das Mengenmenü die Vorschau weiter, solange ihre Werte gleich bleiben. Das verringert Ruckler. Bei jedem Öffnen prüft das Plugin die Menüfunktionen des Spiels. Es erkennt auch die Variante aus der L’Hiver-Workshop-Installation. Schlägt die Prüfung fehl, kannst du die Station wie im Original bedienen.
+- **0.0.65** Am Schleifstein und an anderen Stationen verwendet das Mengenmenü die Vorschau weiter, solange ihre Werte gleich bleiben. Das verringert Ruckler. Beim Öffnen kann das Schleifsteinmenü noch mehrmals kurz hängen. Ein Mengen- oder Rezeptwechsel kann einen einzelnen Hänger von etwa einer Viertelsekunde auslösen. Bei jedem Öffnen prüft das Plugin die Menüfunktionen des Spiels. Es erkennt auch die Variante aus der L’Hiver-Workshop-Installation. Schlägt die Prüfung fehl, kannst du die Station wie im Original bedienen.
 
 - **0.0.64** Verständlichere Detailzeilen erklären zurückgegebene Werkzeuge, gehaltene Gegenstände, Vorschauen bei Menge null, unbekannte Bestände, Schleifkunst und Materialgrenzen an der Bogenbank. Wird das Menüfenster abgewiesen, schreibt das Plugin keinen Text hinein und die Originalbedienung der Station bleibt bedienbar.
 
