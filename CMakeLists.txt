@@ -117,6 +117,7 @@ foreach(
     core/crafting_session
     ui/crafting_menu
     ui/crafting_ui_diagnostics
+    ui/crafting_preview_cache
     stations/grind/grind_ui_readiness
     core/crafting_handoff
     core/crafting_result
@@ -395,6 +396,7 @@ if(UBC_SANITIZE AND NOT WIN32)
         ubc_crafting_session_tests
         ubc_crafting_menu_tests
         ubc_crafting_ui_diagnostics_tests
+        ubc_crafting_preview_cache_tests
         ubc_grind_ui_readiness_tests
         ubc_crafting_handoff_tests
         ubc_crafting_result_tests
