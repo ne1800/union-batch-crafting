@@ -6,6 +6,8 @@
 
 A Union plugin for Gothic II: Night of the Raven with the Marcello L’Hiver DE 2.0.4 mod. At a crafting station, pick a learned recipe and a quantity, check the materials and the preview, and craft the whole batch at once instead of repeating the original dialogue for every piece.
 
+In the current source build, the plugin stays idle when you play without Marcello L’Hiver and the game uses different scripts. In Night of the Raven without a campaign mod, the alchemy table and anvil kept their original dialogues. [Compatibility tests](TESTED-WITH.md#campaign-compatibility)
+
 ![At the saw, five lots use five wood and five raw steel to make 150 arrows. The preview shows the arrow count rising from 881 to 1,031.](docs/images/quantity-menu-en.webp)
 
 Each lot makes 30 arrows. The saw returns to your inventory when you leave the station.
