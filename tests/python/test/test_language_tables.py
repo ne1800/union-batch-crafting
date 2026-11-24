@@ -55,7 +55,7 @@ class LanguageTables(unittest.TestCase):
     def test_one_new_file_is_discovered_and_selectable(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            shutil.copytree(TEXT, root / "include/ubc/text")
+            shutil.copytree(ROOT / "include", root / "include")
             (root / "cmake").symlink_to(ROOT / "cmake", target_is_directory=True)
             (root / "CMakeLists.txt").write_text(
                 "cmake_minimum_required(VERSION 3.21)\nproject(language_test LANGUAGES CXX)\n"

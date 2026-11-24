@@ -281,8 +281,9 @@ ubc::CraftingPage page(const Context& c, ubc::BowMenuTrace* trace) noexcept {
       if (c.dialog.mode != 1)
         return {};
       unsigned selected = 0;
-      for (auto flag : ubc::dndr::category_flags) {
-        const auto value = rt::symbol_int(memory, s::game_parser, flag, ubc::dndr::profile);
+      for (const auto& category : ubc::dndr::categories) {
+        const auto flag = category.flag;
+        const auto value = rt::symbol_int(memory, s::game_parser, flag, ubc::dndr::layout_profile);
         if (!value.valid || (value.value != 0 && value.value != 1))
           return {};
         if (value.value) {

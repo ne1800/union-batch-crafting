@@ -277,8 +277,15 @@ inline constexpr auto dndr_recipes = [] {
   std::array<Descriptor, dndr::recipes.size()> entries{};
   for (std::size_t i = 0; i < entries.size(); ++i) {
     const auto& r = dndr::recipes[i];
-    entries[i] = {r.id,    r.name,    Station::alchemy, Route::dndr_alchemy,       r.targets,
-                  r.costs, r.outputs, "Durchgaenge",    Completion::end_production};
+    entries[i] = {r.id,
+                  r.name,
+                  Station::alchemy,
+                  Route::dndr_alchemy,
+                  r.targets,
+                  r.costs,
+                  r.selected_outputs(false, 0),
+                  "Durchgaenge",
+                  Completion::end_production};
     entries[i].dndr_alchemy = &r;
   }
   return entries;
@@ -300,8 +307,13 @@ inline std::uint32_t units(View<ItemAmount> entries, std::int32_t symbol) noexce
 }
 // Dynamic output is reconstructed exclusively from the exact bound
 // branch. Without a branch there is no asserted exit for the spirit.
+inline constexpr bool has_output_branch(const Descriptor& d) noexcept {
+  return d.route == Route::spirit || (d.dndr_alchemy && d.dndr_alchemy->branched());
+}
 inline View<ItemAmount> outputs_for(const Descriptor& d, bool known = false,
                                     std::int32_t branch = 0) noexcept {
+  if (d.dndr_alchemy)
+    return d.dndr_alchemy->selected_outputs(known, branch);
   if (d.route != Route::spirit)
     return d.outputs;
   if (!d.spirit || !known)
@@ -312,7 +324,7 @@ inline View<ItemAmount> outputs_for(const Descriptor& d, bool known = false,
 }
 inline bool valid_branch(const Descriptor& d, bool known, std::int32_t value,
                          std::int32_t output) noexcept {
-  if (d.route != Route::spirit)
+  if (!has_output_branch(d))
     return !known && !value && output == -1;
   const auto expected = outputs_for(d, known, value);
   return known ? expected.count == 1 && output == expected[0].symbol : !value && output == -1;
@@ -705,7 +717,7 @@ inline bool valid_crafting_state(const CraftingState& state) noexcept {
       (state.context_matches && !state.context_known))
     return false;
   if (!cat::valid_branch(*d, state.branch_known, state.branch_value, state.branch_output) ||
-      (d->route == cat::Route::spirit && !state.branch_known &&
+      (cat::has_output_branch(*d) && !state.branch_known &&
        (state.material_known || state.material_verified || state.maximum)))
     return false;
   if (d->grind) {

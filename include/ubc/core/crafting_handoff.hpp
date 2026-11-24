@@ -164,30 +164,30 @@ inline CraftingPlan make_crafting_plan(CraftingPage source, crafting_catalog::Re
     out.issue = CraftingPlanIssue::unsupported_recipe;
     return out;
   }
-  if (recipe->route != crafting_catalog::Route::spirit && (branch_known || branch_value))
+  if (!crafting_catalog::has_output_branch(*recipe) && (branch_known || branch_value))
     return out;
   if (recipe->route == crafting_catalog::Route::dndr_alchemy) {
     if (source.kind != CraftingPageKind::dndr_alchemy || !quantity || quantity > INT32_MAX)
       return out;
-    const auto* pilot = recipe->dndr_alchemy;
-    if (!pilot || pilot->id != target)
+    const auto* r = recipe->dndr_alchemy;
+    if (!r || r->id != target || (r->branched() && !branch_known))
       return out;
-    const CraftingPage category{CraftingPageKind::dndr_alchemy, pilot->category_flag};
-    if (source.value == 0)
-      out.steps[out.count++] = {CraftingStepKind::start,
-                                recipe_catalog::Invocation::info,
-                                pilot->category->instance,
-                                static_cast<int>(pilot->category->information->symbol),
-                                source,
-                                category};
-    else if (!(source == category))
-      return out;
-    out.steps[out.count++] = {CraftingStepKind::effect,
-                              recipe_catalog::Invocation::info,
-                              pilot->effect->instance,
-                              static_cast<int>(pilot->effect->information->symbol),
-                              category,
-                              {}};
+    const CraftingPage root{CraftingPageKind::dndr_alchemy, 0};
+    const CraftingPage desired{CraftingPageKind::dndr_alchemy, r->category_flag};
+    auto current = source;
+    auto step = [&](CraftingStepKind kind, const recipe_catalog::Owner& owner, CraftingPage next) {
+      out.steps[out.count++] = {kind,           recipe_catalog::Invocation::info,
+                                owner.instance, static_cast<int>(owner.information->symbol),
+                                current,        next};
+      current = next;
+    };
+    if (!(current == desired)) {
+      if (const auto* c = dndr::category(current.value))
+        step(CraftingStepKind::stop, *c->stop, root);
+      if (const auto* c = dndr::category(desired.value))
+        step(CraftingStepKind::start, *c->start, desired);
+    }
+    step(CraftingStepKind::effect, *r->effect, {});
   } else if (recipe->route == crafting_catalog::Route::base) {
     const bool stove = recipe->station == crafting_catalog::Station::stove;
     if (source.kind != (stove ? CraftingPageKind::stove_info : CraftingPageKind::alchemy)) {

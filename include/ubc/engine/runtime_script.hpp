@@ -173,8 +173,8 @@ inline bool range(std::uint64_t base, std::uint64_t size) noexcept {
 inline bool valid_profile(const lhiver::Profile& profile) noexcept {
   if (!range(profile.parser_address, 0x58) || profile.symbol_count == 0 ||
       profile.symbol_count > max_symbols || profile.code_length == 0 ||
-      profile.code_length > max_code_capacity || profile.function_count > 64 ||
-      profile.binding_count > 64 || (profile.function_count && !profile.functions) ||
+      profile.code_length > max_code_capacity || profile.function_count > 128 ||
+      profile.binding_count > 128 || (profile.function_count && !profile.functions) ||
       (profile.binding_count && !profile.bindings))
     return false;
   for (std::size_t i = 0; i < profile.function_count; ++i) {
