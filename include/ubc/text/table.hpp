@@ -232,6 +232,8 @@ struct Table {
   }
   constexpr const char* recipe(std::uint32_t id) const noexcept {
     // Development campaign uses the localized item name in its recipe list.
+    if ((id >= 0x15001 && id <= 0x15005) || (id >= 0x16001 && id <= 0x16008))
+      return recipes.find(id - 0x10000, (*this)[Label::select_recipe]);
     switch (id) {
     case 0x10001:
       return item(7065);

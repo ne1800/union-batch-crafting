@@ -151,9 +151,11 @@ static void install(bool execute) noexcept {
   dndr_active = scripts == ubc::player_campaign::Campaign::dndr;
   if (dndr_active) {
     const auto contract = rt::verify_local_contract(memory, s::game_parser, ubc::dndr::profile);
-    if (!contract.matches) {
-      event("dndr_contract_rejected", static_cast<int>(contract.failed_symbol),
-            static_cast<int>(contract.issue));
+    const auto anvil = rt::verify_local_contract(memory, s::game_parser, ubc::dndr::anvil::profile);
+    if (!contract.matches || !anvil.matches) {
+      const auto& failed = contract.matches ? anvil : contract;
+      event("dndr_contract_rejected", static_cast<int>(failed.failed_symbol),
+            static_cast<int>(failed.issue));
       return;
     }
     event("dndr_campaign_verified");

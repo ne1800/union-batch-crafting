@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 #pragma once
-#include "ubc/catalogs/dndr_alchemy_contract.hpp"
+#include "ubc/catalogs/dndr_anvil_contract.hpp"
 #include "ubc/catalogs/dndr_alchemy_items.hpp"
 
 namespace ubc::dndr {
@@ -18,13 +18,23 @@ inline constexpr std::array<Category, 5> categories{{
     {10095, &owners[18], &owners[19]},
     {10120, &owners[26], &owners[27]},
 }};
-inline constexpr const Category* category(unsigned flag) noexcept {
-  for (const auto& c : categories)
+inline constexpr std::array<Category, 2> anvil_categories{{
+    {10250, &anvil::owners[1], &anvil::owners[3]},
+    {10249, &anvil::owners[2], &anvil::owners[4]},
+}};
+inline constexpr View<Category> station_categories(bool at_anvil) noexcept {
+  return at_anvil ? View<Category>{anvil_categories.data(), anvil_categories.size()}
+                  : View<Category>{categories.data(), categories.size()};
+}
+inline constexpr const Category* category(unsigned flag, bool at_anvil = false) noexcept {
+  for (const auto& c : station_categories(at_anvil))
     if (c.flag == flag)
       return &c;
   return nullptr;
 }
-inline constexpr bool supported_category(unsigned flag) noexcept { return !flag || category(flag); }
+inline constexpr bool supported_category(unsigned flag, bool at_anvil = false) noexcept {
+  return !flag || category(flag, at_anvil);
+}
 
 enum class OutputForm { multiple, single, branched };
 struct Formula {
@@ -36,8 +46,10 @@ struct Formula {
   std::array<int, 2> products; // For the spirit: ordinary first, bloodfly second.
   unsigned guard_jump, product_begin;
   OutputForm form;
+  int reserve = flask;
+  constexpr bool at_anvil() const noexcept { return reserve == anvil::hot; }
 };
-inline constexpr std::array<Formula, 20> formulas{{
+inline constexpr std::array<Formula, 20> alchemy_formulas{{
     {0x10001,
      "Healing essence",
      &owners[14],
@@ -259,6 +271,173 @@ inline constexpr std::array<Formula, 20> formulas{{
      188,
      OutputForm::branched},
 }};
+inline constexpr std::array<Formula, 13> anvil_formulas{{
+    {0x15001,
+     "Sword",
+     &anvil::owners[5],
+     10250,
+     1436,
+     0,
+     {{}},
+     {6805},
+     0,
+     0,
+     OutputForm::multiple,
+     anvil::hot},
+    {0x15002,
+     "Fine sword",
+     &anvil::owners[6],
+     10250,
+     1436,
+     9,
+     {{}},
+     {6811},
+     0,
+     0,
+     OutputForm::multiple,
+     anvil::hot},
+    {0x15003,
+     "Fine longsword",
+     &anvil::owners[7],
+     10250,
+     1436,
+     10,
+     {{}},
+     {6817},
+     0,
+     0,
+     OutputForm::multiple,
+     anvil::hot},
+    {0x15004,
+     "Ruby blade",
+     &anvil::owners[8],
+     10250,
+     1436,
+     11,
+     {{}},
+     {6821},
+     0,
+     0,
+     OutputForm::multiple,
+     anvil::hot},
+    {0x15005,
+     "El Bastardo",
+     &anvil::owners[9],
+     10250,
+     1436,
+     12,
+     {{}},
+     {6832},
+     0,
+     0,
+     OutputForm::multiple,
+     anvil::hot},
+    {0x16001,
+     "Ore longsword",
+     &anvil::owners[10],
+     10249,
+     1436,
+     1,
+     {{{6928, 1}}},
+     {6818},
+     21,
+     46,
+     OutputForm::multiple,
+     anvil::hot},
+    {0x16002,
+     "Ore two-hander",
+     &anvil::owners[11],
+     10249,
+     1436,
+     2,
+     {{{6928, 2}}},
+     {6819},
+     21,
+     46,
+     OutputForm::multiple,
+     anvil::hot},
+    {0x16003,
+     "Ore bastard sword",
+     &anvil::owners[12],
+     10249,
+     1436,
+     3,
+     {{{6928, 2}}},
+     {6830},
+     21,
+     46,
+     OutputForm::multiple,
+     anvil::hot},
+    {0x16004,
+     "Heavy ore two-hander",
+     &anvil::owners[13],
+     10249,
+     1436,
+     4,
+     {{{6928, 3}}},
+     {6831},
+     21,
+     46,
+     OutputForm::multiple,
+     anvil::hot},
+    {0x16005,
+     "Ore battle blade",
+     &anvil::owners[14],
+     10249,
+     1436,
+     5,
+     {{{6928, 3}}},
+     {6842},
+     21,
+     46,
+     OutputForm::multiple,
+     anvil::hot},
+    {0x16006,
+     "Heavy ore battle blade",
+     &anvil::owners[15],
+     10249,
+     1436,
+     6,
+     {{{6928, 4}}},
+     {6843},
+     21,
+     46,
+     OutputForm::multiple,
+     anvil::hot},
+    {0x16007,
+     "Ore dragon slayer",
+     &anvil::owners[16],
+     10249,
+     1436,
+     7,
+     {{{6928, 4}, {6572, 5}}},
+     {6846},
+     43,
+     88,
+     OutputForm::multiple,
+     anvil::hot},
+    {0x16008,
+     "Large ore dragon slayer",
+     &anvil::owners[17],
+     10249,
+     1436,
+     8,
+     {{{6928, 5}, {6572, 5}}},
+     {6847},
+     43,
+     88,
+     OutputForm::multiple,
+     anvil::hot},
+}};
+inline constexpr auto formulas = [] {
+  std::array<Formula, alchemy_formulas.size() + anvil_formulas.size()> all{};
+  std::size_t index = 0;
+  for (const auto& r : alchemy_formulas)
+    all[index++] = r;
+  for (const auto& r : anvil_formulas)
+    all[index++] = r;
+  return all;
+}();
 struct RecipeStorage {
   std::array<PackedInventoryTarget, 7> targets{};
   std::array<ItemAmount, 5> costs{};
@@ -273,7 +452,7 @@ inline constexpr auto storage = [] {
     for (const auto& ingredient : f.ingredients)
       if (ingredient.units)
         row.costs[row.cost_count++] = ingredient;
-    row.costs[row.cost_count++] = {flask, 1};
+    row.costs[row.cost_count++] = {f.reserve, 1};
     for (std::size_t j = 0; j < row.cost_count; ++j)
       row.targets[row.target_count++] = items[item_index(row.costs[j].symbol)].target;
     for (auto id : f.products)
@@ -281,10 +460,14 @@ inline constexpr auto storage = [] {
         row.products[row.product_count++] = {id, 1};
         row.targets[row.target_count++] = items[item_index(id)].target;
       }
+    if (f.at_anvil()) {
+      row.targets[row.target_count++] = items[item_index(anvil::cold)].target;
+      row.targets[row.target_count++] = items[item_index(anvil::hammer)].target;
+    }
   }
   return rows;
 }();
-struct AlchemyRecipe : Formula {
+struct Recipe : Formula {
   View<PackedInventoryTarget> targets;
   View<ItemAmount> costs, outputs;
   constexpr bool branched() const noexcept { return form == OutputForm::branched; }
@@ -295,7 +478,7 @@ struct AlchemyRecipe : Formula {
   }
 };
 inline constexpr auto recipes = [] {
-  std::array<AlchemyRecipe, formulas.size()> result{};
+  std::array<Recipe, formulas.size()> result{};
   for (std::size_t i = 0; i < result.size(); ++i) {
     const auto& row = storage[i];
     result[i] = {formulas[i],
@@ -305,7 +488,7 @@ inline constexpr auto recipes = [] {
   }
   return result;
 }();
-inline constexpr const AlchemyRecipe* callback(unsigned symbol) noexcept {
+inline constexpr const Recipe* callback(unsigned symbol) noexcept {
   for (const auto& recipe : recipes)
     if (recipe.effect->information->symbol == symbol)
       return &recipe;

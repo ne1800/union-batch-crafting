@@ -7,7 +7,7 @@ struct Item {
   PackedInventoryTarget target;
   int localized_symbol;
 };
-inline constexpr std::array<Item, 43> items{{
+inline constexpr std::array<Item, 61> items{{
     {{"ITFO_ADDON_RUM", 6117}, 15673},
     {{"ITFO_ADDON_LOUSHAMMER", 6122}, 15678},
     {{"ITFO_ADDON_SCHLAFHAMMER", 6124}, 15680},
@@ -51,6 +51,24 @@ inline constexpr std::array<Item, 43> items{{
     {{"ITPO_SPEED", 7079}, 16798},
     {{"ITPO_MEGADRINK", 7081}, 16800},
     {{"ITAT_DRAGONEGG_MIS", 7676}, 17585},
+    {{"ITAT_DRAGONBLOOD", 6572}, 16156},
+    {{"ITMW_1H_MACE_L_04", 6767}, 16435},
+    {{"ITMW_1H_COMMON_01", 6805}, 16477},
+    {{"ITMW_SCHWERT1", 6811}, 16483},
+    {{"ITMW_SCHWERT4", 6817}, 16491},
+    {{"ITMW_1H_SPECIAL_01", 6818}, 16492},
+    {{"ITMW_2H_SPECIAL_01", 6819}, 16494},
+    {{"ITMW_RUBINKLINGE", 6821}, 16497},
+    {{"ITMW_1H_SPECIAL_02", 6830}, 16508},
+    {{"ITMW_2H_SPECIAL_02", 6831}, 16510},
+    {{"ITMW_ELBASTARDO", 6832}, 16512},
+    {{"ITMW_1H_SPECIAL_03", 6842}, 16522},
+    {{"ITMW_2H_SPECIAL_03", 6843}, 16524},
+    {{"ITMW_1H_SPECIAL_04", 6846}, 16528},
+    {{"ITMW_2H_SPECIAL_04", 6847}, 16530},
+    {{"ITMISWORDRAW", 6912}, 16610},
+    {{"ITMISWORDRAWHOT", 6913}, 16611},
+    {{"ITMI_NUGGET", 6928}, 16626},
 }};
 inline constexpr std::size_t item_index(int symbol) noexcept {
   for (std::size_t i = 0; i < items.size(); ++i)

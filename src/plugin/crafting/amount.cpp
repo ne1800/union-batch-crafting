@@ -185,7 +185,10 @@ bool late_gate(ubc::GrindCheck* diagnostic, tobacco::Checks* trace) noexcept {
     if (!actor.valid || !field(actor.address, 0x1c, bound) || bound != c.hero ||
         !current_info_effect(c) ||
         !ubc::bow_item_code::verify_externals(memory, s::game_parser).verified ||
-        !rt::verify_local_contract(memory, s::game_parser, ubc::dndr::profile).matches)
+        !rt::verify_local_contract(memory, s::game_parser,
+                                   c.kind == cat::Station::anvil ? ubc::dndr::anvil::profile
+                                                                 : ubc::dndr::profile)
+             .matches)
       return false;
   }
   if (c.kind == cat::Station::saw) {
@@ -236,7 +239,7 @@ bool late_gate(ubc::GrindCheck* diagnostic, tobacco::Checks* trace) noexcept {
         !(trace && trace->collecting()))
       return false;
   }
-  if (c.kind == cat::Station::anvil) {
+  if (!dndr_active && c.kind == cat::Station::anvil) {
     const auto* recipe = cat::find(handoff.request().id);
     if (!c.valid || !recipe || recipe->station != cat::Station::anvil)
       return false;
@@ -855,8 +858,7 @@ void* __cdecl execute_amount(bc::WriterScope& scope) {
                       result_guard.state() == ubc::CraftingResultState::waiting;
     outcome.issue = amount_patch.issue();
   } else if (dndr_recipe) {
-    result = run_dndr_amount(scope, writable, ctx.layout.code + function->byte_offset, *dndr_recipe,
-                             outcome);
+    result = run_dndr_amount(scope, writable, ctx, *dndr_recipe, outcome);
   } else if (cool_job)
     result =
         ubc::run_amount_call(amount_patch, writable, ctx.layout.code + ctx.function->byte_offset,

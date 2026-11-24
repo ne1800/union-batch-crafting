@@ -450,7 +450,7 @@ void observe_result(const Context& c) noexcept {
                         ubc::station_recipe_snapshot_detail::verify_hands(memory, result_hands);
     if (value.hands_known)
       value.hands = result_hands.before;
-    if (recipe->dndr_alchemy && recipe->dndr_alchemy->branched()) {
+    if (recipe->dndr_recipe && recipe->dndr_recipe->branched()) {
       const auto branch =
           rt::symbol_int(memory, s::game_parser, ubc::dndr::bloodfly, ubc::dndr::layout_profile);
       if (!branch.valid || branch.value != request.material_snapshot.branch_value)

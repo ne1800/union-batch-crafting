@@ -111,6 +111,7 @@ foreach(
     engine/player_engine
     engine/player_campaign
     stations/alchemy/dndr_alchemy
+    stations/anvil/dndr_anvil
     core/batch_session
     ui/batch_menu
     engine/amount_patch

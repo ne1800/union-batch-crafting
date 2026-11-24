@@ -74,12 +74,16 @@ Context context() noexcept {
   const auto production = rt::symbol_int(memory, s::game_parser, production_symbol());
   if (!production.valid)
     return c;
-  if (dndr_active &&
-      (production.value != 4 || !matches_station_profile(c.station, cat::Station::alchemy)))
-    return c;
-  if (production.value == 14 && name_is(c.station, 0x1e0, "FRYINGMEAT") &&
-      name_is(c.station, 0x1b8, "STOVE") && name_is(c.station, 0x1a4, "") &&
-      name_is(c.station, 0x1cc, "B_USESTOVE"))
+  if (dndr_active) {
+    if (production.value == 4 && matches_station_profile(c.station, cat::Station::alchemy))
+      c.kind = cat::Station::alchemy;
+    else if (production.value == 1 && matches_station_profile(c.station, cat::Station::anvil))
+      c.kind = cat::Station::anvil;
+    else
+      return c;
+  } else if (production.value == 14 && name_is(c.station, 0x1e0, "FRYINGMEAT") &&
+             name_is(c.station, 0x1b8, "STOVE") && name_is(c.station, 0x1a4, "") &&
+             name_is(c.station, 0x1cc, "B_USESTOVE"))
     c.kind = cat::Station::stove;
   else if (production.value == 4 && name_is(c.station, 0x1e0, "POTIONALCHEMY") &&
            name_is(c.station, 0x1a4, "ITMI_FLASK") && name_is(c.station, 0x1cc, ""))
@@ -189,6 +193,9 @@ bool foreign_dialog(const Context& c) noexcept {
 }
 const basecat::Owner* owner_for(std::int32_t instance) noexcept {
   if (dndr_active) {
+    for (const auto& owner : ubc::dndr::anvil::owners)
+      if (owner.instance == instance)
+        return &owner;
     for (const auto& owner : ubc::dndr::owners)
       if (owner.instance == instance)
         return &owner;
@@ -417,6 +424,10 @@ bool matches_station_profile(std::uint32_t mob, cat::Station kind) noexcept {
   if (kind == cat::Station::alchemy)
     return name_is(mob, 0x1e0, "POTIONALCHEMY") && name_is(mob, 0x1a4, "ITMI_FLASK") &&
            name_is(mob, 0x1cc, "");
+  if (dndr_active && kind == cat::Station::anvil)
+    return name_is(mob, 0x1e0, "SMITHWEAPON") && name_is(mob, 0x1b8, "BSANVIL") &&
+           (name_is(mob, 0x1a4, "ITMISWORDRAWHOT") || name_is(mob, 0x1a4, "ItMiSwordRawHot")) &&
+           name_is(mob, 0x1cc, "") && integer(mob, 0x200) == 0;
   if (kind == cat::Station::anvil)
     return name_is(mob, 0x1e0, acat::station.on_state) &&
            name_is(mob, 0x1b8, acat::station.scheme) &&
@@ -445,7 +456,8 @@ bool matches_station_profile(std::uint32_t mob, cat::Station kind) noexcept {
 }
 bool common_bindings_verified() noexcept {
   if (dndr_active)
-    return rt::verify_local_contract(memory, s::game_parser, ubc::dndr::profile).matches;
+    return rt::verify_local_contract(memory, s::game_parser, ubc::dndr::profile).matches &&
+           rt::verify_local_contract(memory, s::game_parser, ubc::dndr::anvil::profile).matches;
   const ubc::lhiver::Profile profile{layout_profile.parser_address,
                                      layout_profile.symbol_count,
                                      layout_profile.code_length,
