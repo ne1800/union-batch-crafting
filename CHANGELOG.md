@@ -4,6 +4,8 @@
 
 ## English
 
+- **Unreleased** The plugin stays idle when another campaign uses different scripts. Selecting Marcello L’Hiver with an unsupported script version still shows the compatibility notice.
+
 - **0.0.66** The grindstone preview now refreshes once when you open the menu and once per recipe, quantity or inventory change. A brief hitch of about 50 ms remains. In 0.0.65, opening the menu could cause repeated pauses, and a refresh could take a quarter of a second. If an ingredient is equipped, the recipe now shows `[equipped]` and asks you to unequip it first.
 
 - **0.0.65** At the grindstone and other stations, the quantity menu reuses the preview while its values stay the same to reduce stutter. The grindstone can still stutter several times as the menu opens. Changing the quantity or recipe can cause a single pause of about a quarter of a second. Each time the menu opens, the plugin checks the game's menu functions. It recognizes the variant seen in the L’Hiver Workshop setup. If the check fails, you can still use the station's original controls.
@@ -35,6 +37,8 @@
 - **0.0.30–0.0.35** measured and bounded the grinding preview. Rough swords passed the in-game comparison at 1, 2, 5 and maximum 3 in 0.0.35.
 
 ## Deutsch
+
+- **Unveröffentlicht** Bei einer anderen Kampagne mit abweichenden Skripten bleibt das Plugin untätig. Ist Marcello L’Hiver mit einem nicht unterstützten Skriptstand gewählt, erscheint weiterhin der Fehlerhinweis.
 
 - **0.0.66** Am Schleifstein wird die Vorschau beim Öffnen des Menüs und bei jedem Rezept-, Mengen- oder Bestandswechsel nur noch einmal berechnet. Ein kurzer Hänger von etwa 50 ms bleibt. In 0.0.65 konnte das Menü beim Öffnen mehrmals stocken, und eine Neuberechnung dauerte bis zu einer Viertelsekunde. Ist eine Zutat ausgerüstet, zeigt das Rezept jetzt `[ausgerüstet]` und bittet dich, sie zuerst abzulegen.
 

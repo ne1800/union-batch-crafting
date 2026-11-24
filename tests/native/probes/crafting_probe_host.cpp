@@ -1,13 +1,19 @@
 // SPDX-License-Identifier: MIT
 #include <windows.h>
 #include <cstdio>
+#include <cwchar>
 int wmain(int argc, wchar_t** argv) {
-  if (argc != 2)
+  if (argc != 2 && !(argc == 3 && std::wcscmp(argv[2], L"-game:Lhiver_marcello_de.ini") == 0))
     return 2;
   const auto module = LoadLibraryW(argv[1]);
   if (!module) {
     std::fprintf(stderr, "LoadLibrary: %lu\n", GetLastError());
     return 3;
+  }
+  using Init = void(__cdecl*)();
+  if (const auto init = reinterpret_cast<Init>(GetProcAddress(module, "Game_Init"))) {
+    init();
+    init();
   }
   using Version = unsigned(__cdecl*)();
   using Installed = int(__cdecl*)();

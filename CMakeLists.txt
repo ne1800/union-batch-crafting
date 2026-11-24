@@ -98,6 +98,7 @@ add_test(NAME selection_snapshot COMMAND ubc_selection_snapshot_tests)
 foreach(
     test_path
     engine/player_engine
+    engine/player_campaign
     core/batch_session
     ui/batch_menu
     engine/amount_patch
@@ -704,6 +705,7 @@ if(WIN32)
     configure_file(cmake/version.rc.in "${version_resource}" @ONLY)
     add_crafting_plugin(UnionBatchCraftingExtended "${version_resource}")
     add_crafting_plugin(UnionBatchCraftingPlayer "${version_resource}")
+    target_link_libraries(UnionBatchCraftingPlayer PRIVATE shell32)
     target_compile_definitions(
         UnionBatchCraftingPlayer
         PRIVATE UBC_PLAYER_RELEASE
