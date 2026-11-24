@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 #include "crafting/runtime.hpp"
+#ifdef UBC_PLAYER_RELEASE
+#include "player_campaign_windows.hpp"
+#endif
 
 namespace ubc_native {
 bool execution_enabled = false;
@@ -66,6 +69,20 @@ bool configure_batch_symbols(bc::Config& config) noexcept {
         return false;
   return true;
 }
+#ifdef UBC_PLAYER_RELEASE
+static bool install_notice() noexcept {
+  static constexpr std::array<s::HookSite, 2> notice_sites{
+      {a::frame_hook, ubc::crafting_hook_sites::menu_event_hook}};
+  static w::Hooks<s::HookSite, 2> notice_hooks(notice_sites);
+  const auto bridge = reinterpret_cast<std::uintptr_t>(&UbcFrameBridge);
+  if (!notice_hooks.prepare({bridge, reinterpret_cast<std::uintptr_t>(&observe_menu_event)}))
+    return false;
+  UbcFrameContinuation = notice_hooks.original(0);
+  UbcAfterFrame = after_frame;
+  original_menu_event = reinterpret_cast<m::MenuHandleEvent>(notice_hooks.original(1));
+  return notice_hooks.install(bridge);
+}
+#endif
 static void install(bool execute) noexcept {
   wchar_t path[32768]{};
   if (!w::sibling_path(module, path, L"UnionBatchCraftingExtended.log"))
@@ -79,12 +96,22 @@ static void install(bool execute) noexcept {
                          FILE_ATTRIBUTE_NORMAL, nullptr);
   if (log_file == INVALID_HANDLE_VALUE)
     return;
+#ifdef UBC_PLAYER_RELEASE
+  const auto campaign = ubc::player_campaign::mode(ubc::player_campaign::active_dat_matches(),
+                                                   ubc::player_campaign::marcello_selected());
+  if (campaign == ubc::player_campaign::Mode::idle) {
+    event("plugin_idle", 0, 0, ",\"reason\":\"unsupported_scripts_without_marcello_lhiver\"");
+    return;
+  }
+#endif
   const char* header = execute ? "crafting_version=1\r\nmode=recipe_amounts\r\n"
                                : "crafting_version=1\r\nmode=ui_only\r\n";
   DWORD written = 0;
   WriteFile(log_file, header, static_cast<DWORD>(std::strlen(header)), &written, nullptr);
   log_bytes = written;
 #ifdef UBC_PLAYER_RELEASE
+  if (campaign == ubc::player_campaign::Mode::notice)
+    event("script_profile_rejected");
   if (!w::player_image_header()) {
     event("engine_header_rejected");
     return;
@@ -102,6 +129,17 @@ static void install(bool execute) noexcept {
     event("frame_prefix_rejected");
     return;
   }
+#ifdef UBC_PLAYER_RELEASE
+  if (campaign == ubc::player_campaign::Mode::notice) {
+    script_notice_only = true;
+    if (install_notice()) {
+      InterlockedExchange(&installed, 1);
+      event("notice_hooks_installed");
+    } else
+      event("hooks_rejected");
+    return;
+  }
+#endif
   const std::array<std::uintptr_t, sites.size()> destinations{
       {reinterpret_cast<std::uintptr_t>(&UbcFrameBridge),
        reinterpret_cast<std::uintptr_t>(&observe_add),
@@ -155,6 +193,16 @@ static void install(bool execute) noexcept {
 } // namespace ubc_native
 
 using namespace ubc_native;
+#ifdef UBC_PLAYER_RELEASE
+// Union calls this after the game has resolved its paths and loaded its scripts.
+extern "C" __declspec(dllexport) void __cdecl Game_Init() {
+  static volatile LONG attempted = 0;
+  const auto error = GetLastError();
+  if (execution_enabled && !InterlockedExchange(&attempted, 1))
+    install(true);
+  SetLastError(error);
+}
+#endif
 extern "C" unsigned __cdecl UbcSelectionProbeVersion() { return 4; }
 extern "C" int __cdecl UbcSelectionProbeHooksInstalled() {
   return static_cast<int>(InterlockedCompareExchange(&installed, 0, 0));
@@ -169,7 +217,6 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
         GetPrivateProfileIntW(L"UNIONBATCHCRAFTING", L"Enabled", 1, ini) != 0 &&
         ubc::player_engine::game_process()) {
       execution_enabled = true;
-      install(execution_enabled);
     }
 #else
     if (w::target_matches()) {

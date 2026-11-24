@@ -430,6 +430,24 @@ void observe_result_notice(const Context& c) noexcept {
   } else if (!success)
     ui.render_failure();
 }
+#ifdef UBC_PLAYER_RELEASE
+bool script_notice_only = false;
+static void observe_script_notice(std::uint32_t game) noexcept {
+  if (frame != UINT64_MAX)
+    ++frame;
+  Context c;
+  c.game = game;
+  c.identity_known = integer(game, 0) == static_cast<std::int32_t>(a::game_vtable) &&
+                     field(game, a::game_world, c.world) && read(s::hero_pointer, c.hero);
+  if (ui.opened())
+    observe_result_notice(c);
+  else if (!failure_notified && c.identity_known && c.world && c.hero &&
+           integer(0x8d1e38, 8) == 0 && open_failure_notice(c)) {
+    failure_notified = true;
+    ui.render_failure();
+  }
+}
+#endif
 void __fastcall after_frame(void* game, void* manager) {
   const auto error = GetLastError();
   std::uint32_t current = 0, owned = 0;
@@ -445,6 +463,13 @@ void __fastcall after_frame(void* game, void* manager) {
     SetLastError(error);
     return;
   }
+#ifdef UBC_PLAYER_RELEASE
+  if (script_notice_only) {
+    observe_script_notice(current);
+    SetLastError(error);
+    return;
+  }
+#endif
   if (campfire_observation_mode) {
     if (frame != UINT64_MAX)
       ++frame;

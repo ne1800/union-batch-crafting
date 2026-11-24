@@ -125,6 +125,7 @@ extern volatile LONG installed, engine_thread;
 extern bool execution_enabled;
 extern bool disabled, native_update;
 #ifdef UBC_PLAYER_RELEASE
+extern bool script_notice_only;
 inline constexpr bool grind_measurement_mode = false;
 inline constexpr bool campfire_observation_mode = false;
 inline constexpr bool bow_diagnosis = false, bow_comparison = false;
