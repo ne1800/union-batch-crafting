@@ -36,7 +36,7 @@ static constexpr std::array<Expected, 20> expected{{
     {10104, 10095, 3072, 0, {{{6546, 2}, {7061, 1}, {7065, 1}, {6129, 1}}}, 6177, 6179},
 }};
 // Synthetic instruction windows exercise every shaped write without embedding game script bodies.
-static bool batch_window(const d::AlchemyRecipe& r) {
+static bool batch_window(const d::Recipe& r) {
   d::AlchemyBody body;
   const auto& f = *r.effect->information;
   body.length = f.byte_length;
@@ -81,7 +81,8 @@ static bool batch_window(const d::AlchemyRecipe& r) {
 }
 static bool profiles() {
   const CraftingPage root{CraftingPageKind::dndr_alchemy, 0};
-  if (!runtime_script::detail::valid_profile(d::profile) || expected.size() != d::recipes.size())
+  if (!runtime_script::detail::valid_profile(d::profile) ||
+      expected.size() != d::alchemy_formulas.size())
     return false;
   constexpr int numbers[]{999, 10, 99, 5,  6, 5, 6, 99, 2, 3, 4,  4,  7,  99, 2, 3,
                           4,   4,  9,  99, 2, 3, 3, 3,  3, 3, 11, 99, 10, 11, 2};

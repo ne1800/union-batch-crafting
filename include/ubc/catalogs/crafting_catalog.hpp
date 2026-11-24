@@ -28,10 +28,10 @@ enum class Route {
   cool,
   grind,
   tobacco,
-  dndr_alchemy
+  dndr
 };
 inline constexpr bool requires_context(Route route) noexcept {
-  return route == Route::dndr_alchemy || route == Route::tobacco || route == Route::alchemy_extra ||
+  return route == Route::dndr || route == Route::tobacco || route == Route::alchemy_extra ||
          route == Route::anvil || route == Route::ore || route == Route::spirit ||
          route == Route::bow || route == Route::cool || route == Route::grind;
 }
@@ -56,7 +56,7 @@ struct Descriptor {
   const cool_recipe_catalog::Descriptor* cool = nullptr;
   const grind_recipe::Descriptor* grind = nullptr;
   const tobacco::Descriptor* tobacco = nullptr;
-  const dndr::AlchemyRecipe* dndr_alchemy = nullptr;
+  const dndr::Recipe* dndr_recipe = nullptr;
 };
 inline constexpr std::size_t base_begin = 0, station_begin = recipe_catalog::recipes.size();
 inline constexpr std::size_t alchemy_extra_begin =
@@ -279,14 +279,14 @@ inline constexpr auto dndr_recipes = [] {
     const auto& r = dndr::recipes[i];
     entries[i] = {r.id,
                   r.name,
-                  Station::alchemy,
-                  Route::dndr_alchemy,
+                  r.at_anvil() ? Station::anvil : Station::alchemy,
+                  Route::dndr,
                   r.targets,
                   r.costs,
                   r.selected_outputs(false, 0),
                   "Durchgaenge",
                   Completion::end_production};
-    entries[i].dndr_alchemy = &r;
+    entries[i].dndr_recipe = &r;
   }
   return entries;
 }();
@@ -308,12 +308,12 @@ inline std::uint32_t units(View<ItemAmount> entries, std::int32_t symbol) noexce
 // Dynamic output is reconstructed exclusively from the exact bound
 // branch. Without a branch there is no asserted exit for the spirit.
 inline constexpr bool has_output_branch(const Descriptor& d) noexcept {
-  return d.route == Route::spirit || (d.dndr_alchemy && d.dndr_alchemy->branched());
+  return d.route == Route::spirit || (d.dndr_recipe && d.dndr_recipe->branched());
 }
 inline View<ItemAmount> outputs_for(const Descriptor& d, bool known = false,
                                     std::int32_t branch = 0) noexcept {
-  if (d.dndr_alchemy)
-    return d.dndr_alchemy->selected_outputs(known, branch);
+  if (d.dndr_recipe)
+    return d.dndr_recipe->selected_outputs(known, branch);
   if (d.route != Route::spirit)
     return d.outputs;
   if (!d.spirit || !known)
@@ -335,8 +335,11 @@ struct HandAmounts {
 };
 inline HandAmounts hand_amounts(const Descriptor& d, std::int32_t symbol) noexcept {
   HandAmounts result;
-  if (d.route == Route::dndr_alchemy) {
-    result.consumed = symbol == static_cast<int>(dndr::flask) ? 1 : 0;
+  if (d.route == Route::dndr) {
+    if (d.dndr_recipe) {
+      result.consumed = symbol == d.dndr_recipe->reserve;
+      result.generated = d.dndr_recipe->at_anvil() && symbol == dndr::anvil::hammer;
+    }
     return result;
   }
   if (d.tobacco) {
@@ -623,15 +626,23 @@ inline bool bound_hands(const crafting_catalog::Descriptor& d,
            right.symbol == want.active_item_symbol &&
            right.amount == static_cast<std::int32_t>(want.amount);
   }
-  if (d.route == crafting_catalog::Route::dndr_alchemy || d.tobacco ||
+  if (d.dndr_recipe && d.dndr_recipe->at_anvil()) {
+    const auto& left = hands.hands.left;
+    const auto& right = hands.hands.right;
+    return hands.left_slot_known && hands.right_slot_known && hands.interact_item_known &&
+           hands.left_tmp_level == 0 && hands.right_tmp_level == 1 && left.state == 1 &&
+           left.symbol == dndr::anvil::hot && left.amount == 1 && right.state == 1 &&
+           right.symbol == dndr::anvil::hammer && right.amount == 1 && left.object &&
+           right.object && left.object != right.object && hands.interact_item == left.object;
+  }
+  if (d.route == crafting_catalog::Route::dndr || d.tobacco ||
       d.route == crafting_catalog::Route::alchemy_extra ||
       d.route == crafting_catalog::Route::spirit) {
     const auto& left = hands.hands.left;
     const auto& right = hands.hands.right;
     const auto flask =
-        d.route == crafting_catalog::Route::dndr_alchemy ? static_cast<int>(dndr::flask) : 16604;
-    return (d.route == crafting_catalog::Route::dndr_alchemy || d.tobacco || d.alchemy_extra ||
-            d.spirit) &&
+        d.route == crafting_catalog::Route::dndr ? static_cast<int>(dndr::flask) : 16604;
+    return (d.route == crafting_catalog::Route::dndr || d.tobacco || d.alchemy_extra || d.spirit) &&
            hands.left_slot_known && hands.right_slot_known && hands.interact_item_known &&
            left.state == 0 && !left.object && right.state == 1 && right.object &&
            right.symbol == flask && right.amount == 1 && hands.interact_item == right.object;

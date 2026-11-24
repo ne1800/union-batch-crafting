@@ -276,26 +276,26 @@ ubc::CraftingPage page(const Context& c, ubc::BowMenuTrace* trace) noexcept {
     return {};
   if (c.kind == cat::Station::stove)
     return c.dialog.mode == 1 ? ubc::crafting_stove_page() : ubc::CraftingPage{};
-  if (c.kind == cat::Station::alchemy) {
-    if (dndr_active) {
-      if (c.dialog.mode != 1)
-        return {};
-      unsigned selected = 0;
-      for (const auto& category : ubc::dndr::categories) {
-        const auto flag = category.flag;
-        const auto value = rt::symbol_int(memory, s::game_parser, flag, ubc::dndr::layout_profile);
-        if (!value.valid || (value.value != 0 && value.value != 1))
-          return {};
-        if (value.value) {
-          if (selected)
-            return {};
-          selected = flag;
-        }
-      }
-      if (ubc::dndr::supported_category(selected))
-        return {ubc::CraftingPageKind::dndr_alchemy, selected};
+  if (dndr_active && (c.kind == cat::Station::alchemy || c.kind == cat::Station::anvil)) {
+    const bool at_anvil = c.kind == cat::Station::anvil;
+    if (c.dialog.mode != 1)
       return {};
+    unsigned selected = 0;
+    for (const auto& category : ubc::dndr::station_categories(at_anvil)) {
+      const auto flag = category.flag;
+      const auto value = rt::symbol_int(memory, s::game_parser, flag, ubc::dndr::layout_profile);
+      if (!value.valid || (value.value != 0 && value.value != 1))
+        return {};
+      if (value.value) {
+        if (selected)
+          return {};
+        selected = flag;
+      }
     }
+    return {at_anvil ? ubc::CraftingPageKind::dndr_anvil : ubc::CraftingPageKind::dndr_alchemy,
+            selected};
+  }
+  if (c.kind == cat::Station::alchemy) {
     const auto current = alchemy_page(c);
     if (c.dialog.mode == 2 && current == nav::Page::tobacco_info)
       return {ubc::CraftingPageKind::tobacco_choices, tobacco::owner.instance};
@@ -459,7 +459,7 @@ Capture capture(const Context& c, const GrindPreviewLease* shared_grind,
   const bool boundary = (outer || callback) && !station_depth && !collection_depth;
   Capture captured;
   if (dndr_active) {
-    capture_dndr_alchemy(captured, c, boundary);
+    capture_dndr(captured, c, boundary);
   } else if (c.kind == cat::Station::stove || c.kind == cat::Station::alchemy) {
     const auto kind =
         c.kind == cat::Station::stove ? basecat::Station::stove : basecat::Station::alchemy;

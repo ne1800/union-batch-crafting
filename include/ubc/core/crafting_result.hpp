@@ -125,15 +125,15 @@ struct CraftingResultSuccess {
 namespace crafting_result_detail {
 inline bool separate_ended_route(crafting_catalog::Route route) noexcept {
   using crafting_catalog::Route;
-  return route == Route::dndr_alchemy || route == Route::tobacco || route == Route::alchemy_extra ||
+  return route == Route::dndr || route == Route::tobacco || route == Route::alchemy_extra ||
          route == Route::anvil || route == Route::ore || route == Route::spirit ||
          route == Route::bow || route == Route::cool || route == Route::grind;
 }
 inline std::int32_t production(const crafting_catalog::Descriptor& d) noexcept {
   using crafting_catalog::Route;
   switch (d.route) {
-  case Route::dndr_alchemy:
-    return 4;
+  case Route::dndr:
+    return d.station == crafting_catalog::Station::anvil ? 1 : 4;
   case Route::base:
     return d.base ? d.base->production_context : 0;
   case Route::station:
@@ -162,7 +162,7 @@ inline bool canonical_ended(const crafting_catalog::Descriptor& d) noexcept {
   if (d.completion != crafting_catalog::Completion::end_production)
     return false;
   switch (d.route) {
-  case Route::dndr_alchemy:
+  case Route::dndr:
     return crafting_catalog::find(d.id) == &d;
   case Route::alchemy_extra:
     return d.alchemy_extra && alchemy_recipe_catalog::structurally_valid(*d.alchemy_extra);

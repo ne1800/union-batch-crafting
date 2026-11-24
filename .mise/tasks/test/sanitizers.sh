@@ -33,7 +33,7 @@ clang++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer \
   -Wall -Wextra -Werror -Wconversion -pedantic -I include -I "$language_include" tests/native/ui/menu_model_tests.cpp \
   -o "$test_root/menu_model_tests"
 "$test_root/menu_model_tests"
-for test_path in stations/station_snapshot engine/runtime_script engine/player_campaign stations/alchemy/dndr_alchemy engine/hand_snapshot engine/info_snapshot engine/packed_inventory core/selection_session core/selection_stock core/selection_snapshot core/batch_session ui/batch_menu engine/amount_patch core/batch_result catalogs/recipe_catalog core/recipe_material core/recipe_result \
+for test_path in stations/station_snapshot engine/runtime_script engine/player_campaign stations/alchemy/dndr_alchemy stations/anvil/dndr_anvil engine/hand_snapshot engine/info_snapshot engine/packed_inventory core/selection_session core/selection_stock core/selection_snapshot core/batch_session ui/batch_menu engine/amount_patch core/batch_result catalogs/recipe_catalog core/recipe_material core/recipe_result \
   core/recipe_runtime core/recipe_session ui/recipe_menu core/recipe_navigation core/recipe_handoff core/recipe_snapshot \
   catalogs/station_recipe_catalog stations/station_recipe_material stations/station_recipe_navigation stations/station_recipe_result \
   stations/station_recipe_runtime stations/station_recipe_snapshot core/post_remove_choice \

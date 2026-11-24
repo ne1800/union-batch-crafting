@@ -24,7 +24,8 @@ enum class CraftingPageKind {
   cool,
   grind,
   tobacco_choices,
-  dndr_alchemy
+  dndr_alchemy,
+  dndr_anvil
 };
 struct CraftingPage {
   CraftingPageKind kind = CraftingPageKind::unknown;
@@ -95,6 +96,8 @@ inline bool valid_crafting_page(CraftingPage page) noexcept {
   if (page.kind == CraftingPageKind::anvil)
     return anvil_recipe_navigation::supported_page(
         static_cast<anvil_recipe_navigation::Page>(page.value));
+  if (page.kind == CraftingPageKind::dndr_anvil)
+    return dndr::supported_category(page.value, true);
   if (page.kind == CraftingPageKind::dndr_alchemy)
     return dndr::supported_category(page.value);
   if (page.kind == CraftingPageKind::bow)
@@ -166,14 +169,16 @@ inline CraftingPlan make_crafting_plan(CraftingPage source, crafting_catalog::Re
   }
   if (!crafting_catalog::has_output_branch(*recipe) && (branch_known || branch_value))
     return out;
-  if (recipe->route == crafting_catalog::Route::dndr_alchemy) {
-    if (source.kind != CraftingPageKind::dndr_alchemy || !quantity || quantity > INT32_MAX)
+  if (recipe->route == crafting_catalog::Route::dndr) {
+    const auto* r = recipe->dndr_recipe;
+    if (!r || r->id != target || !quantity || quantity > INT32_MAX ||
+        (r->branched() && !branch_known))
       return out;
-    const auto* r = recipe->dndr_alchemy;
-    if (!r || r->id != target || (r->branched() && !branch_known))
+    const auto kind = r->at_anvil() ? CraftingPageKind::dndr_anvil : CraftingPageKind::dndr_alchemy;
+    if (source.kind != kind)
       return out;
-    const CraftingPage root{CraftingPageKind::dndr_alchemy, 0};
-    const CraftingPage desired{CraftingPageKind::dndr_alchemy, r->category_flag};
+    const CraftingPage root{kind, 0};
+    const CraftingPage desired{kind, r->category_flag};
     auto current = source;
     auto step = [&](CraftingStepKind kind, const recipe_catalog::Owner& owner, CraftingPage next) {
       out.steps[out.count++] = {kind,           recipe_catalog::Invocation::info,
@@ -182,9 +187,9 @@ inline CraftingPlan make_crafting_plan(CraftingPage source, crafting_catalog::Re
       current = next;
     };
     if (!(current == desired)) {
-      if (const auto* c = dndr::category(current.value))
+      if (const auto* c = dndr::category(current.value, r->at_anvil()))
         step(CraftingStepKind::stop, *c->stop, root);
-      if (const auto* c = dndr::category(desired.value))
+      if (const auto* c = dndr::category(desired.value, r->at_anvil()))
         step(CraftingStepKind::start, *c->start, desired);
     }
     step(CraftingStepKind::effect, *r->effect, {});
@@ -650,7 +655,8 @@ inline bool page_mode(CraftingPage page, recipe_catalog::Invocation mode,
     return false;
   if (page.kind == CraftingPageKind::tobacco_choices)
     return mode == recipe_catalog::Invocation::choice && owner == 20399;
-  if (page.kind == CraftingPageKind::stove_info || page.kind == CraftingPageKind::dndr_alchemy)
+  if (page.kind == CraftingPageKind::stove_info || page.kind == CraftingPageKind::dndr_alchemy ||
+      page.kind == CraftingPageKind::dndr_anvil)
     return mode == recipe_catalog::Invocation::info;
   if (page.kind == CraftingPageKind::bow || page.kind == CraftingPageKind::cool)
     return mode == recipe_catalog::Invocation::info;

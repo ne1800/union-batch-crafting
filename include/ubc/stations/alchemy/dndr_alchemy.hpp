@@ -14,7 +14,7 @@ inline constexpr auto body_capacity = [] {
 }();
 using AlchemyBody = ScriptWindow<body_capacity>;
 
-inline std::uint32_t maximum(const AlchemyRecipe& recipe, const std::int32_t* stock,
+inline std::uint32_t maximum(const Recipe& recipe, const std::int32_t* stock,
                              bool branch_known = false, int branch = 0) noexcept {
   const auto outputs = recipe.selected_outputs(branch_known, branch);
   if (!outputs.count)
@@ -26,8 +26,7 @@ inline std::uint32_t maximum(const AlchemyRecipe& recipe, const std::int32_t* st
     const auto symbol = recipe.targets[i].symbol;
     for (const auto& cost : recipe.costs)
       if (cost.symbol == symbol) {
-        const auto available =
-            static_cast<std::uint64_t>(stock[i]) + (symbol == static_cast<int>(flask));
+        const auto available = static_cast<std::uint64_t>(stock[i]) + (symbol == recipe.reserve);
         limit = (std::min)(limit, (std::min)(available, std::uint64_t{INT32_MAX}) / cost.units);
       }
     for (const auto& output : outputs)
@@ -41,10 +40,9 @@ inline std::uint32_t maximum(const AlchemyRecipe& recipe, const std::int32_t* st
 // Keep the original ingredient tests, debits, branch and station end. Use the space occupied by
 // the two status messages for the extra flask debit. Its failure precedes all ingredient debits.
 // Both failure paths call the verified original END info, which returns the hand flask once.
-inline bool prepare_batch(AlchemyBody& body, const AlchemyRecipe& r,
-                          std::uint32_t quantity) noexcept {
+inline bool prepare_batch(AlchemyBody& body, const Recipe& r, std::uint32_t quantity) noexcept {
   const auto& f = *r.effect->information;
-  if (!quantity || body.length != f.byte_length || body.length > body_capacity)
+  if (r.at_anvil() || !quantity || body.length != f.byte_length || body.length > body_capacity)
     return false;
   for (const auto& cost : r.costs)
     if (quantity > INT32_MAX / cost.units)

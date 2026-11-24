@@ -70,13 +70,13 @@ Binding binding(const cat::Descriptor& d) {
                                           d.ore,           d.spirit,
                                           d.bow,           d.cool,
                                           d.grind,         d.tobacco,
-                                          d.dndr_alchemy};
+                                          d.dndr_recipe};
   if (std::count(links.begin(), links.end(), nullptr) != 10)
     throw std::runtime_error("Genau ein gebundenes Quellprofil erwartet");
   using namespace ubc;
   switch (d.route) {
-  case cat::Route::dndr_alchemy:
-    return {"dndr_alchemy", source_row(d.dndr_alchemy, dndr::recipes, "dndr_alchemy_profile.hpp")};
+  case cat::Route::dndr:
+    return {"dndr_alchemy", source_row(d.dndr_recipe, dndr::recipes, "dndr_alchemy_profile.hpp")};
   case cat::Route::base:
     return {"base", source_row(d.base, recipe_catalog::recipes, "recipe_catalog.hpp")};
   case cat::Route::station:
