@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 #pragma once
 
+#include "ubc/catalogs/dndr_alchemy_profile.hpp"
 #include "ubc/catalogs/lhiver_recipe_profile.hpp"
 #include "ubc/core/sha256.hpp"
 #include <algorithm>
@@ -9,6 +10,12 @@
 namespace ubc::player_campaign {
 enum class Mode { idle, notice, crafting };
 
+enum class Campaign { unknown, marcello, dndr };
+#ifdef UBC_ENABLE_DNDR
+inline constexpr bool enable_dndr = true;
+#else
+inline constexpr bool enable_dndr = false;
+#endif
 template <class Char> constexpr Char folded(Char c) noexcept {
   if (c == '/')
     return static_cast<Char>('\\');
@@ -63,8 +70,8 @@ inline bool marcello_ini(std::wstring_view ini) noexcept {
          equal_name(name, L"2847787799_Lhiver_marcello_de");
 }
 
-inline Mode mode(bool scripts_match, bool selected) noexcept {
-  if (scripts_match)
+inline Mode mode(Campaign campaign, bool selected) noexcept {
+  if (campaign == Campaign::marcello || (enable_dndr && campaign == Campaign::dndr))
     return Mode::crafting;
   return selected ? Mode::notice : Mode::idle;
 }
@@ -84,5 +91,12 @@ bool matches(long size, Read read, long expected_size, const lhiver::Digest& exp
     size -= count;
   }
   return hash.finish() == expected;
+}
+template <class Read> Campaign identify(long size, Read read) noexcept {
+  if (size == 9327865 && matches(size, read, 9327865, lhiver::dat_sha256))
+    return Campaign::marcello;
+  if (size == dndr::dat_size && matches(size, read, dndr::dat_size, dndr::dat_digest))
+    return Campaign::dndr;
+  return Campaign::unknown;
 }
 } // namespace ubc::player_campaign

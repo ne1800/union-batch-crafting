@@ -29,6 +29,10 @@ struct NativeAmountContext {
   bool predebit = false;
 };
 
+void capture_dndr_alchemy(Capture&, const Context&, bool) noexcept;
+void* run_dndr_amount(bc::WriterScope&, const ubc::AmountMemory&, std::uint32_t,
+                      const ubc::dndr::AlchemyRecipe&, ubc::AmountOutcome&);
+void* __cdecl execute_original_amount(void*);
 // The full copy of 4096 objects persists. Exactly one reader holds it
 // until its projection finishes. Reentry must not replace this storage.
 struct GrindCaptureLease {

@@ -33,7 +33,7 @@ template <std::size_t N> bool read_string(std::uint32_t address, char (&out)[N])
   return out[text[1]] == '\0' && std::strlen(out) == text[1];
 }
 
-inline bool active_dat_matches() noexcept {
+inline Campaign active_dat() noexcept {
   // Game_Init runs after oCGame::Init loaded the game parser. Read its actual
   // source and resolved directory, including Paths.d and forced mod options.
   constexpr auto parser = lhiver::game_parser;
@@ -43,18 +43,18 @@ inline bool active_dat_matches() noexcept {
   if (!windows_probe::player_image_header() || !read_value(0x8cd988, options) || !options ||
       !read_value(parser + 0x2088, loaded_dat) || loaded_dat != 1 ||
       !read_value(0xab6284, reparse) || reparse || !read_value(0x8c34c5, physical_first))
-    return false;
+    return Campaign::unknown;
   char source[MAX_PATH]{}, directory[MAX_PATH]{}, root[MAX_PATH]{}, dat[MAX_PATH]{};
   constexpr std::uint32_t dir_strings = 0x7c, compiled_scripts = 19, root_dir = 24;
   if (!read_string(parser + 0x2074, source) ||
       !read_string(options + dir_strings + compiled_scripts * 20, directory) ||
       !read_string(options + dir_strings + root_dir * 20, root) ||
       !dat_path(root, directory, source, dat))
-    return false;
+    return Campaign::unknown;
 
   const auto vdfs = GetModuleHandleW(L"vdfs32g.dll");
   if (!vdfs)
-    return false;
+    return Campaign::unknown;
   const auto open =
       reinterpret_cast<long(__cdecl*)(const char*, long)>(GetProcAddress(vdfs, "vdf_fopen"));
   const auto read =
@@ -62,14 +62,13 @@ inline bool active_dat_matches() noexcept {
   const auto size = reinterpret_cast<long(__cdecl*)(long)>(GetProcAddress(vdfs, "vdf_ffilesize"));
   const auto close = reinterpret_cast<long(__cdecl*)(long)>(GetProcAddress(vdfs, "vdf_fclose"));
   if (!open || !read || !size || !close)
-    return false;
+    return Campaign::unknown;
   constexpr long virtual_and_physical = 1 | 2, physical_first_flag = 4;
   const long file = open(dat, virtual_and_physical | (physical_first ? physical_first_flag : 0));
   if (file == -1)
-    return false;
-  const bool match = matches(
-      size(file), [&](void* out, long count) { return read(file, out, count); }, 9327865,
-      lhiver::dat_sha256);
+    return Campaign::unknown;
+  const auto match =
+      identify(size(file), [&](void* out, long count) { return read(file, out, count); });
   close(file);
   return match;
 }

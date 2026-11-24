@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #pragma once
+#include "ubc/catalogs/dndr_alchemy_profile.hpp"
 #include "ubc/core/recipe_snapshot.hpp"
 #include "ubc/stations/station_recipe_snapshot.hpp"
 #include "ubc/stations/alchemy/alchemy_extra_snapshot.hpp"
@@ -16,11 +17,23 @@ using RecipeId = std::uint32_t;
 using recipe_catalog::ItemAmount;
 using recipe_catalog::View;
 enum class Station { stove, alchemy, leather, saw, forge, anvil, bow, cool, grind };
-enum class Route { base, station, alchemy_extra, anvil, ore, spirit, bow, cool, grind, tobacco };
+enum class Route {
+  base,
+  station,
+  alchemy_extra,
+  anvil,
+  ore,
+  spirit,
+  bow,
+  cool,
+  grind,
+  tobacco,
+  dndr_alchemy
+};
 inline constexpr bool requires_context(Route route) noexcept {
-  return route == Route::tobacco || route == Route::alchemy_extra || route == Route::anvil ||
-         route == Route::ore || route == Route::spirit || route == Route::bow ||
-         route == Route::cool || route == Route::grind;
+  return route == Route::dndr_alchemy || route == Route::tobacco || route == Route::alchemy_extra ||
+         route == Route::anvil || route == Route::ore || route == Route::spirit ||
+         route == Route::bow || route == Route::cool || route == Route::grind;
 }
 enum class Completion { ready_same_station, end_production };
 struct Descriptor {
@@ -43,6 +56,7 @@ struct Descriptor {
   const cool_recipe_catalog::Descriptor* cool = nullptr;
   const grind_recipe::Descriptor* grind = nullptr;
   const tobacco::Descriptor* tobacco = nullptr;
+  const dndr::AlchemyRecipe* dndr_alchemy = nullptr;
 };
 inline constexpr std::size_t base_begin = 0, station_begin = recipe_catalog::recipes.size();
 inline constexpr std::size_t alchemy_extra_begin =
@@ -259,7 +273,20 @@ inline constexpr auto recipes = [] {
   }
   return result;
 }();
+inline constexpr auto dndr_recipes = [] {
+  std::array<Descriptor, dndr::recipes.size()> entries{};
+  for (std::size_t i = 0; i < entries.size(); ++i) {
+    const auto& r = dndr::recipes[i];
+    entries[i] = {r.id,    r.name,    Station::alchemy, Route::dndr_alchemy,       r.targets,
+                  r.costs, r.outputs, "Durchgaenge",    Completion::end_production};
+    entries[i].dndr_alchemy = &r;
+  }
+  return entries;
+}();
 inline constexpr const Descriptor* find(RecipeId id) noexcept {
+  for (const auto& value : dndr_recipes)
+    if (value.id == id)
+      return &value;
   for (const auto& value : recipes)
     if (value.id == id)
       return &value;
@@ -296,6 +323,10 @@ struct HandAmounts {
 };
 inline HandAmounts hand_amounts(const Descriptor& d, std::int32_t symbol) noexcept {
   HandAmounts result;
+  if (d.route == Route::dndr_alchemy) {
+    result.consumed = symbol == static_cast<int>(dndr::flask) ? 1 : 0;
+    return result;
+  }
   if (d.tobacco) {
     if (symbol == tobacco::flask)
       result.consumed = 1;
@@ -580,14 +611,18 @@ inline bool bound_hands(const crafting_catalog::Descriptor& d,
            right.symbol == want.active_item_symbol &&
            right.amount == static_cast<std::int32_t>(want.amount);
   }
-  if (d.tobacco || d.route == crafting_catalog::Route::alchemy_extra ||
+  if (d.route == crafting_catalog::Route::dndr_alchemy || d.tobacco ||
+      d.route == crafting_catalog::Route::alchemy_extra ||
       d.route == crafting_catalog::Route::spirit) {
     const auto& left = hands.hands.left;
     const auto& right = hands.hands.right;
-    return (d.tobacco || d.alchemy_extra || d.spirit) && hands.left_slot_known &&
-           hands.right_slot_known && hands.interact_item_known && left.state == 0 && !left.object &&
-           right.state == 1 && right.object && right.symbol == 16604 && right.amount == 1 &&
-           hands.interact_item == right.object;
+    const auto flask =
+        d.route == crafting_catalog::Route::dndr_alchemy ? static_cast<int>(dndr::flask) : 16604;
+    return (d.route == crafting_catalog::Route::dndr_alchemy || d.tobacco || d.alchemy_extra ||
+            d.spirit) &&
+           hands.left_slot_known && hands.right_slot_known && hands.interact_item_known &&
+           left.state == 0 && !left.object && right.state == 1 && right.object &&
+           right.symbol == flask && right.amount == 1 && hands.interact_item == right.object;
   }
   if (d.route == crafting_catalog::Route::anvil || d.route == crafting_catalog::Route::ore) {
     const auto* want = d.route == crafting_catalog::Route::anvil

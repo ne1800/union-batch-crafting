@@ -522,11 +522,13 @@ void __fastcall after_frame(void* game, void* manager) {
       SetLastError(error);
       return;
     }
-    initialize_extra(c);
-    initialize_bow(c);
-    initialize_cool(c);
-    initialize_grind(c);
-    maybe_install_ammo(c);
+    if (!dndr_active) {
+      initialize_extra(c);
+      initialize_bow(c);
+      initialize_cool(c);
+      initialize_grind(c);
+      maybe_install_ammo(c);
+    }
     observe_result(c);
     observe_ammo_frame_health();
     if (success_pending && ammo_job && !ammo_notice_ready && ammo::healthy()) {
@@ -699,7 +701,7 @@ void __fastcall after_frame(void* game, void* manager) {
           }
           // At our first station, the actual new preview generation
           // now exists. The original dialog is still visible.
-          if (!disabled)
+          if (!disabled && !dndr_active)
             initialize_cool(c);
           const auto opening_serial = grind_preview_input_serial;
           const auto captured = capture_opening(c, bow_trace);

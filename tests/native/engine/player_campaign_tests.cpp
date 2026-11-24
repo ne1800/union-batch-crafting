@@ -17,6 +17,11 @@ int main() {
       pc::dat_path("C:\\Gothic", "C:\\Gothic2\\Scripts", "Other.src", path) ||
       pc::dat_path("C:\\Gothic", "C:\\Gothic\\Scripts", "Other.src", too_short))
     return 5;
+  if (pc::mode(pc::Campaign::dndr, false) !=
+          (pc::enable_dndr ? pc::Mode::crafting : pc::Mode::idle) ||
+      pc::mode(pc::Campaign::dndr, true) !=
+          (pc::enable_dndr ? pc::Mode::crafting : pc::Mode::notice))
+    return 7;
   constexpr std::string_view dat = "abc";
   const auto expected = ubc::lhiver::digest_literal(
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
@@ -28,7 +33,7 @@ int main() {
           return size;
         },
         3, expected);
-    return pc::mode(match, pc::marcello_ini(ini));
+    return pc::mode(match ? pc::Campaign::marcello : pc::Campaign::unknown, pc::marcello_ini(ini));
   };
   if (check("abd", L"GothicGame.ini") != pc::Mode::idle ||
       check("abd", L"Other_Lhiver_marcello_de.ini") != pc::Mode::idle ||

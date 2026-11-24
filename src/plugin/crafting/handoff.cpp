@@ -424,7 +424,7 @@ void observe_result(const Context& c) noexcept {
   value.hero = c.hero;
   value.station_known = c.station_known;
   value.station = c.station;
-  const auto production = rt::symbol_int(memory, s::game_parser, ubc::lhiver::production_symbol);
+  const auto production = rt::symbol_int(memory, s::game_parser, production_symbol());
   value.production_known = production.valid;
   value.production = production.value;
   value.selection_known = c.dialog.valid;

@@ -95,10 +95,22 @@ add_test(NAME selection_session COMMAND ubc_selection_session_tests)
 add_test(NAME selection_stock COMMAND ubc_selection_stock_tests)
 add_test(NAME selection_snapshot COMMAND ubc_selection_snapshot_tests)
 
+add_executable(
+    ubc_dndr_campaign_enabled_tests
+    tests/native/engine/player_campaign_tests.cpp
+)
+target_include_directories(ubc_dndr_campaign_enabled_tests PRIVATE include)
+target_compile_definitions(
+    ubc_dndr_campaign_enabled_tests
+    PRIVATE UBC_ENABLE_DNDR
+)
+add_test(NAME dndr_campaign_enabled COMMAND ubc_dndr_campaign_enabled_tests)
+
 foreach(
     test_path
     engine/player_engine
     engine/player_campaign
+    stations/alchemy/dndr_alchemy
     core/batch_session
     ui/batch_menu
     engine/amount_patch
@@ -662,6 +674,7 @@ if(WIN32)
         src/plugin/crafting/menu.cpp
         src/plugin/crafting/amount.cpp
         src/plugin/crafting/tobacco.cpp
+        src/plugin/crafting/dndr_alchemy.cpp
         src/plugin/crafting/hooks.cpp
     )
     function(add_crafting_plugin target resource)
@@ -717,6 +730,22 @@ if(WIN32)
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/player"
             ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/player"
     )
+    option(UBC_ENABLE_DNDR "Build the Night of the Raven campaign test DLL" OFF)
+    if(UBC_ENABLE_DNDR)
+        add_crafting_plugin(UnionBatchCraftingDndrTest "${version_resource}")
+        target_link_libraries(UnionBatchCraftingDndrTest PRIVATE shell32)
+        target_compile_definitions(
+            UnionBatchCraftingDndrTest
+            PRIVATE UBC_PLAYER_RELEASE UBC_ENABLE_DNDR
+        )
+        set_target_properties(
+            UnionBatchCraftingDndrTest
+            PROPERTIES
+                OUTPUT_NAME UnionBatchCraftingExtended
+                RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/dndr-test"
+                ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/dndr-test"
+        )
+    endif()
     add_executable(
         ubc_crafting_effect_guard_tests
         tests/native/engine/crafting_effect_guard_tests.cpp

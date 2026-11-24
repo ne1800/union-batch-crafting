@@ -16,6 +16,12 @@ bool cool_context_mode = false;
 bool configure_batch_symbols(bc::Config& config) noexcept {
   if (config.symbol_count)
     return false;
+  if (dndr_active) {
+    static_assert(ubc::dndr::recipes.size() <= std::tuple_size<decltype(config.symbols)>::value);
+    for (const auto& recipe : ubc::dndr::recipes)
+      config.symbols[config.symbol_count++] = static_cast<int>(recipe.effect->information->symbol);
+    return true;
+  }
   for (const auto& recipe : basecat::recipes)
     for (const auto& callback : recipe.callbacks)
       if (callback.minimum_quantity) {
@@ -97,8 +103,9 @@ static void install(bool execute) noexcept {
   if (log_file == INVALID_HANDLE_VALUE)
     return;
 #ifdef UBC_PLAYER_RELEASE
-  const auto campaign = ubc::player_campaign::mode(ubc::player_campaign::active_dat_matches(),
-                                                   ubc::player_campaign::marcello_selected());
+  const auto scripts = ubc::player_campaign::active_dat();
+  const auto campaign =
+      ubc::player_campaign::mode(scripts, ubc::player_campaign::marcello_selected());
   if (campaign == ubc::player_campaign::Mode::idle) {
     event("plugin_idle", 0, 0, ",\"reason\":\"unsupported_scripts_without_marcello_lhiver\"");
     return;
@@ -140,6 +147,18 @@ static void install(bool execute) noexcept {
     return;
   }
 #endif
+#ifdef UBC_ENABLE_DNDR
+  dndr_active = scripts == ubc::player_campaign::Campaign::dndr;
+  if (dndr_active) {
+    const auto contract = rt::verify_local_contract(memory, s::game_parser, ubc::dndr::profile);
+    if (!contract.matches) {
+      event("dndr_contract_rejected", static_cast<int>(contract.failed_symbol),
+            static_cast<int>(contract.issue));
+      return;
+    }
+    event("dndr_campaign_verified");
+  }
+#endif
   const std::array<std::uintptr_t, sites.size()> destinations{
       {reinterpret_cast<std::uintptr_t>(&UbcFrameBridge),
        reinterpret_cast<std::uintptr_t>(&observe_add),
@@ -175,12 +194,14 @@ static void install(bool execute) noexcept {
   config.signature = batch_signature;
   config.select = select_batch_call;
   config.writer = execute_amount;
-  config.reject_unexpected = reject_unexpected_cool_info;
+  if (!dndr_active)
+    config.reject_unexpected = reject_unexpected_cool_info;
   if (!configure_batch_symbols(config)) {
     event("hooks_rejected");
     return;
   }
-  if (!bc::configure(config) || !ammo::configure({nullptr, read_ammo_context, read_ammo_scope})) {
+  if (!bc::configure(config) ||
+      (!dndr_active && !ammo::configure({nullptr, read_ammo_context, read_ammo_scope}))) {
     event("hooks_rejected");
     return;
   }

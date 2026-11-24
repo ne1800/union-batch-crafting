@@ -23,7 +23,8 @@ enum class CraftingPageKind {
   bow,
   cool,
   grind,
-  tobacco_choices
+  tobacco_choices,
+  dndr_alchemy
 };
 struct CraftingPage {
   CraftingPageKind kind = CraftingPageKind::unknown;
@@ -94,6 +95,8 @@ inline bool valid_crafting_page(CraftingPage page) noexcept {
   if (page.kind == CraftingPageKind::anvil)
     return anvil_recipe_navigation::supported_page(
         static_cast<anvil_recipe_navigation::Page>(page.value));
+  if (page.kind == CraftingPageKind::dndr_alchemy)
+    return dndr::supported_category(page.value);
   if (page.kind == CraftingPageKind::bow)
     return crafting_page(static_cast<bow_recipe_navigation::Page>(page.value)) == page;
   if (page.kind == CraftingPageKind::cool)
@@ -163,7 +166,29 @@ inline CraftingPlan make_crafting_plan(CraftingPage source, crafting_catalog::Re
   }
   if (recipe->route != crafting_catalog::Route::spirit && (branch_known || branch_value))
     return out;
-  if (recipe->route == crafting_catalog::Route::base) {
+  if (recipe->route == crafting_catalog::Route::dndr_alchemy) {
+    if (source.kind != CraftingPageKind::dndr_alchemy || !quantity || quantity > INT32_MAX)
+      return out;
+    const auto* pilot = recipe->dndr_alchemy;
+    if (!pilot || pilot->id != target)
+      return out;
+    const CraftingPage category{CraftingPageKind::dndr_alchemy, pilot->category_flag};
+    if (source.value == 0)
+      out.steps[out.count++] = {CraftingStepKind::start,
+                                recipe_catalog::Invocation::info,
+                                pilot->category->instance,
+                                static_cast<int>(pilot->category->information->symbol),
+                                source,
+                                category};
+    else if (!(source == category))
+      return out;
+    out.steps[out.count++] = {CraftingStepKind::effect,
+                              recipe_catalog::Invocation::info,
+                              pilot->effect->instance,
+                              static_cast<int>(pilot->effect->information->symbol),
+                              category,
+                              {}};
+  } else if (recipe->route == crafting_catalog::Route::base) {
     const bool stove = recipe->station == crafting_catalog::Station::stove;
     if (source.kind != (stove ? CraftingPageKind::stove_info : CraftingPageKind::alchemy)) {
       out.issue = CraftingPlanIssue::station;
@@ -625,7 +650,7 @@ inline bool page_mode(CraftingPage page, recipe_catalog::Invocation mode,
     return false;
   if (page.kind == CraftingPageKind::tobacco_choices)
     return mode == recipe_catalog::Invocation::choice && owner == 20399;
-  if (page.kind == CraftingPageKind::stove_info)
+  if (page.kind == CraftingPageKind::stove_info || page.kind == CraftingPageKind::dndr_alchemy)
     return mode == recipe_catalog::Invocation::info;
   if (page.kind == CraftingPageKind::bow || page.kind == CraftingPageKind::cool)
     return mode == recipe_catalog::Invocation::info;

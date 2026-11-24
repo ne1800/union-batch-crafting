@@ -67,12 +67,15 @@ Context context() noexcept {
       integer(c.station, 0x1f4) != 1 || integer(c.station, 0x1f8) != 1)
     return c;
   c.ownership_known = true;
-  const auto hero = rt::read_symbol_address(memory, s::game_parser, ubc::lhiver::hero_symbol);
+  const auto hero = rt::read_symbol_address(memory, s::game_parser, hero_symbol());
   std::uint32_t bound = 0;
   if (!hero.valid || !field(hero.address, 0x1c, bound) || bound != c.hero)
     return c;
-  const auto production = rt::symbol_int(memory, s::game_parser, ubc::lhiver::production_symbol);
+  const auto production = rt::symbol_int(memory, s::game_parser, production_symbol());
   if (!production.valid)
+    return c;
+  if (dndr_active &&
+      (production.value != 4 || !matches_station_profile(c.station, cat::Station::alchemy)))
     return c;
   if (production.value == 14 && name_is(c.station, 0x1e0, "FRYINGMEAT") &&
       name_is(c.station, 0x1b8, "STOVE") && name_is(c.station, 0x1a4, "") &&
@@ -127,7 +130,8 @@ Context context() noexcept {
   if (target != 1 && !(c.kind == cat::Station::cool && target == 0))
     return c;
 #ifdef UBC_PLAYER_RELEASE
-  if (player_image.failure[static_cast<unsigned>(c.kind)] || !player_scripts_match(c.kind))
+  if (player_image.failure[static_cast<unsigned>(c.kind)] ||
+      (!dndr_active && !player_scripts_match(c.kind)))
     return c;
 #endif
   c.valid = true;
@@ -184,6 +188,12 @@ bool foreign_dialog(const Context& c) noexcept {
          (c.dialog.npc != c.hero || c.dialog.player != c.hero);
 }
 const basecat::Owner* owner_for(std::int32_t instance) noexcept {
+  if (dndr_active) {
+    for (const auto& owner : ubc::dndr::owners)
+      if (owner.instance == instance)
+        return &owner;
+    return nullptr;
+  }
   if (instance == tobacco::owner.instance)
     return &tobacco::owner;
   if (const auto* owner = nav::owner_for(instance))
@@ -434,6 +444,8 @@ bool matches_station_profile(std::uint32_t mob, cat::Station kind) noexcept {
   return false;
 }
 bool common_bindings_verified() noexcept {
+  if (dndr_active)
+    return rt::verify_local_contract(memory, s::game_parser, ubc::dndr::profile).matches;
   const ubc::lhiver::Profile profile{layout_profile.parser_address,
                                      layout_profile.symbol_count,
                                      layout_profile.code_length,
