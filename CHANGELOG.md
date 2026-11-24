@@ -4,7 +4,7 @@
 
 ## English
 
-- **Unreleased** The plugin stays idle when another campaign uses different scripts. Selecting Marcello L’Hiver with an unsupported script version still shows the compatibility notice.
+- **Unreleased** The plugin stays idle when another campaign uses different scripts. Selecting Marcello L’Hiver with an unsupported script version still shows the compatibility notice. Campaign profiles now prepare a Night of the Raven alchemy pilot in development builds.
 
 - **0.0.66** The grindstone preview now refreshes once when you open the menu and once per recipe, quantity or inventory change. A brief hitch of about 50 ms remains. In 0.0.65, opening the menu could cause repeated pauses, and a refresh could take a quarter of a second. If an ingredient is equipped, the recipe now shows `[equipped]` and asks you to unequip it first.
 
@@ -38,7 +38,7 @@
 
 ## Deutsch
 
-- **Unveröffentlicht** Bei einer anderen Kampagne mit abweichenden Skripten bleibt das Plugin untätig. Ist Marcello L’Hiver mit einem nicht unterstützten Skriptstand gewählt, erscheint weiterhin der Fehlerhinweis.
+- **Unveröffentlicht** Bei einer anderen Kampagne mit abweichenden Skripten bleibt das Plugin untätig. Ist Marcello L’Hiver mit einem nicht unterstützten Skriptstand gewählt, erscheint weiterhin der Fehlerhinweis. Kampagnenprofile bereiten einen DNdR-Alchemiepiloten für Entwicklungsbuilds vor.
 
 - **0.0.66** Am Schleifstein wird die Vorschau beim Öffnen des Menüs und bei jedem Rezept-, Mengen- oder Bestandswechsel nur noch einmal berechnet. Ein kurzer Hänger von etwa 50 ms bleibt. In 0.0.65 konnte das Menü beim Öffnen mehrmals stocken, und eine Neuberechnung dauerte bis zu einer Viertelsekunde. Ist eine Zutat ausgerüstet, zeigt das Rezept jetzt `[ausgerüstet]` und bittet dich, sie zuerst abzulegen.
 

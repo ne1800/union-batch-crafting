@@ -277,6 +277,24 @@ ubc::CraftingPage page(const Context& c, ubc::BowMenuTrace* trace) noexcept {
   if (c.kind == cat::Station::stove)
     return c.dialog.mode == 1 ? ubc::crafting_stove_page() : ubc::CraftingPage{};
   if (c.kind == cat::Station::alchemy) {
+    if (dndr_active) {
+      if (c.dialog.mode != 1)
+        return {};
+      unsigned selected = 0;
+      for (auto flag : ubc::dndr::category_flags) {
+        const auto value = rt::symbol_int(memory, s::game_parser, flag, ubc::dndr::profile);
+        if (!value.valid || (value.value != 0 && value.value != 1))
+          return {};
+        if (value.value) {
+          if (selected)
+            return {};
+          selected = flag;
+        }
+      }
+      if (ubc::dndr::supported_category(selected))
+        return {ubc::CraftingPageKind::dndr_alchemy, selected};
+      return {};
+    }
     const auto current = alchemy_page(c);
     if (c.dialog.mode == 2 && current == nav::Page::tobacco_info)
       return {ubc::CraftingPageKind::tobacco_choices, tobacco::owner.instance};
@@ -439,7 +457,9 @@ Capture capture(const Context& c, const GrindPreviewLease* shared_grind,
   const bool callback = native_update && update_depth == 1 && info_depth + choice_depth <= 1;
   const bool boundary = (outer || callback) && !station_depth && !collection_depth;
   Capture captured;
-  if (c.kind == cat::Station::stove || c.kind == cat::Station::alchemy) {
+  if (dndr_active) {
+    capture_dndr_alchemy(captured, c, boundary);
+  } else if (c.kind == cat::Station::stove || c.kind == cat::Station::alchemy) {
     const auto kind =
         c.kind == cat::Station::stove ? basecat::Station::stove : basecat::Station::alchemy;
     std::array<bool, basecat::recipes.size()> contracts{};
@@ -581,7 +601,7 @@ Capture capture(const Context& c, const GrindPreviewLease* shared_grind,
   }
 #ifdef UBC_PLAYER_RELEASE
   for (std::size_t i = 0; i < player_recipes.size(); ++i)
-    if (!player_recipes[i]) {
+    if (!dndr_active && !player_recipes[i]) {
       captured.snapshot.recipes[i].contract = false;
       captured.snapshot.recipes[i].known = false;
     }

@@ -401,13 +401,13 @@ ubc::StationEndPoint end_point_once(const ubc::CraftingKey& k, bool before) noex
       !field(game, a::game_world, out.world) || !read(s::hero_pointer, out.hero) || !out.world ||
       !out.hero)
     return out;
-  const auto hero = rt::read_symbol_address(memory, s::game_parser, ubc::lhiver::hero_symbol);
+  const auto hero = rt::read_symbol_address(memory, s::game_parser, hero_symbol());
   std::uint32_t bound = 0;
   if (!hero.valid || !field(hero.address, 0x1c, bound) || bound != out.hero)
     return out;
   out.identity_known = true;
   out.station_known = field(out.hero, s::npc_interact_mob, out.station);
-  const auto production = rt::symbol_int(memory, s::game_parser, ubc::lhiver::production_symbol);
+  const auto production = rt::symbol_int(memory, s::game_parser, production_symbol());
   out.production_known = production.valid;
   out.production = production.value;
   out.hands_known = ubc::station_recipe_snapshot_detail::begin_hands(memory, out.hero, end_hands) ==

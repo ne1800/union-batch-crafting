@@ -119,6 +119,17 @@ inline constexpr ubc::lhiver::Profile layout_profile{ubc::lhiver::game_parser,
                                                      0,
                                                      nullptr,
                                                      0};
+#ifdef UBC_ENABLE_DNDR
+inline bool dndr_active = false;
+#else
+inline constexpr bool dndr_active = false;
+#endif
+inline unsigned hero_symbol() noexcept {
+  return dndr_active ? ubc::dndr::hero : ubc::lhiver::hero_symbol;
+}
+inline unsigned production_symbol() noexcept {
+  return dndr_active ? ubc::dndr::production : ubc::lhiver::production_symbol;
+}
 extern HMODULE module;
 extern HANDLE log_file;
 extern volatile LONG installed, engine_thread;

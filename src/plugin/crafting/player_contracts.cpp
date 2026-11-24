@@ -12,6 +12,8 @@ std::array<bool, 9> checked_stations{}, available_stations{};
 bool player_recipe_matches(const cat::Descriptor& recipe) noexcept {
   const auto parser = s::game_parser;
   switch (recipe.route) {
+  case cat::Route::dndr_alchemy:
+    return dndr_active && rt::verify_local_contract(memory, parser, ubc::dndr::profile).matches;
   case cat::Route::base:
     return ubc::recipe_runtime::verify(memory, parser, *recipe.base).matches;
   case cat::Route::station:

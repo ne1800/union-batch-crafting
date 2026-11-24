@@ -65,15 +65,18 @@ struct Binding {
 };
 
 Binding binding(const cat::Descriptor& d) {
-  const std::array<const void*, 10> links{d.base,          d.station_descriptor,
+  const std::array<const void*, 11> links{d.base,          d.station_descriptor,
                                           d.alchemy_extra, d.anvil,
                                           d.ore,           d.spirit,
                                           d.bow,           d.cool,
-                                          d.grind,         d.tobacco};
-  if (std::count(links.begin(), links.end(), nullptr) != 9)
+                                          d.grind,         d.tobacco,
+                                          d.dndr_alchemy};
+  if (std::count(links.begin(), links.end(), nullptr) != 10)
     throw std::runtime_error("Genau ein gebundenes Quellprofil erwartet");
   using namespace ubc;
   switch (d.route) {
+  case cat::Route::dndr_alchemy:
+    return {"dndr_alchemy", source_row(d.dndr_alchemy, dndr::recipes, "dndr_alchemy_profile.hpp")};
   case cat::Route::base:
     return {"base", source_row(d.base, recipe_catalog::recipes, "recipe_catalog.hpp")};
   case cat::Route::station:

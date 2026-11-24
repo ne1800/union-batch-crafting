@@ -55,6 +55,16 @@ const basecat::Callback* amount_callback(std::int32_t symbol) noexcept {
 }
 
 bool __cdecl batch_signature(const bc::Call& call) noexcept {
+  if (dndr_active) {
+    const auto* recipe = ubc::dndr::callback(static_cast<unsigned>(call.symbol));
+    if (!recipe || reinterpret_cast<std::uintptr_t>(call.parser) != s::game_parser)
+      return false;
+    rt::detail::Layout layout{};
+    return rt::detail::read_layout(memory, s::game_parser, ubc::dndr::profile, layout) ==
+               rt::Issue::none &&
+           rt::detail::check_function(memory, layout, *recipe->effect->information) ==
+               rt::Issue::none;
+  }
   const auto* entry = amount_callback(call.symbol);
   const ubc::lhiver::Function* registered = call.symbol == 20401 ? tobacco::owner.information
                                             : entry              ? entry->function
@@ -169,6 +179,15 @@ bool late_gate(ubc::GrindCheck* diagnostic, tobacco::Checks* trace) noexcept {
     return false;
   const auto c = context();
   const auto current = observation(c, false);
+  if (dndr_active) {
+    const auto actor = rt::read_symbol_address(memory, s::game_parser, ubc::dndr::self);
+    std::uint32_t bound = 0;
+    if (!actor.valid || !field(actor.address, 0x1c, bound) || bound != c.hero ||
+        !current_info_effect(c) ||
+        !ubc::bow_item_code::verify_externals(memory, s::game_parser).verified ||
+        !rt::verify_local_contract(memory, s::game_parser, ubc::dndr::profile).matches)
+      return false;
+  }
   if (c.kind == cat::Station::saw) {
     const auto* recipe = cat::find(handoff.request().id);
     if (!c.valid || !recipe || recipe->route != cat::Route::station ||
@@ -702,8 +721,11 @@ void* __cdecl execute_amount(bc::WriterScope& scope) {
     SetLastError(incoming_error);
     return nullptr;
   }
+  const auto* dndr_recipe =
+      dndr_active ? ubc::dndr::callback(static_cast<unsigned>(scope.call.symbol)) : nullptr;
   const auto* function =
-      recipe && recipe->cool
+      dndr_recipe && dndr_recipe->id == request.id ? dndr_recipe->effect->information
+      : recipe && recipe->cool
           ? (cool_plan.valid ? (cool_plan.callback == 20775   ? ccat::single.information
                                 : cool_plan.callback == 20778 ? ccat::triple.information
                                                               : nullptr)
@@ -832,6 +854,9 @@ void* __cdecl execute_amount(bc::WriterScope& scope) {
     outcome.entered = result_guard.cool_witness().valid &&
                       result_guard.state() == ubc::CraftingResultState::waiting;
     outcome.issue = amount_patch.issue();
+  } else if (dndr_recipe) {
+    result = run_dndr_amount(scope, writable, ctx.layout.code + function->byte_offset, *dndr_recipe,
+                             outcome);
   } else if (cool_job)
     result =
         ubc::run_amount_call(amount_patch, writable, ctx.layout.code + ctx.function->byte_offset,

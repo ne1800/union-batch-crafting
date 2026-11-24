@@ -223,9 +223,26 @@ struct Table {
     return labels[static_cast<std::size_t>(key)];
   }
   constexpr const char* item(std::int32_t symbol) const noexcept {
+    // Equivalent item names in the two verified script catalogues.
+    switch (symbol) {
+    case 7001:
+      symbol = 16708;
+      break;
+    case 7029:
+      symbol = 16736;
+      break;
+    case 6906:
+      symbol = 16604;
+      break;
+    case 7059:
+      symbol = 16766;
+      break;
+    }
     return items.find(static_cast<std::uint32_t>(symbol), (*this)[Label::unknown_item]);
   }
   constexpr const char* recipe(std::uint32_t id) const noexcept {
+    if (id == 0x10004)
+      return item(7059);
     return recipes.find(id, (*this)[Label::select_recipe]);
   }
 };
