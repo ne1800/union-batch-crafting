@@ -450,6 +450,14 @@ void observe_result(const Context& c) noexcept {
                         ubc::station_recipe_snapshot_detail::verify_hands(memory, result_hands);
     if (value.hands_known)
       value.hands = result_hands.before;
+    if (recipe->dndr_alchemy && recipe->dndr_alchemy->branched()) {
+      const auto branch =
+          rt::symbol_int(memory, s::game_parser, ubc::dndr::bloodfly, ubc::dndr::layout_profile);
+      if (!branch.valid || branch.value != request.material_snapshot.branch_value)
+        value.stock_known = false;
+      if (branch.valid && branch.value != request.material_snapshot.branch_value)
+        result_guard.fail(ubc::CraftingResultIssue::context);
+    }
     if (recipe->grind)
       value.grind = read_grind_result_values(request);
     const auto fresh = context();

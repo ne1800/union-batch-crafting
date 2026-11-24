@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #pragma once
+#include "ubc/catalogs/dndr_alchemy_items.hpp"
 #include "ubc/text/codepage.hpp"
 #include <iterator>
 #include <type_traits>
@@ -224,25 +225,55 @@ struct Table {
   }
   constexpr const char* item(std::int32_t symbol) const noexcept {
     // Equivalent item names in the two verified script catalogues.
-    switch (symbol) {
-    case 7001:
-      symbol = 16708;
-      break;
-    case 7029:
-      symbol = 16736;
-      break;
-    case 6906:
-      symbol = 16604;
-      break;
-    case 7059:
-      symbol = 16766;
-      break;
-    }
+    const auto index = dndr::item_index(symbol);
+    if (index < dndr::items.size())
+      symbol = dndr::items[index].localized_symbol;
     return items.find(static_cast<std::uint32_t>(symbol), (*this)[Label::unknown_item]);
   }
   constexpr const char* recipe(std::uint32_t id) const noexcept {
-    if (id == 0x10004)
+    // Development campaign uses the localized item name in its recipe list.
+    switch (id) {
+    case 0x10001:
+      return item(7065);
+    case 0x10002:
+      return item(7067);
+    case 0x10003:
+      return item(7069);
+    case 0x10004:
       return item(7059);
+    case 0x10005:
+      return item(7061);
+    case 0x10006:
+      return item(7063);
+    case 0x14001:
+      return item(6122);
+    case 0x14002:
+      return item(6124);
+    case 0x14003:
+      return item(6126);
+    case 0x14004:
+      return item(6183);
+    case 0x14005:
+      return item(6181);
+    case 0x14006:
+      return item(7075);
+    case 0x14007:
+      return item(7077);
+    case 0x14008:
+      return item(7073);
+    case 0x14009:
+      return item(7071);
+    case 0x1400a:
+      return item(7079);
+    case 0x1400b:
+      return item(6922);
+    case 0x1400c:
+      return item(6149);
+    case 0x1400d:
+      return item(7081);
+    case 0x17001:
+      return item(6177);
+    }
     return recipes.find(id, (*this)[Label::select_recipe]);
   }
 };
