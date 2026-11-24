@@ -93,3 +93,5 @@ Renovate schlägt Updates für gepinnte Werkzeuge und GitHub Actions als Pull Re
 ## Lizenz
 
 Der eigene Code steht unter der [MIT-Lizenz](LICENSE). Die [Hinweise zu Drittkomponenten](THIRD-PARTY-NOTICES) betreffen die in die DLL gelinkte Microsoft-Laufzeit. Das Repository enthält keine Spieldateien, Originalskripte oder Spielstände.
+
+Die Bildschirmfotos unter `docs/images/` zeigen Szenen aus Gothic II und der Mod Marcello L’Hiver. Diese Spielinhalte gehören ihren Rechteinhabern und fallen nicht unter die MIT-Lizenz.
