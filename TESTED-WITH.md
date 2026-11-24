@@ -2,6 +2,21 @@
 
 Gothic II: Night of the Raven / Die Nacht des Raben, Windows x86, 2.6 fix, Marcello L’Hiver **DE 2.0.4**, Union **1.0m**.
 
+<a id="campaign-compatibility"></a>
+
+## Campaign compatibility · Kampagnenverträglichkeit (Unreleased)
+
+| In-game test / Spieltest | Player DLL SHA-256 / SHA-256 der Spieler-DLL |
+| --- | --- |
+| Night of the Raven without a campaign mod / Die Nacht des Raben ohne Kampagnenmod | `c7b3517cfa629ab91ff60834807f07f3d689247ecde70df8650df600e18732b9` |
+| Marcello L’Hiver DE 2.0.4, slot 14 / Slot 14 | `0dc1cf7c1eb4bfcb00b88cc568b06e67aceef8fcdfc77893c824a67baa8cf1dc` |
+
+In Night of the Raven, the plugin loaded, logged one reason for staying idle and left the main menu, the alchemy dialogue and the anvil dialogue intact. Making one honey tobacco used one apple tobacco and one laboratory flask. The honey remained in inventory. The final build also accepts the script directory format observed in that run. Its Night of the Raven check was replayed offline. In Marcello L’Hiver DE 2.0.4, that build displayed the quantity menu and crafted two swamp tobaccos in one order, consuming two apple tobaccos and two laboratory flasks.
+
+In *Gothic II – Die Nacht des Raben* lud das Plugin, protokollierte einmal den Grund für seine Untätigkeit und ließ das Hauptmenü sowie die Originaldialoge am Alchemietisch und am Amboss unverändert. Ein Honigtabak verbrauchte einen Apfeltabak und eine Laborwasserflasche. Der Honig blieb erhalten. Der endgültige Build erkennt auch das in diesem Lauf beobachtete Skriptverzeichnis. Seine Prüfung für Die Nacht des Raben wurde offline wiederholt. In Marcello L’Hiver DE 2.0.4 zeigte dieser Build das Mengenmenü an und stellte mit einem Auftrag zwei Sumpftabake aus zwei Einheiten Apfeltabak und zwei Laborwasserflaschen her.
+
+## Earlier in-game results · Frühere Spieltests
+
 | File / Datei | Tested SHA-256 / geprüfter SHA-256 |
 | --- | --- |
 | Gothic2.exe | `0655b4811e008a353ce372fde463ef00b6101f3e89be850e2f14980140447c7f` |
