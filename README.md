@@ -93,3 +93,5 @@ Renovate proposes updates for pinned tools and GitHub Actions as pull requests, 
 ## License
 
 The project’s own code uses the [MIT licence](LICENSE). The [third-party notices](THIRD-PARTY-NOTICES) cover the Microsoft runtime linked into the DLL. The repository contains no game files, original scripts or saves.
+
+The screenshots in `docs/images/` show scenes from Gothic II and the Marcello L’Hiver mod. That game content belongs to its rights holders and is not covered by the MIT licence.
