@@ -5,6 +5,11 @@
 namespace pc = ubc::player_campaign;
 int main() {
   char path[128]{}, too_short[8]{};
+  if (!pc::dat_path(R"(S:\GAME)", R"(\_WORK\DATA\SCRIPTS\_COMPILED\)", R"(CONTENT\GOTHIC.SRC)",
+                    path) ||
+      std::string_view(path) != R"(_WORK\DATA\SCRIPTS\_COMPILED\GOTHIC.DAT)" ||
+      pc::dat_path(R"(S:\GAME)", R"(\\server\share\scripts)", "GOTHIC.SRC", path))
+    return 6;
   if (!pc::dat_path("C:\\Gothic\\", "c:\\GOTHIC\\_Work\\Scripts\\", "Content\\Gothic.src", path) ||
       std::string_view(path) != "_Work\\Scripts\\Gothic.DAT" ||
       !pc::dat_path("D:\\Game", "D:\\Game\\Custom", "Other.src", path) ||

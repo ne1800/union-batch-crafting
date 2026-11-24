@@ -25,11 +25,18 @@ bool dat_path(std::string_view root, std::string_view directory, std::string_vie
               char (&result)[N]) noexcept {
   while (!root.empty() && folded(root.back()) == '\\')
     root.remove_suffix(1);
-  if (root.empty() || directory.size() <= root.size() || folded(directory[root.size()]) != '\\' ||
-      !std::equal(root.begin(), root.end(), directory.begin(),
-                  [](char a, char b) { return folded(a) == folded(b); }))
+  if (root.empty() || directory.empty())
     return false;
-  directory.remove_prefix(root.size() + 1);
+  if (directory.size() > root.size() && folded(directory[root.size()]) == '\\' &&
+      std::equal(root.begin(), root.end(), directory.begin(),
+                 [](char a, char b) { return folded(a) == folded(b); })) {
+    directory.remove_prefix(root.size() + 1);
+  } else if (directory.size() > 1 && folded(directory[0]) == '\\' && folded(directory[1]) != '\\') {
+    // GetDirString also returns directories rooted in the VDFS namespace.
+    directory.remove_prefix(1);
+  } else {
+    return false;
+  }
   while (!directory.empty() && folded(directory.back()) == '\\')
     directory.remove_suffix(1);
   source.remove_prefix(source.find_last_of("/\\") + 1);
