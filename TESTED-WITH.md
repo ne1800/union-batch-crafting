@@ -15,6 +15,12 @@ In Night of the Raven, the plugin loaded, logged one reason for staying idle and
 
 In *Gothic II – Die Nacht des Raben* lud das Plugin, protokollierte einmal den Grund für seine Untätigkeit und ließ das Hauptmenü sowie die Originaldialoge am Alchemietisch und am Amboss unverändert. Ein Honigtabak verbrauchte einen Apfeltabak und eine Laborwasserflasche. Der Honig blieb erhalten. Der endgültige Build erkennt auch das in diesem Lauf beobachtete Skriptverzeichnis. Seine Prüfung für Die Nacht des Raben wurde offline wiederholt. In Marcello L’Hiver DE 2.0.4 zeigte dieser Build das Mengenmenü an und stellte mit einem Auftrag zwei Sumpftabake aus zwei Einheiten Apfeltabak und zwei Laborwasserflaschen her.
 
+## Workshop archive · Workshop-Archiv (Unreleased)
+
+With the slot-14 player DLL identified above, Gothic II opened `Data/UnionBatchCrafting.vdf`. Union loaded its DLL from `Data/$Templates$` and installed the hooks once. The loose autorun DLL was absent. After the main menu and loading slot 14, the alchemy table showed the quantity menu. One order made two swamp tobaccos. All 418 inventory balances matched and the game exited normally without saving.
+
+Mit der oben für Slot 14 genannten Spieler-DLL öffnete Gothic II die `Data/UnionBatchCrafting.vdf`. Union lud die DLL aus `Data/$Templates$` und installierte die Hooks einmal. Das lose Autorun-Verzeichnis enthielt keine Spieler-DLL. Nach Hauptmenü und Laden von Slot 14 erschien am Alchemietisch das Mengenmenü. Ein Auftrag ergab zwei Sumpftabake. Alle 418 Inventarbestände entsprachen der erwarteten Bilanz. Das Spiel endete regulär ohne Speichern.
+
 ## Earlier in-game results · Frühere Spieltests
 
 | File / Datei | Tested SHA-256 / geprüfter SHA-256 |
