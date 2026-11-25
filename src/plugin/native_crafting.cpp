@@ -108,10 +108,12 @@ static void install(bool execute) noexcept {
     return;
 #ifdef UBC_PLAYER_RELEASE
   const auto scripts = ubc::player_campaign::active_dat();
-  const auto campaign =
-      ubc::player_campaign::mode(scripts, ubc::player_campaign::marcello_selected());
+  const auto selected = ubc::player_campaign::marcello_selected();
+  const auto campaign = ubc::player_campaign::mode(scripts, selected);
   if (campaign == ubc::player_campaign::Mode::idle) {
-    event("plugin_idle", 0, 0, ",\"reason\":\"unsupported_scripts_without_marcello_lhiver\"");
+    event("plugin_idle", 0, 0,
+          selected ? ",\"reason\":\"unsupported_scripts\""
+                   : ",\"reason\":\"unsupported_scripts_without_marcello_lhiver\"");
     return;
   }
 #endif

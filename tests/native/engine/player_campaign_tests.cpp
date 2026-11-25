@@ -3,6 +3,9 @@
 #include <cstring>
 
 namespace pc = ubc::player_campaign;
+#ifdef UBC_PLAYER_RELEASE
+static_assert(pc::enable_dndr, "The player package must support Night of the Raven");
+#endif
 int main() {
   char path[128]{}, too_short[8]{};
   if (!pc::dat_path(R"(S:\GAME)", R"(\_WORK\DATA\SCRIPTS\_COMPILED\)", R"(CONTENT\GOTHIC.SRC)",
@@ -22,6 +25,13 @@ int main() {
       pc::mode(pc::Campaign::dndr, true) !=
           (pc::enable_dndr ? pc::Mode::crafting : pc::Mode::notice))
     return 7;
+  const auto wrong_dat = pc::identify(ubc::dndr::dat_size, [](void* buffer, long size) {
+    std::memset(buffer, 0, static_cast<std::size_t>(size));
+    return size;
+  });
+  if (wrong_dat != pc::Campaign::unknown || pc::mode(wrong_dat, false) != pc::Mode::idle ||
+      pc::mode(wrong_dat, true) != pc::Mode::idle)
+    return 8;
   constexpr std::string_view dat = "abc";
   const auto expected = ubc::lhiver::digest_literal(
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
@@ -39,9 +49,9 @@ int main() {
       check("abd", L"Other_Lhiver_marcello_de.ini") != pc::Mode::idle ||
       check("abd", L"Lhiver_marcello_de.ini.old") != pc::Mode::idle)
     return 1;
-  if (check("abd", L"2847787799_LHIVER_MARCELLO_DE.INI") != pc::Mode::notice ||
-      check("abd", L"Lhiver_marcello_de") != pc::Mode::notice ||
-      check("", L"System\\Lhiver_marcello_de.ini") != pc::Mode::notice)
+  if (check("abd", L"2847787799_LHIVER_MARCELLO_DE.INI") != pc::Mode::idle ||
+      check("abd", L"Lhiver_marcello_de") != pc::Mode::idle ||
+      check("", L"System\\Lhiver_marcello_de.ini") != pc::Mode::idle)
     return 2;
   if (check(dat, L"Lhiver_marcello_de.ini") != pc::Mode::crafting ||
       check(dat, L"GothicGame.ini") != pc::Mode::crafting)

@@ -95,16 +95,21 @@ add_test(NAME selection_session COMMAND ubc_selection_session_tests)
 add_test(NAME selection_stock COMMAND ubc_selection_stock_tests)
 add_test(NAME selection_snapshot COMMAND ubc_selection_snapshot_tests)
 
+add_library(ubc_player_configuration INTERFACE)
+target_compile_definitions(
+    ubc_player_configuration
+    INTERFACE UBC_PLAYER_RELEASE UBC_ENABLE_DNDR
+)
 add_executable(
-    ubc_dndr_campaign_enabled_tests
+    ubc_player_configuration_tests
     tests/native/engine/player_campaign_tests.cpp
 )
-target_include_directories(ubc_dndr_campaign_enabled_tests PRIVATE include)
-target_compile_definitions(
-    ubc_dndr_campaign_enabled_tests
-    PRIVATE UBC_ENABLE_DNDR
+target_include_directories(ubc_player_configuration_tests PRIVATE include)
+target_link_libraries(
+    ubc_player_configuration_tests
+    PRIVATE ubc_player_configuration
 )
-add_test(NAME dndr_campaign_enabled COMMAND ubc_dndr_campaign_enabled_tests)
+add_test(NAME player_configuration COMMAND ubc_player_configuration_tests)
 
 foreach(
     test_path
@@ -721,12 +726,15 @@ if(WIN32)
     set(version_resource "${CMAKE_CURRENT_BINARY_DIR}/generated/version.rc")
     configure_file(cmake/version.rc.in "${version_resource}" @ONLY)
     add_crafting_plugin(UnionBatchCraftingExtended "${version_resource}")
-    add_crafting_plugin(UnionBatchCraftingPlayer "${version_resource}")
-    target_link_libraries(UnionBatchCraftingPlayer PRIVATE shell32)
-    target_compile_definitions(
-        UnionBatchCraftingPlayer
-        PRIVATE UBC_PLAYER_RELEASE
-    )
+    function(add_player_plugin target)
+        add_crafting_plugin(${target} "${version_resource}")
+        target_sources(${target} PRIVATE src/plugin/crafting/dndr_forge.cpp)
+        target_link_libraries(
+            ${target}
+            PRIVATE shell32 ubc_player_configuration
+        )
+    endfunction()
+    add_player_plugin(UnionBatchCraftingPlayer)
     set_target_properties(
         UnionBatchCraftingPlayer
         PROPERTIES
@@ -736,16 +744,7 @@ if(WIN32)
     )
     option(UBC_ENABLE_DNDR "Build the Night of the Raven campaign test DLL" OFF)
     if(UBC_ENABLE_DNDR)
-        add_crafting_plugin(UnionBatchCraftingDndrTest "${version_resource}")
-        target_sources(
-            UnionBatchCraftingDndrTest
-            PRIVATE src/plugin/crafting/dndr_forge.cpp
-        )
-        target_link_libraries(UnionBatchCraftingDndrTest PRIVATE shell32)
-        target_compile_definitions(
-            UnionBatchCraftingDndrTest
-            PRIVATE UBC_PLAYER_RELEASE UBC_ENABLE_DNDR
-        )
+        add_player_plugin(UnionBatchCraftingDndrTest)
         set_target_properties(
             UnionBatchCraftingDndrTest
             PROPERTIES

@@ -71,6 +71,8 @@ inline bool marcello_ini(std::wstring_view ini) noexcept {
 }
 
 inline Mode mode(Campaign campaign, bool selected) noexcept {
+  if (campaign == Campaign::unknown)
+    return Mode::idle;
   if (campaign == Campaign::marcello || (enable_dndr && campaign == Campaign::dndr))
     return Mode::crafting;
   return selected ? Mode::notice : Mode::idle;
