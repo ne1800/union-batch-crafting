@@ -47,7 +47,9 @@ protontricks-launch --appid 39510 ./GothicSteamWorkshopUploader.exe publish \
   --content="$content" --preview="$preview"
 ```
 
-Auf der versteckten Workshop-Seite Union (2787458679) und Marcello L’Hiver DE (2847787799) als **benötigte Objekte** eintragen. In der Sprachverwaltung den deutschen Titel aus `title.de.txt` und die Beschreibung aus `description.de.bbcode` ergänzen. Beide Sprachen verwenden dasselbe Addon. Den versteckten Eintrag abonnieren, mit Union aktivieren, Marcello L’Hiver DE 2.0.4 auswählen und im Spiel prüfen. Anschließend kann der Eintrag sichtbar geschaltet werden. Nach einer früheren manuellen Installation zuerst Gothic schließen und die lose `system/autorun/UnionBatchCraftingExtended.dll` entfernen.
+Trage auf der versteckten Workshop-Seite ausschließlich Union (2787458679) als **benötigtes Objekt** ein. Der Gothic-Launcher verlangt alle eingetragenen Objekte. Steamworks bietet für diese Beziehung kein optionales Kennzeichen. Verlinke die optionale Kampagne Marcello L’Hiver DE (2847787799) in der Beschreibung. [Steamworks](https://partner.steamgames.com/doc/api/ISteamUGC#AddDependency) · [Gothic Workshop Guide](https://steamcommunity.com/sharedfiles/filedetails/?id=2779846714)
+
+Ergänze den deutschen Titel und die Beschreibung aus `title.de.txt` und `description.de.bbcode`. Abonniere den versteckten Eintrag und aktiviere ihn mit Union. Prüfe die deutsche Version 2.6 von Die Nacht des Raben ohne Kampagnenmod und Marcello L’Hiver DE 2.0.4 jeweils im Spiel, bevor du den Eintrag sichtbar schaltest. Entferne beim Umstieg von einer manuellen Installation zuerst die lose `system/autorun/UnionBatchCraftingExtended.dll` bei geschlossenem Spiel.
 
 ## Bestehenden Eintrag aktualisieren
 

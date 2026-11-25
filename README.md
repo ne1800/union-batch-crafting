@@ -4,9 +4,9 @@
 
 [English](README.md) · [Deutsch](README.de.md)
 
-A Union plugin for Gothic II: Night of the Raven with the Marcello L’Hiver DE 2.0.4 mod. At a crafting station, pick a learned recipe and a quantity, check the materials and the preview, and craft the whole batch at once instead of repeating the original dialogue for every piece.
+Choose a learned recipe and a quantity at the crafting station. Union Batch Crafting supports Gothic II: Night of the Raven without a campaign mod and Marcello L’Hiver DE 2.0.4.
 
-The plugin stays idle when you play without Marcello L’Hiver and the game uses different scripts. In Night of the Raven without a campaign mod, the alchemy table and anvil kept their original dialogues. [Compatibility tests](TESTED-WITH.md#campaign-compatibility)
+The supported unmodded edition is German 2.6, using the loose `_work/Data/Scripts/_compiled/GOTHIC.DAT` shipped with Gothic II: Gold Classic on Steam (Workshop branch, build 9820952). The plugin stays idle with an unrecognized DAT, including other language and patch versions.
 
 ![At the saw, five lots use five wood and five raw steel to make 150 arrows. The preview shows the arrow count rising from 881 to 1,031.](docs/images/quantity-menu-en.webp)
 
@@ -16,8 +16,12 @@ Each lot makes 30 arrows. The saw returns to your inventory when you leave the s
 
 ## Features
 
-- One quantity menu for 98 recipe profiles at nine stations: stove, alchemy table, leather bench, saw, forge, anvil, bow bench, cooling tub and grindstone.
-- Presets for 1, 5, 10 and maximum, plus any custom amount up to the material limit.
+- **Night of the Raven without a campaign mod** – alchemy table (20 potion and specialty recipes, three tobacco blends), anvil (five regular and eight ore weapons), forge, frying pan and stove.
+- **Marcello L’Hiver DE 2.0.4** – 98 recipe profiles across the stove, alchemy table, leather bench, saw, forge, anvil, bow bench, cooling tub and grindstone.
+
+In Night of the Raven, each piece at the forge, frying pan and stove plays its original animation. Cancelling in the quantity menu costs nothing. As in the original game, pressing Marvin F8 after reservation can cost one cold raw steel at the forge or one raw meat at the stove. A hard interruption of the stove animation can also consume the reserved meat.
+
+- At recipe stations, presets for 1, 5, 10 and maximum, plus any custom amount up to the material limit.
 - Required materials, current stock and a preview of the result for the selected amount.
 - Blocked recipes name the reason, such as “[equipped]”, “[missing ingredients]” or “[no space]”.
 - An order only runs when the materials and station conditions match the verified recipe. Otherwise the game’s original selection stays available.
@@ -30,7 +34,7 @@ Each lot makes 30 arrows. The saw returns to your inventory when you leave the s
 
 ## Status
 
-This is an early release. In-game tests covered selected recipes and amounts at every station, listed in the [station guide](docs/STATIONS.md#coverage). The other profiles still await an in-game order. Station controls have not yet been tested with a physical controller. The plugin checks the engine and the script functions each recipe needs. On a mismatch the original selection stays available, and an engine mismatch can disable the whole plugin. [Tested with](TESTED-WITH.md) · [Changelog](CHANGELOG.md#english)
+The station guide describes in-game coverage for Marcello. Physical controller testing is pending. The compatibility record lists the tested builds and saves. [Station guide](docs/STATIONS.md#coverage) · [Tested with](TESTED-WITH.md) · [Changelog](CHANGELOG.md#english)
 
 <a id="install"></a>
 

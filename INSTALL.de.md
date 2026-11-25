@@ -1,6 +1,6 @@
 <a id="player"></a>
 
-# Union Batch Crafting 0.0.67 für Spieler
+# Union Batch Crafting 0.0.68 für Spieler
 
 [English](INSTALL.md) · [Deutsch](INSTALL.de.md) · [Getestet mit](TESTED-WITH.md)
 
@@ -8,13 +8,11 @@
 
 ## Installieren
 
-1. Du brauchst Gothic II: Die Nacht des Raben mit installiertem Union und Marcello L’Hiver DE. Beende Gothic und den Workshop-Launcher. Öffne in Steam die **Eigenschaften → Installierte Dateien → Durchsuchen**. Im richtigen Spielverzeichnis findest du `system/Gothic2.exe`.
-2. Öffne `union-batch-crafting-player-0.0.67.zip`. Kopiere daraus `system/autorun/UnionBatchCraftingExtended.dll` in den entsprechenden Ordner im Spiel. Unter Linux/Proton übernimmst du die Schreibweise des vorhandenen autorun-Ordners. Vom Spielverzeichnis aus lautet der fertige Pfad `system/autorun/UnionBatchCraftingExtended.dll`. Liegt dort schon eine gleichnamige DLL, verschiebe sie vorher zur Sicherung aus dem Spielverzeichnis. Anleitungen und Lizenzen kannst du separat aufbewahren.
-3. Starte Gothic wie gewohnt, wähle Marcello L’Hiver und lade einen Spielstand. Wähle an einer unterstützten Station ein gelerntes Rezept, stelle die Menge ein und bestätige die Herstellung. Union lädt die DLL bei jedem Start aus dem autorun-Ordner.
+1. Installiere Union für Gothic II: Die Nacht des Raben. Beende Gothic und den Workshop-Launcher. Öffne in Steam die **Eigenschaften → Installierte Dateien → Durchsuchen**. Im richtigen Spielverzeichnis findest du `system/Gothic2.exe`.
+2. Öffne `union-batch-crafting-player-0.0.68.zip`. Kopiere daraus `system/autorun/UnionBatchCraftingExtended.dll` in den entsprechenden Ordner im Spiel. Unter Linux/Proton übernimmst du die Schreibweise des vorhandenen autorun-Ordners. Vom Spielverzeichnis aus lautet der fertige Pfad `system/autorun/UnionBatchCraftingExtended.dll`. Liegt dort schon eine gleichnamige DLL, verschiebe sie vorher zur Sicherung aus dem Spielverzeichnis. Anleitungen und Lizenzen kannst du separat aufbewahren.
+3. Starte Gothic wie gewohnt, wähle das Originalspiel oder Marcello L’Hiver DE 2.0.4 und starte oder lade ein Spiel. Wähle an einer unterstützten Station ein gelerntes Rezept, stelle die Menge ein und bestätige die Herstellung. Union lädt die DLL bei jedem Start aus dem autorun-Ordner.
 
-Zum Ausprobieren nimm zwei Stück rohes Fleisch an einen Herd mit, wähle Fleisch und stelle die Menge auf 2. Am Lagerfeuer erscheint die originale Fleischauswahl des Spiels.
-
-Die Spieler-DLL aus 0.0.57 lud ohne Marker. Am Alchemietisch verbrauchte die Herstellung von zwei Sumpftabaken zwei Apfeltabake und zwei Laborwasserflaschen. Das Sumpfkraut blieb erhalten. Mit 0.0.59 zeigte das deutsche Mengenmenü „2 / 6 Durchgänge“ und „Zurück“. Das ä entsprach im Menüzustand dem erwarteten Windows-1252-Byte E4. Zwei Sumpftabake verbrauchten zwei Apfeltabake und zwei Laborwasserflaschen.
+Zum Ausprobieren nimm zwei Stück rohes Fleisch an einen Herd mit und stelle die Menge auf 2.
 
 <a id="configure"></a>
 
@@ -32,9 +30,14 @@ Language=auto
 
 <a id="compatibility"></a>
 
-## Andere Versionen
+## Unterstützte Fassungen und Stationen
 
-Du kannst die DLL beim Kampagnenwechsel installiert lassen. Weichen die Skripte ab und ist Marcello L’Hiver nicht gewählt, schreibt das Plugin eine einzige Logzeile und lässt Menüs, Dialoge und Inventar unverändert. Geprüft wurde das am Alchemietisch und am Amboss in *Gothic II – Die Nacht des Raben* ohne Kampagnenmod. Wählst du Marcello L’Hiver mit einem abweichenden Skriptstand, erscheint der Kompatibilitätshinweis. [Geprüfte Builds](TESTED-WITH.md#campaign-compatibility)
+Geprüft ist die deutsche Version 2.6 mit der mitgelieferten losen `_work/Data/Scripts/_compiled/GOTHIC.DAT` aus Gothic II: Gold Classic auf Steam (Workshop-Zweig, Build 9820952). Bei einer unbekannten DAT bleibt das Plugin untätig. Das gilt auch für andere Sprach- und Patchstände.
+
+- **Die Nacht des Raben ohne Kampagnenmod** – Alchemietisch (20 Trank- und Sonderrezepte, drei Tabaksorten), Amboss (fünf normale und acht Erzwaffen), Esse, Pfanne und Herd.
+- **Marcello L’Hiver DE 2.0.4** – 98 Rezeptprofile an Herd, Alchemietisch, Lederbank, Säge, Esse, Amboss, Bogenbank, Kühlbecken und Schleifstein.
+
+In Die Nacht des Raben spielt jedes Stück an Esse, Pfanne und Herd seine Originalanimation. Ein Abbruch im Mengenmenü ist kostenlos. Marvin-F8 nach der Reservierung kann wie im Original an der Esse einen kalten Rohstahl und am Herd ein rohes Fleisch kosten. Auch bei einem anderen harten Abbruch der Herdanimation kann das reservierte Rohfleisch verloren gehen.
 
 Das Plugin prüft die Kompatibilität der Engine und die für das Rezept benötigten Skriptfunktionen und Symbole. Bei Abweichungen bleibt die Originalauswahl zugänglich. Ein abweichendes gemeinsames Engine-Layout kann das ganze Plugin abschalten. Bei geladenem Plugin findest du die Diagnose des aktuellen Starts in `system/autorun/UnionBatchCraftingExtended.log`. Der autorun-Ordner muss zum Anlegen des Logs beschreibbar sein. Frühere Spielnachweise und den Prüfumfang dieser Version nennt die [Kompatibilitätsliste](TESTED-WITH.md).
 

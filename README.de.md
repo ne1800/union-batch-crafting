@@ -4,9 +4,9 @@
 
 [English](README.md) · [Deutsch](README.de.md)
 
-Ein Union-Plugin für Gothic II: Die Nacht des Raben mit der Mod Marcello L’Hiver DE 2.0.4. Wähle an einer Werkstation ein gelerntes Rezept und eine Menge, prüfe Material und Vorschau und stelle alles auf einmal her, statt den Originaldialog für jedes Stück zu wiederholen.
+Wähle an der Werkstation ein gelerntes Rezept und die gewünschte Menge. Union Batch Crafting unterstützt Gothic II: Die Nacht des Raben ohne Kampagnenmod sowie Marcello L’Hiver DE 2.0.4.
 
-Das Plugin bleibt untätig, wenn du ohne Marcello L’Hiver und mit anderen Skripten spielst. In *Gothic II – Die Nacht des Raben* ohne Kampagnenmod blieben die Originaldialoge am Alchemietisch und am Amboss erhalten. [Verträglichkeitsprüfung](TESTED-WITH.md#campaign-compatibility)
+Geprüft ist die deutsche Version 2.6 mit der mitgelieferten losen `_work/Data/Scripts/_compiled/GOTHIC.DAT` aus Gothic II: Gold Classic auf Steam (Workshop-Zweig, Build 9820952). Bei einer unbekannten DAT bleibt das Plugin untätig. Das gilt auch für andere Sprach- und Patchstände.
 
 ![Mengenmenü an der Säge. Fünf Lose verbrauchen fünf Holz und fünf Rohstahl für 150 Pfeile. Der Pfeilbestand steigt laut Vorschau von 881 auf 1031.](docs/images/quantity-menu-de.webp)
 
@@ -16,8 +16,12 @@ Ein Los ergibt 30 Pfeile. Beim Verlassen der Station wandert die Säge zurück i
 
 ## Funktionen
 
-- Ein Mengenmenü für 98 Rezeptprofile an neun Stationen: Herd, Alchemietisch, Lederbank, Säge, Esse, Amboss, Bogenbank, Kühlbecken und Schleifstein.
-- Vorgaben für 1, 5, 10 und Maximum sowie jede freie Menge bis zur Materialgrenze.
+- **Die Nacht des Raben ohne Kampagnenmod** – Alchemietisch (20 Trank- und Sonderrezepte, drei Tabaksorten), Amboss (fünf normale und acht Erzwaffen), Esse, Pfanne und Herd.
+- **Marcello L’Hiver DE 2.0.4** – 98 Rezeptprofile an Herd, Alchemietisch, Lederbank, Säge, Esse, Amboss, Bogenbank, Kühlbecken und Schleifstein.
+
+In Die Nacht des Raben spielt jedes Stück an Esse, Pfanne und Herd seine Originalanimation. Ein Abbruch im Mengenmenü ist kostenlos. Marvin-F8 nach der Reservierung kann wie im Original an der Esse einen kalten Rohstahl und am Herd ein rohes Fleisch kosten. Auch bei einem anderen harten Abbruch der Herdanimation kann das reservierte Rohfleisch verloren gehen.
+
+- An Stationen mit Rezeptauswahl gibt es Vorgaben für 1, 5, 10 und Maximum sowie jede freie Menge bis zur Materialgrenze.
 - Benötigtes Material, aktueller Vorrat und eine Vorschau des Ergebnisses für die gewählte Menge.
 - Gesperrte Rezepte nennen den Grund, etwa „[ausgerüstet]“, „[Zutaten fehlen]“ oder „[Platz fehlt]“.
 - Ein Auftrag läuft nur, wenn Material und Stationsbedingungen zum geprüften Rezept passen. Sonst bleibt die Originalauswahl des Spiels verfügbar.
@@ -30,7 +34,7 @@ Ein Los ergibt 30 Pfeile. Beim Verlassen der Station wandert die Säge zurück i
 
 ## Stand
 
-Dies ist eine frühe Version. Im Spiel geprüft sind ausgewählte Rezepte und Mengen an jeder Station, aufgeführt in der [Stationsanleitung](docs/STATIONEN.md#coverage). Die übrigen Profile warten noch auf einen Auftrag im Spiel. Mit einem echten Controller ist die Bedienung an den Stationen noch nicht getestet. Das Plugin prüft die Engine und die Skriptfunktionen, die jedes Rezept braucht. Passt etwas nicht, bleibt die Originalauswahl verfügbar. Eine abweichende Engine kann das ganze Plugin abschalten. [Getestet mit](TESTED-WITH.md) · [Changelog](CHANGELOG.md#deutsch)
+Die Stationsanleitung beschreibt die Weltprüfungen für Marcello. Die Prüfung mit einem physischen Controller steht aus. Die Kompatibilitätsliste nennt die geprüften Builds und Spielstände. [Stationsanleitung](docs/STATIONEN.md#coverage) · [Getestet mit](TESTED-WITH.md) · [Changelog](CHANGELOG.md#deutsch)
 
 <a id="install"></a>
 

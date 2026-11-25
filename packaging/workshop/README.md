@@ -47,7 +47,9 @@ protontricks-launch --appid 39510 ./GothicSteamWorkshopUploader.exe publish \
   --content="$content" --preview="$preview"
 ```
 
-On the hidden Workshop page, add Union (2787458679) and Marcello L’Hiver DE (2847787799) as **Required Items**. Add the German title and description from `title.de.txt` and `description.de.bbcode` in the page’s language editor. Both languages use the same addon. Subscribe to the hidden item, enable it with Union, select Marcello L’Hiver DE 2.0.4 and check it in game before making the page public. For an earlier manual installation, close Gothic and remove its loose `system/autorun/UnionBatchCraftingExtended.dll` first.
+On the hidden Workshop page, add only Union (2787458679) under **Required Items**. The Gothic launcher requires all listed items. Steamworks provides no optional flag for this relationship. Link the optional Marcello L’Hiver DE campaign (2847787799) in the description. [Steamworks](https://partner.steamgames.com/doc/api/ISteamUGC#AddDependency) · [Gothic Workshop Guide](https://steamcommunity.com/sharedfiles/filedetails/?id=2779846714)
+
+Add the German title and description from `title.de.txt` and `description.de.bbcode`. Subscribe to the hidden item and enable it with Union. Test German Night of the Raven 2.6 without a campaign mod and Marcello L’Hiver DE 2.0.4 in game before making the page public. When moving from a manual installation, close Gothic and remove the loose `system/autorun/UnionBatchCraftingExtended.dll` first.
 
 ## Update the existing item
 
