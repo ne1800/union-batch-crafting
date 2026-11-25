@@ -32,7 +32,7 @@ Language=auto
 
 ## Supported editions and stations
 
-The supported unmodded edition is German 2.6, using the loose `_work/Data/Scripts/_compiled/GOTHIC.DAT` shipped with Gothic II: Gold Classic on Steam (Workshop branch, build 9820952). The plugin stays idle with an unrecognized DAT, including other language and patch versions.
+The supported unmodded edition is German 2.6, using the loose `_work/Data/Scripts/_compiled/GOTHIC.DAT` shipped with Gothic II: Gold Classic on Steam (Workshop branch, build 9820952). With an unrecognized DAT, the plugin shows a compatibility notice if you selected Marcello L’Hiver. Otherwise it stays idle, including in other language and patch versions of Night of the Raven.
 
 - **Night of the Raven without a campaign mod** – alchemy table (20 potion and specialty recipes, three tobacco blends), anvil (five regular and eight ore weapons), forge, frying pan and stove.
 - **Marcello L’Hiver DE 2.0.4** – 98 recipe profiles across the stove, alchemy table, leather bench, saw, forge, anvil, bow bench, cooling tub and grindstone.

@@ -32,7 +32,7 @@ Language=auto
 
 ## Unterstützte Fassungen und Stationen
 
-Geprüft ist die deutsche Version 2.6 mit der mitgelieferten losen `_work/Data/Scripts/_compiled/GOTHIC.DAT` aus Gothic II: Gold Classic auf Steam (Workshop-Zweig, Build 9820952). Bei einer unbekannten DAT bleibt das Plugin untätig. Das gilt auch für andere Sprach- und Patchstände.
+Geprüft ist die deutsche Version 2.6 mit der mitgelieferten losen `_work/Data/Scripts/_compiled/GOTHIC.DAT` aus Gothic II: Gold Classic auf Steam (Workshop-Zweig, Build 9820952). Bei einer unbekannten DAT erscheint ein Kompatibilitätshinweis, wenn du Marcello L’Hiver gewählt hast. Andernfalls bleibt das Plugin untätig, auch bei anderen Sprach- und Patchständen von Die Nacht des Raben.
 
 - **Die Nacht des Raben ohne Kampagnenmod** – Alchemietisch (20 Trank- und Sonderrezepte, drei Tabaksorten), Amboss (fünf normale und acht Erzwaffen), Esse, Pfanne und Herd.
 - **Marcello L’Hiver DE 2.0.4** – 98 Rezeptprofile an Herd, Alchemietisch, Lederbank, Säge, Esse, Amboss, Bogenbank, Kühlbecken und Schleifstein.

@@ -713,29 +713,46 @@ def main() -> None:
                 ini = payload / "Gothic.INI"
                 ini.unlink(missing_ok=True)
                 player_marker.write_bytes(activation)
-                for arguments, reason in (
-                    ([], "unsupported_scripts_without_marcello_lhiver"),
-                    (["-game:Lhiver_marcello_de.ini"], "unsupported_scripts"),
+                player_log.write_text("old")
+                print(run([str(spoofed), windows_path(player_dll)]), flush=True)
+                if (
+                    json.loads(player_log.read_text())
+                    != {
+                        "event": "plugin_idle",
+                        "frame": 0,
+                        "detail": 0,
+                        "quantity": 0,
+                        "reason": "unsupported_scripts_without_marcello_lhiver",
+                    }
+                    or player_marker.read_bytes() != activation
                 ):
-                    player_log.write_text("old")
-                    print(
-                        run([str(spoofed), windows_path(player_dll), *arguments]),
-                        flush=True,
+                    raise RuntimeError(
+                        "Unknown scripts without Marcello must leave the player idle"
                     )
-                    if (
-                        json.loads(player_log.read_text())
-                        != {
-                            "event": "plugin_idle",
-                            "frame": 0,
-                            "detail": 0,
-                            "quantity": 0,
-                            "reason": reason,
-                        }
-                        or player_marker.read_bytes() != activation
-                    ):
-                        raise RuntimeError(
-                            "Unrecognized scripts must leave the player idle and preserve its marker"
-                        )
+                print(
+                    run(
+                        [
+                            str(spoofed),
+                            windows_path(player_dll),
+                            "-game:Lhiver_marcello_de.ini",
+                        ]
+                    ),
+                    flush=True,
+                )
+                events = {
+                    json.loads(line)["event"]
+                    for line in player_log.read_text().splitlines()
+                    if line.startswith("{")
+                }
+                # The synthetic host reaches the notice path but lacks the engine sites.
+                if (
+                    not {"script_profile_rejected", "engine_station_disabled"} <= events
+                    or "plugin_idle" in events
+                    or player_marker.read_bytes() != activation
+                ):
+                    raise RuntimeError(
+                        "Unknown Marcello scripts must take the notice path"
+                    )
                 player_log.unlink()
                 ini.write_text("[UNIONBATCHCRAFTING]\nEnabled=0\n")
                 print(run([str(spoofed), windows_path(player_dll)]), flush=True)

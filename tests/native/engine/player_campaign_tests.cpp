@@ -3,8 +3,8 @@
 #include <cstring>
 
 namespace pc = ubc::player_campaign;
-#ifdef UBC_PLAYER_RELEASE
-static_assert(pc::enable_dndr, "The player package must support Night of the Raven");
+#if defined(UBC_PLAYER_RELEASE) && !defined(UBC_ENABLE_DNDR)
+#error The player package must support Night of the Raven
 #endif
 int main() {
   char path[128]{}, too_short[8]{};
@@ -20,17 +20,15 @@ int main() {
       pc::dat_path("C:\\Gothic", "C:\\Gothic2\\Scripts", "Other.src", path) ||
       pc::dat_path("C:\\Gothic", "C:\\Gothic\\Scripts", "Other.src", too_short))
     return 5;
-  if (pc::mode(pc::Campaign::dndr, false) !=
-          (pc::enable_dndr ? pc::Mode::crafting : pc::Mode::idle) ||
-      pc::mode(pc::Campaign::dndr, true) !=
-          (pc::enable_dndr ? pc::Mode::crafting : pc::Mode::notice))
+  if (pc::mode(pc::Campaign::dndr, false) != pc::Mode::crafting ||
+      pc::mode(pc::Campaign::dndr, true) != pc::Mode::crafting)
     return 7;
   const auto wrong_dat = pc::identify(ubc::dndr::dat_size, [](void* buffer, long size) {
     std::memset(buffer, 0, static_cast<std::size_t>(size));
     return size;
   });
   if (wrong_dat != pc::Campaign::unknown || pc::mode(wrong_dat, false) != pc::Mode::idle ||
-      pc::mode(wrong_dat, true) != pc::Mode::idle)
+      pc::mode(wrong_dat, true) != pc::Mode::notice)
     return 8;
   constexpr std::string_view dat = "abc";
   const auto expected = ubc::lhiver::digest_literal(
@@ -49,9 +47,9 @@ int main() {
       check("abd", L"Other_Lhiver_marcello_de.ini") != pc::Mode::idle ||
       check("abd", L"Lhiver_marcello_de.ini.old") != pc::Mode::idle)
     return 1;
-  if (check("abd", L"2847787799_LHIVER_MARCELLO_DE.INI") != pc::Mode::idle ||
-      check("abd", L"Lhiver_marcello_de") != pc::Mode::idle ||
-      check("", L"System\\Lhiver_marcello_de.ini") != pc::Mode::idle)
+  if (check("abd", L"2847787799_LHIVER_MARCELLO_DE.INI") != pc::Mode::notice ||
+      check("abd", L"Lhiver_marcello_de") != pc::Mode::notice ||
+      check("", L"System\\Lhiver_marcello_de.ini") != pc::Mode::notice)
     return 2;
   if (check(dat, L"Lhiver_marcello_de.ini") != pc::Mode::crafting ||
       check(dat, L"GothicGame.ini") != pc::Mode::crafting)

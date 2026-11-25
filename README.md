@@ -6,7 +6,7 @@
 
 Choose a learned recipe and a quantity at the crafting station. Union Batch Crafting supports Gothic II: Night of the Raven without a campaign mod and Marcello L’Hiver DE 2.0.4.
 
-The supported unmodded edition is German 2.6, using the loose `_work/Data/Scripts/_compiled/GOTHIC.DAT` shipped with Gothic II: Gold Classic on Steam (Workshop branch, build 9820952). The plugin stays idle with an unrecognized DAT, including other language and patch versions.
+The supported unmodded edition is German 2.6, using the loose `_work/Data/Scripts/_compiled/GOTHIC.DAT` shipped with Gothic II: Gold Classic on Steam (Workshop branch, build 9820952). With an unrecognized DAT, the plugin shows a compatibility notice if you selected Marcello L’Hiver. Otherwise it stays idle, including in other language and patch versions of Night of the Raven.
 
 ![At the saw, five lots use five wood and five raw steel to make 150 arrows. The preview shows the arrow count rising from 881 to 1,031.](docs/images/quantity-menu-en.webp)
 
