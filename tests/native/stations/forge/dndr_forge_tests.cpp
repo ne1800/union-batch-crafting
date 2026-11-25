@@ -136,6 +136,21 @@ void menu() {
   picker.observe(1, false, false);
   REQUIRE(picker.decision() == 0);
 }
+void return_focus() {
+  ReturnFocus focus;
+  focus.reset(1000);
+  REQUIRE(focus.observe(1004, Focus::missing) == NeutralResult::waiting);
+  REQUIRE(focus.observe(1098, Focus::missing) == NeutralResult::waiting);
+  REQUIRE(focus.observe(1104, Focus::forge) == NeutralResult::waiting);
+  REQUIRE(focus.observe(1110, Focus::forge) == NeutralResult::ready);
+  focus.reset(2000);
+  REQUIRE(focus.observe(2004, Focus::other) == NeutralResult::rejected);
+  focus.reset(2000);
+  REQUIRE(focus.observe(2004, Focus::forge) == NeutralResult::waiting);
+  REQUIRE(focus.observe(2010, Focus::missing) == NeutralResult::rejected);
+  focus.reset(2000);
+  REQUIRE(focus.observe(2251, Focus::forge) == NeutralResult::rejected);
+}
 } // namespace
 int main() {
   replay(0, 3, 0);
@@ -148,4 +163,5 @@ int main() {
   faults();
   packed();
   menu();
+  return_focus();
 }

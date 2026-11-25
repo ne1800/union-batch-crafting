@@ -40,6 +40,31 @@ enum class Phase {
 };
 enum class Witness { reservation, insert, exchange, remove, end, neutral };
 
+// EndInteraction briefly clears the hero's focus before the engine targets the forge again.
+enum class Focus { missing, forge, other };
+enum class NeutralResult { waiting, ready, rejected };
+class ReturnFocus {
+public:
+  void reset(std::uint64_t tick) noexcept {
+    start_ = tick;
+    seen_ = false;
+  }
+  NeutralResult observe(std::uint64_t tick, Focus focus) noexcept {
+    if (tick < start_ || tick - start_ > 250 || focus == Focus::other)
+      return NeutralResult::rejected;
+    if (focus == Focus::missing)
+      return seen_ ? NeutralResult::rejected : NeutralResult::waiting;
+    if (seen_)
+      return NeutralResult::ready;
+    seen_ = true;
+    return NeutralResult::waiting;
+  }
+
+private:
+  std::uint64_t start_ = 0;
+  bool seen_ = false;
+};
+
 // Each transition needs the observed inventory and hand state at that boundary.
 // Interruptions leave the entire material decision to the original game.
 class Order {
@@ -89,6 +114,9 @@ public:
     return false;
   }
   bool active() const noexcept { return phase_ >= Phase::ready && phase_ <= Phase::ended; }
+  bool neutral_stock(const Stock& s) const noexcept {
+    return phase_ == Phase::ended && matches(s, -1, 1, Hand::empty);
+  }
   Phase phase() const noexcept { return phase_; }
   unsigned selected() const noexcept { return selected_; }
   unsigned completed() const noexcept { return completed_; }
