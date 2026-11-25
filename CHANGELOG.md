@@ -13,6 +13,9 @@
 - **English** The Night of the Raven test build adds a quantity selector for heating raw steel at a forge.
 - **Deutsch** Der Testbuild für Die Nacht des Raben enthält eine Mengenwahl zum Erhitzen von Rohstahl an der Esse.
 
+- **English** Known limitation at the original Night of the Raven forge. A hard Marvin F8 interruption after raw steel is reserved and before it reaches the left hand consumes one cold steel without producing hot steel.
+- **Deutsch** Bekannte Grenze der Originalesse in Die Nacht des Raben. Ein harter Marvin-Abbruch mit F8 nach der Reservierung und vor der Übergabe in die linke Hand kostet einen kalten Rohstahl. Dabei entsteht kein heißer Stahl.
+
 - **English** The Night of the Raven test build checks tobacco orders and their reserved flask at the alchemy bench.
 - **Deutsch** Der Testbuild für Die Nacht des Raben prüft Tabakaufträge und die reservierte Flasche am Alchemietisch.
 
