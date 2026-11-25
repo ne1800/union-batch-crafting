@@ -109,6 +109,7 @@ add_test(NAME dndr_campaign_enabled COMMAND ubc_dndr_campaign_enabled_tests)
 foreach(
     test_path
     engine/player_engine
+    engine/animation_observation
     engine/player_campaign
     stations/alchemy/dndr_alchemy
     stations/anvil/dndr_anvil
@@ -386,6 +387,7 @@ if(UBC_SANITIZE AND NOT WIN32)
         ubc_station_snapshot_tests
         ubc_runtime_script_tests
         ubc_hand_snapshot_tests
+        ubc_animation_observation_tests
         ubc_info_snapshot_tests
         ubc_packed_inventory_tests
         ubc_selection_session_tests
@@ -598,6 +600,7 @@ if(WIN32)
         UnionBatchCraftingStationProbe
         SHARED
         src/probes/native_station_probe.cpp
+        src/probes/animation_probe.cpp
         src/probes/native_station_probe.def
     )
     target_include_directories(UnionBatchCraftingStationProbe PRIVATE include)
