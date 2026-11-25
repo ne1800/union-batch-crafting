@@ -57,8 +57,7 @@ bool belongs(void* object, void* npc) noexcept {
 void station_event(const char* suffix, int detail = 0, int quantity = 0,
                    const char* fields = "") noexcept {
   char name[64]{};
-  std::snprintf(name, sizeof(name), "%s_%s", station->kind == f::Station::pan ? "pan" : "forge",
-                suffix);
+  std::snprintf(name, sizeof(name), "%s_%s", station->log_prefix, suffix);
   event(name, detail, quantity, fields);
 }
 void stop(const char* reason) noexcept {
@@ -72,13 +71,17 @@ void stop(const char* reason) noexcept {
 }
 f::Stock sample() noexcept {
   namespace h = ubc::station_recipe_snapshot_detail;
-  const auto stock = ubc::read_packed_inventory(memory, hero, station->items, true, inventory);
+  const bool stove = station->kind == f::Station::stove;
+  const auto stock = ubc::read_packed_inventory<3>(
+      memory, hero, stove ? f::stove_items.data() : station->items.data(),
+      stove ? f::stove_items.size() : station->items.size(), true, inventory);
   if (h::begin_hands(memory, hero, hands) != ubc::StationHandReadIssue::none ||
       !h::verify_hands(memory, hands))
     return {};
   const auto& v = hands.before;
   const auto anchor = ubc::hand_detail::read_object(memory, v.interact_item);
-  return f::stock_from(stock, inventory, f::hand_state(v, anchor, *station), *station);
+  return f::stock_from(stock, inventory, f::hand_state(v, anchor, *station), *station,
+                       anchor.object, v.hands.right.object);
 }
 bool world_ok() noexcept {
   Address game{}, current{}, actor{}, hw{}, mw{};
@@ -109,7 +112,7 @@ bool ready_place(bool require_focus = true) noexcept {
 }
 const f::StationProfile* station_profile(Address target) noexcept {
   char name[48]{};
-  for (const auto* profile : {&f::smithy, &f::pan})
+  for (const auto* profile : {&f::smithy, &f::pan, &f::stove})
     if (name_is(target, 0x1b8, profile->scheme) && obs::string(memory, target, 0x1a4, name) &&
         _stricmp(name, profile->items[0].name) == 0)
       return profile;
@@ -199,18 +202,25 @@ int __fastcall world_key_toggled(void* device, void*, unsigned short key) {
 bool witness(f::Witness what) noexcept {
   const auto stock = sample();
   obs::Animation animation;
-  if (station->kind == f::Station::pan &&
-      (what == f::Witness::insert || what == f::Witness::exchange || what == f::Witness::remove)) {
+  if (station->kind != f::Station::forge &&
+      (what == f::Witness::insert || what == f::Witness::create || what == f::Witness::exchange ||
+       what == f::Witness::remove)) {
     Address model{};
     if (field(hero, 0xc8, model))
       animation = obs::current(memory, model, station->scheme);
   }
   const bool ok = order.observe(what, stock, frame, animation.name);
   char fields[112]{};
-  const char* format = station->kind == f::Station::pan ? ",\"raw\":%d,\"cooked\":%d,\"hand\":%d"
-                                                        : ",\"cold\":%d,\"hot\":%d,\"hand\":%d";
-  std::snprintf(fields, sizeof(fields), format, stock.input_count, stock.output_count,
-                static_cast<int>(stock.hand));
+  if (station->kind == f::Station::stove)
+    std::snprintf(fields, sizeof(fields),
+                  ",\"raw\":%d,\"cooked\":%d,\"hand\":%d,\"stored_pans\":%d", stock.input_count,
+                  stock.output_count, static_cast<int>(stock.hand), stock.stored_pans);
+  else {
+    const char* format = station->kind == f::Station::pan ? ",\"raw\":%d,\"cooked\":%d,\"hand\":%d"
+                                                          : ",\"cold\":%d,\"hot\":%d,\"hand\":%d";
+    std::snprintf(fields, sizeof(fields), format, stock.input_count, stock.output_count,
+                  static_cast<int>(stock.hand));
+  }
   station_event(ok ? "witness" : "balance_rejected", static_cast<int>(what),
                 static_cast<int>(order.completed()), fields);
   if (!ok)
@@ -293,6 +303,17 @@ __declspec(naked) void secondary_input() {
   __asm { call occupancy }
   __asm {push 0x6993c4} __asm { ret }
 }
+f::Witness material_message(const char* tag) noexcept {
+  if (tag == obs::tags[0])
+    return f::Witness::insert;
+  if (tag == obs::tags[1])
+    return f::Witness::remove;
+  if (tag == obs::tags[2] && station->kind == f::Station::stove)
+    return f::Witness::create;
+  if (tag == obs::tags[5])
+    return f::Witness::exchange;
+  return f::Witness::none;
+}
 void __fastcall item_message(void* npc, void*, void* msg, void* sender) {
   const auto saved = GetLastError();
   const bool watch = own_thread() && hero == addr(npc) && order.active();
@@ -301,6 +322,11 @@ void __fastcall item_message(void* npc, void*, void* msg, void* sender) {
   const auto* tag = watch ? obs::message_tag(memory, addr(msg)) : nullptr;
   if (tag && (++message_depth != 1 || integer(hero, 0x964) != static_cast<int>(mob)))
     stop("message_context");
+  // Only those manipulation messages are material witnesses. Unknown ones still reach the game.
+  const auto material = material_message(tag);
+  if (tag && order.active() && station->kind == f::Station::stove &&
+      !order.stove_before(material, sample()))
+    stop("workpiece_changed");
   SetLastError(saved);
   reinterpret_cast<Message>(forge_hooks.original(1))(npc, msg, sender);
   const auto error = GetLastError();
@@ -309,12 +335,8 @@ void __fastcall item_message(void* npc, void*, void* msg, void* sender) {
     if (order.active()) {
       if (integer(hero, 0x964) != static_cast<int>(mob))
         stop("message_context");
-      else if (tag == obs::tags[0])
-        witness(f::Witness::insert);
-      else if (tag == obs::tags[5])
-        witness(f::Witness::exchange);
-      else if (tag == obs::tags[1])
-        witness(f::Witness::remove);
+      else if (material != f::Witness::none)
+        witness(material);
       else
         stop("unexpected_item");
     }
@@ -341,7 +363,9 @@ void __fastcall interact(void* object, void*, void* npc, int action, int up, int
       if (field(hero, 0xc8, model) &&
           !std::strcmp(obs::current(memory, model, station->scheme).name,
                        station->working_animation)) {
-        if (station->kind == f::Station::pan && !order.pan_workpiece(sample())) {
+        if ((station->kind == f::Station::pan && !order.pan_workpiece(sample())) ||
+            (station->kind == f::Station::stove &&
+             !order.stove_before(f::Witness::exchange, sample()))) {
           stop("workpiece_changed");
         } else {
           forward_sent = true;
@@ -421,7 +445,7 @@ void forge_frame() noexcept {
       return;
     }
     if (!window.open() ||
-        !window.render_station_quantity(chooser, station->kind == f::Station::pan)) {
+        !window.render_station_quantity(chooser, station->kind != f::Station::forge)) {
       passthrough = true;
       stop("window_rejected");
       return;
@@ -436,7 +460,7 @@ void forge_frame() noexcept {
     }
     chooser.observe(frame, down, true);
     if (chooser.decision() < 0) {
-      if (!window.render_station_quantity(chooser, station->kind == f::Station::pan))
+      if (!window.render_station_quantity(chooser, station->kind != f::Station::forge))
         stop("render_failed");
       return;
     }
@@ -475,7 +499,7 @@ void forge_frame() noexcept {
       return;
     if (order.selected() > 1)
       window.show_station_progress(order.completed(), order.selected(),
-                                   station->kind == f::Station::pan);
+                                   station->kind != f::Station::forge);
     if (!order.active())
       station_event("order_complete", static_cast<int>(order.completed()));
     return;
