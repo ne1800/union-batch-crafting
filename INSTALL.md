@@ -34,7 +34,7 @@ Language=auto
 
 ## Other versions
 
-With the current source build, you can leave the DLL installed when switching campaigns. If the scripts differ and Marcello L’Hiver is not selected, the plugin writes one line to its log and leaves menus, dialogues and inventory alone. This was checked at the alchemy table and anvil in Night of the Raven without a campaign mod. If you select Marcello L’Hiver with an unsupported script version, the plugin shows its compatibility notice. [Tested builds](TESTED-WITH.md#campaign-compatibility)
+You can leave the DLL installed when switching campaigns. If the scripts differ and Marcello L’Hiver is not selected, the plugin writes one line to its log and leaves menus, dialogues and inventory alone. This was checked at the alchemy table and anvil in Night of the Raven without a campaign mod. If you select Marcello L’Hiver with an unsupported script version, the plugin shows its compatibility notice. [Tested builds](TESTED-WITH.md#campaign-compatibility)
 
 The plugin checks engine compatibility and the script functions and symbols needed for each recipe. A mismatch leaves the original crafting selection available. A shared engine-layout mismatch can disable the entire plugin. For a loaded plugin, `system/autorun/UnionBatchCraftingExtended.log` contains the current run's diagnostics. The autorun folder must be writable to create the log. Earlier in-game results and the scope of this build's tests are listed in [Tested with](TESTED-WITH.md).
 
