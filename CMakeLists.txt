@@ -113,6 +113,7 @@ foreach(
     stations/alchemy/dndr_alchemy
     stations/anvil/dndr_anvil
     stations/forge/dndr_forge
+    stations/pan/dndr_pan
     core/batch_session
     ui/batch_menu
     engine/amount_patch

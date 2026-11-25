@@ -4,6 +4,9 @@
 
 ## Unreleased
 
+- **English** The Night of the Raven test build adds quantity selection at the frying pan. Each piece goes through the original cooking animation.
+- **Deutsch** Der Testbuild für Die Nacht des Raben ergänzt die Mengenwahl an der Pfanne. Jedes Stück durchläuft die originale Bratanimation.
+
 - **English** The Night of the Raven test build adds a quantity selector for heating raw steel at a forge.
 - **Deutsch** Der Testbuild für Die Nacht des Raben enthält eine Mengenwahl zum Erhitzen von Rohstahl an der Esse.
 

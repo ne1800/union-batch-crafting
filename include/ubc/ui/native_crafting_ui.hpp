@@ -78,9 +78,9 @@ public:
   void close() noexcept;
   bool render(const CraftingSession&, bool execution_enabled) noexcept;
 #ifdef UBC_ENABLE_DNDR
-  bool render_station_quantity(const StationQuantity&) noexcept;
+  bool render_station_quantity(const StationQuantity&, bool pan) noexcept;
   static CraftingMenuAction station_action(int key) noexcept;
-  void show_forge_progress(unsigned completed, unsigned selected) noexcept;
+  void show_station_progress(unsigned completed, unsigned selected, bool pan) noexcept;
 #endif
   bool render_failure() noexcept;
   bool render_success() noexcept;

@@ -37,6 +37,7 @@ ubc::NativeCraftingUi window;
 ubc::StationQuantity chooser;
 ubc::SelectionInput release;
 f::Order order;
+const f::StationProfile* station = &f::smithy;
 f::ReturnFocus return_focus;
 f::Stock opening_stock;
 ubc::PackedInventoryWorkspace inventory;
@@ -53,9 +54,16 @@ bool active() noexcept { return pending || window.opened() || order.active(); }
 bool belongs(void* object, void* npc) noexcept {
   return own_thread() && mob == addr(object) && hero == addr(npc) && hero && order.active();
 }
+void station_event(const char* suffix, int detail = 0, int quantity = 0,
+                   const char* fields = "") noexcept {
+  char name[64]{};
+  std::snprintf(name, sizeof(name), "%s_%s", station->kind == f::Station::pan ? "pan" : "forge",
+                suffix);
+  event(name, detail, quantity, fields);
+}
 void stop(const char* reason) noexcept {
   if (active() && !closing)
-    event(reason, static_cast<int>(order.completed()), static_cast<int>(order.selected()));
+    station_event(reason, static_cast<int>(order.completed()), static_cast<int>(order.selected()));
   order.stop();
   pending = false;
   closing = true;
@@ -64,13 +72,13 @@ void stop(const char* reason) noexcept {
 }
 f::Stock sample() noexcept {
   namespace h = ubc::station_recipe_snapshot_detail;
-  const auto stock = ubc::read_packed_inventory(memory, hero, f::steel, true, inventory);
+  const auto stock = ubc::read_packed_inventory(memory, hero, station->items, true, inventory);
   if (h::begin_hands(memory, hero, hands) != ubc::StationHandReadIssue::none ||
       !h::verify_hands(memory, hands))
     return {};
   const auto& v = hands.before;
   const auto anchor = ubc::hand_detail::read_object(memory, v.interact_item);
-  return f::stock_from(stock, inventory, f::hand_state(v, anchor));
+  return f::stock_from(stock, inventory, f::hand_state(v, anchor, *station), *station);
 }
 bool world_ok() noexcept {
   Address game{}, current{}, actor{}, hw{}, mw{};
@@ -99,10 +107,13 @@ bool ready_place(bool require_focus = true) noexcept {
          integer(mob, 0x1f4) == 0 && integer(mob, 0x1fc) == 0 && name_is(mob, 0x1cc, "") &&
          name_is(mob, 0x1e0, "");
 }
-bool forge_station(Address target) noexcept {
+const f::StationProfile* station_profile(Address target) noexcept {
   char name[48]{};
-  return name_is(target, 0x1b8, "BSFIRE") && obs::string(memory, target, 0x1a4, name) &&
-         _stricmp(name, "ITMISWORDRAW") == 0;
+  for (const auto* profile : {&f::smithy, &f::pan})
+    if (name_is(target, 0x1b8, profile->scheme) && obs::string(memory, target, 0x1a4, name) &&
+        _stricmp(name, profile->items[0].name) == 0)
+      return profile;
+  return nullptr;
 }
 // The forge fix relocates the original RemoveFromSlot CALL into a small Union stub.
 Address branch(Address where, std::uint8_t op) noexcept {
@@ -187,14 +198,23 @@ int __fastcall world_key_toggled(void* device, void*, unsigned short key) {
 }
 bool witness(f::Witness what) noexcept {
   const auto stock = sample();
-  const bool ok = order.observe(what, stock, frame);
+  obs::Animation animation;
+  if (station->kind == f::Station::pan &&
+      (what == f::Witness::insert || what == f::Witness::exchange || what == f::Witness::remove)) {
+    Address model{};
+    if (field(hero, 0xc8, model))
+      animation = obs::current(memory, model, station->scheme);
+  }
+  const bool ok = order.observe(what, stock, frame, animation.name);
   char fields[112]{};
-  std::snprintf(fields, sizeof(fields), ",\"cold\":%d,\"hot\":%d,\"hand\":%d", stock.cold_count,
-                stock.hot_count, static_cast<int>(stock.hand));
-  event(ok ? "forge_witness" : "forge_balance_rejected", static_cast<int>(what),
-        static_cast<int>(order.completed()), fields);
+  const char* format = station->kind == f::Station::pan ? ",\"raw\":%d,\"cooked\":%d,\"hand\":%d"
+                                                        : ",\"cold\":%d,\"hot\":%d,\"hand\":%d";
+  std::snprintf(fields, sizeof(fields), format, stock.input_count, stock.output_count,
+                static_cast<int>(stock.hand));
+  station_event(ok ? "witness" : "balance_rejected", static_cast<int>(what),
+                static_cast<int>(order.completed()), fields);
   if (!ok)
-    stop("forge_order_stopped");
+    stop("order_stopped");
   return ok;
 }
 int __fastcall occupancy(void* object, void*, void* npc) {
@@ -205,17 +225,23 @@ int __fastcall occupancy(void* object, void*, void* npc) {
   const auto error = GetLastError();
   // Only these two keyboard/gamepad action branches go on to reserve the item.
   // AI, reachability checks, NPC decisions and the original entry keep their answer.
-  if (actual || !own_thread() || addr(npc) != observed_hero || !forge_station(addr(object))) {
+  const auto* profile = !actual && own_thread() && addr(npc) == observed_hero
+                            ? station_profile(addr(object))
+                            : nullptr;
+  if (!profile) {
     SetLastError(error);
     return actual;
   }
   bool consume = locked || active();
   if (!consume && passthrough) {
     passthrough = false;
-    SetLastError(error);
-    return actual;
+    if (mob == addr(object) && hero == addr(npc)) {
+      SetLastError(error);
+      return actual;
+    }
   }
   if (!consume && !ui.opened() && !handoff.active() && !disabled) {
+    station = profile;
     mob = addr(object);
     hero = addr(npc);
     world = observed_world;
@@ -226,15 +252,15 @@ int __fastcall occupancy(void* object, void*, void* npc) {
       if (issue) {
         event(issue);
       } else {
-        // The original initializes an untouched forge's position list before testing its range.
-        // ScanIdealPositions only builds the model positions. CanInteractWith would debit steel.
+        // The original initializes an untouched station's position list before testing its range.
+        // ScanIdealPositions only builds the model positions. CanInteractWith would reserve material.
         Address node{};
         if (field(mob, 0x18c, node) && !node) {
           using ScanPositions = void(__thiscall*)(void*);
           reinterpret_cast<ScanPositions>(0x71dc30)(object);
         }
         if (!ready_place()) {
-          event("forge_place_unavailable");
+          station_event("place_unavailable");
           SetLastError(error);
           return actual;
         }
@@ -245,13 +271,13 @@ int __fastcall occupancy(void* object, void*, void* npc) {
           closing = false;
           chooser.open(max);
           last_tick = GetTickCount64();
-          event("forge_use_captured", opening_stock.cold_count, static_cast<int>(max));
+          station_event("use_captured", opening_stock.input_count, static_cast<int>(max));
         } else
-          event("forge_stock_unavailable", opening_stock.cold_count,
-                static_cast<int>(opening_stock.hand));
+          station_event("stock_unavailable", opening_stock.input_count,
+                        static_cast<int>(opening_stock.hand));
       }
     } else {
-      event("forge_use_unavailable", world_ok() ? 1 : 0, ready_place() ? 1 : 0);
+      station_event("use_unavailable", world_ok() ? 1 : 0, ready_place() ? 1 : 0);
     }
   }
   SetLastError(error);
@@ -271,10 +297,10 @@ void __fastcall item_message(void* npc, void*, void* msg, void* sender) {
   const auto saved = GetLastError();
   const bool watch = own_thread() && hero == addr(npc) && order.active();
   if (own_thread() && active() && hero == addr(npc) && integer(addr(msg), 0) == 0x83dafc)
-    stop("forge_hit"); // oCMsgDamage, including hits absorbed by armour.
+    stop("hit"); // oCMsgDamage, including hits absorbed by armour.
   const auto* tag = watch ? obs::message_tag(memory, addr(msg)) : nullptr;
   if (tag && (++message_depth != 1 || integer(hero, 0x964) != static_cast<int>(mob)))
-    stop("forge_message_context");
+    stop("message_context");
   SetLastError(saved);
   reinterpret_cast<Message>(forge_hooks.original(1))(npc, msg, sender);
   const auto error = GetLastError();
@@ -282,7 +308,7 @@ void __fastcall item_message(void* npc, void*, void* msg, void* sender) {
     --message_depth;
     if (order.active()) {
       if (integer(hero, 0x964) != static_cast<int>(mob))
-        stop("forge_message_context");
+        stop("message_context");
       else if (tag == obs::tags[0])
         witness(f::Witness::insert);
       else if (tag == obs::tags[5])
@@ -290,7 +316,7 @@ void __fastcall item_message(void* npc, void*, void* msg, void* sender) {
       else if (tag == obs::tags[1])
         witness(f::Witness::remove);
       else
-        stop("forge_unexpected_item");
+        stop("unexpected_item");
     }
   }
   SetLastError(error);
@@ -298,7 +324,7 @@ void __fastcall item_message(void* npc, void*, void* msg, void* sender) {
 void __fastcall interrupted(void* object, void*, void* npc) {
   const auto error = GetLastError();
   if (belongs(object, npc))
-    stop("forge_interrupted");
+    stop("interrupted");
   SetLastError(error);
   reinterpret_cast<Notify>(forge_hooks.original(2))(object, npc);
 }
@@ -308,15 +334,20 @@ void __fastcall interact(void* object, void*, void* npc, int action, int up, int
   if (belongs(object, npc) && order.selected() > 1 && addr(_ReturnAddress()) == 0x698643) {
     if (action || up || down || left || right || !world_ok() ||
         !ubc::NativeSelectionUi::callback_is_top(callback))
-      stop("forge_input_interrupted");
-    else if (!forward_sent && order.phase() == f::Phase::exchanged && integer(mob, 0x1f4) == 1 &&
+      stop("input_interrupted");
+    else if (!forward_sent && order.awaiting_forward() && integer(mob, 0x1f4) == 1 &&
              integer(mob, 0x1fc) == 1 && station_owns(mob, hero)) {
       Address model{};
       if (field(hero, 0xc8, model) &&
-          !std::strcmp(obs::current(memory, model, "BSFIRE").name, "S_BSFIRE_S1")) {
-        forward_sent = true;
-        up = 1;
-        event("forge_original_forward");
+          !std::strcmp(obs::current(memory, model, station->scheme).name,
+                       station->working_animation)) {
+        if (station->kind == f::Station::pan && !order.pan_workpiece(sample())) {
+          stop("workpiece_changed");
+        } else {
+          forward_sent = true;
+          up = 1;
+          station_event("original_forward");
+        }
       }
     }
   }
@@ -344,7 +375,7 @@ void forge_start(void* object, void* npc) noexcept {
 void forge_end(void* object, void* npc, int flag, Address caller) noexcept {
   if (!flag && belongs(object, npc)) {
     if (caller != ubc::station_end_contract::completed_return || integer(hero, 0x964) != 0)
-      stop("forge_end_rejected");
+      stop("end_rejected");
     else if (witness(f::Witness::end)) {
       ended_frame = frame;
       return_focus.reset(GetTickCount64());
@@ -355,13 +386,13 @@ bool forge_event(void* menu, int key) noexcept {
   if (!own_thread() || !installed_forge || !active())
     return false;
   if (menu != window.object()) {
-    stop("forge_external_menu");
+    stop("external_menu");
     return false;
   }
   if (window.owns_input() && window.focused() && !closing)
     chooser.handle(window.station_action(key));
   else
-    stop("forge_focus_lost");
+    stop("focus_lost");
   return true;
 }
 void forge_frame() noexcept {
@@ -371,7 +402,7 @@ void forge_frame() noexcept {
   const bool down = held(!window.opened() && !pending);
   release.observe(frame, down, window.focused());
   if (active() && (!world_ok() || tick - last_tick > 1500))
-    stop("forge_context_lost");
+    stop("context_lost");
   last_tick = tick;
   if (closing) {
     if (window.opened())
@@ -386,47 +417,48 @@ void forge_frame() noexcept {
   if (pending) {
     pending = false;
     if (!ready_place()) {
-      stop("forge_place_changed");
+      stop("place_changed");
       return;
     }
-    if (!window.open() || !window.render_station_quantity(chooser)) {
+    if (!window.open() ||
+        !window.render_station_quantity(chooser, station->kind == f::Station::pan)) {
       passthrough = true;
-      stop("forge_window_rejected");
+      stop("window_rejected");
       return;
     }
     window.apply_backdrop();
-    event("forge_menu_opened", opening_stock.cold_count, static_cast<int>(chooser.maximum()));
+    station_event("menu_opened", opening_stock.input_count, static_cast<int>(chooser.maximum()));
   }
   if (window.opened()) {
     if (!window.owns_input() || !ready_place()) {
-      stop("forge_menu_focus_lost");
+      stop("menu_focus_lost");
       return;
     }
     chooser.observe(frame, down, true);
     if (chooser.decision() < 0) {
-      if (!window.render_station_quantity(chooser))
-        stop("forge_render_failed");
+      if (!window.render_station_quantity(chooser, station->kind == f::Station::pan))
+        stop("render_failed");
       return;
     }
     if (!chooser.released())
       return;
     if (!chooser.decision()) {
-      stop("forge_menu_cancelled");
+      stop("menu_cancelled");
       window.close();
       return;
     }
     window.close();
-    if (!order.open(opening_stock, static_cast<unsigned>(chooser.decision()))) {
-      stop("forge_order_rejected");
+    if (!order.open(opening_stock, static_cast<unsigned>(chooser.decision()), station->kind)) {
+      stop("order_rejected");
       return;
     }
-    event("forge_order_selected", static_cast<int>(order.selected()));
+    station_event("order_selected", static_cast<int>(order.selected()));
   }
   if (order.phase() == f::Phase::ended && frame > ended_frame) {
     Address focus{};
     if (!field(hero, 0x9ac, focus) || !ready_place(false) || held(true) || !release.armed() ||
         !ubc::NativeSelectionUi::callback_is_top(callback) || !order.neutral_stock(sample())) {
-      stop("forge_neutral_rejected");
+      stop("neutral_rejected");
       return;
     }
     const auto target = !focus         ? f::Focus::missing
@@ -434,7 +466,7 @@ void forge_frame() noexcept {
                                        : f::Focus::other;
     const auto result = return_focus.observe(tick, target);
     if (result == f::NeutralResult::rejected) {
-      stop("forge_return_focus_rejected");
+      stop("return_focus_rejected");
       return;
     }
     if (result == f::NeutralResult::waiting)
@@ -442,25 +474,27 @@ void forge_frame() noexcept {
     if (!witness(f::Witness::neutral))
       return;
     if (order.selected() > 1)
-      window.show_forge_progress(order.completed(), order.selected());
+      window.show_station_progress(order.completed(), order.selected(),
+                                   station->kind == f::Station::pan);
     if (!order.active())
-      event("forge_order_complete", static_cast<int>(order.completed()));
+      station_event("order_complete", static_cast<int>(order.completed()));
     return;
   }
   if (order.phase() != f::Phase::ready) {
     if (tick > deadline)
-      stop("forge_timeout");
+      stop("timeout");
     return;
   }
   if (held(true) || !release.armed() || !ubc::NativeSelectionUi::callback_is_top(callback) ||
-      !ready_place() || !forge_station(mob) || profile_issue() || !order.start(sample())) {
-    stop("forge_restart_rejected");
+      !ready_place() || station_profile(mob) != station || profile_issue() ||
+      !order.start(sample())) {
+    stop("restart_rejected");
     return;
   }
   forward_sent = false;
   deadline = tick + 15000;
-  event("forge_original_entry", static_cast<int>(order.completed() + 1),
-        static_cast<int>(order.selected()));
+  station_event("original_entry", static_cast<int>(order.completed() + 1),
+                static_cast<int>(order.selected()));
   // This original request reserves once and posts oCMobMsg(STARTINTERACTION, hero).
   // It can return before StartInteraction. Never retry a dispatched request.
   reinterpret_cast<Enter>(enter)(reinterpret_cast<void*>(mob), reinterpret_cast<void*>(hero), 1);
