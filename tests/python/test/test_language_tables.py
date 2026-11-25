@@ -23,6 +23,8 @@ class LanguageTables(unittest.TestCase):
             .split("enum class Label {")[1]
             .split("count\n};")[0]
         )
+        # Include labels from every build configuration, excluding the directives themselves.
+        enum = re.sub(r"^[ \t]*#.*$", "", enum, flags=re.MULTILINE)
         labels = {"Label::" + key for key in re.findall(r"\w+", enum)}
         reference = set(keys((TEXT / "locales/en.hpp").read_text()))
         for file in sorted((TEXT / "locales").glob("*.hpp")):
