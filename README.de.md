@@ -19,7 +19,7 @@ Ein Los ergibt 30 Pfeile. Beim Verlassen der Station wandert die Säge zurück i
 - **Die Nacht des Raben ohne Kampagnenmod** – Alchemietisch (20 Trank- und Sonderrezepte, drei Tabaksorten), Amboss (fünf normale und acht Erzwaffen), Esse, Pfanne und Herd.
 - **Marcello L’Hiver DE 2.0.4** – 98 Rezeptprofile an Herd, Alchemietisch, Lederbank, Säge, Esse, Amboss, Bogenbank, Kühlbecken und Schleifstein.
 
-In Die Nacht des Raben spielt jedes Stück an Esse, Pfanne und Herd seine Originalanimation. Ein Abbruch im Mengenmenü ist kostenlos. Marvin-F8 nach der Reservierung kann wie im Original an der Esse einen kalten Rohstahl und am Herd ein rohes Fleisch kosten. Auch bei einem anderen harten Abbruch der Herdanimation kann das reservierte Rohfleisch verloren gehen.
+In Die Nacht des Raben bieten Esse, Pfanne und Herd die Auswahl zwischen 1, freier Menge und Maximum. Jedes Stück durchläuft seine Originalanimation. Ein Abbruch im Mengenmenü ist kostenlos. Marvin-F8 nach der Reservierung kann wie im Original an der Esse einen kalten Rohstahl und am Herd ein rohes Fleisch kosten. Auch bei einem anderen harten Abbruch der Herdanimation kann das reservierte Rohfleisch verloren gehen.
 
 - An Stationen mit Rezeptauswahl gibt es Vorgaben für 1, 5, 10 und Maximum sowie jede freie Menge bis zur Materialgrenze.
 - Benötigtes Material, aktueller Vorrat und eine Vorschau des Ergebnisses für die gewählte Menge.

@@ -19,7 +19,7 @@ Each lot makes 30 arrows. The saw returns to your inventory when you leave the s
 - **Night of the Raven without a campaign mod** – alchemy table (20 potion and specialty recipes, three tobacco blends), anvil (five regular and eight ore weapons), forge, frying pan and stove.
 - **Marcello L’Hiver DE 2.0.4** – 98 recipe profiles across the stove, alchemy table, leather bench, saw, forge, anvil, bow bench, cooling tub and grindstone.
 
-In Night of the Raven, each piece at the forge, frying pan and stove plays its original animation. Cancelling in the quantity menu costs nothing. As in the original game, pressing Marvin F8 after reservation can cost one cold raw steel at the forge or one raw meat at the stove. A hard interruption of the stove animation can also consume the reserved meat.
+In Night of the Raven, the forge, frying pan and stove offer 1, a custom quantity or the maximum. Each piece plays its original animation. Cancelling in the quantity menu costs nothing. As in the original game, pressing Marvin F8 after reservation can cost one cold raw steel at the forge or one raw meat at the stove. A hard interruption of the stove animation can also consume the reserved meat.
 
 - At recipe stations, presets for 1, 5, 10 and maximum, plus any custom amount up to the material limit.
 - Required materials, current stock and a preview of the result for the selected amount.
