@@ -137,19 +137,38 @@ void menu() {
   REQUIRE(picker.decision() == 0);
 }
 void return_focus() {
+  constexpr std::uint64_t start = 5000;
   ReturnFocus focus;
-  focus.reset(1000);
-  REQUIRE(focus.observe(1004, Focus::missing) == NeutralResult::waiting);
-  REQUIRE(focus.observe(1098, Focus::missing) == NeutralResult::waiting);
-  REQUIRE(focus.observe(1104, Focus::forge) == NeutralResult::waiting);
-  REQUIRE(focus.observe(1110, Focus::forge) == NeutralResult::ready);
-  focus.reset(2000);
-  REQUIRE(focus.observe(2004, Focus::other) == NeutralResult::rejected);
-  focus.reset(2000);
-  REQUIRE(focus.observe(2004, Focus::forge) == NeutralResult::waiting);
-  REQUIRE(focus.observe(2010, Focus::missing) == NeutralResult::rejected);
-  focus.reset(2000);
-  REQUIRE(focus.observe(2251, Focus::forge) == NeutralResult::rejected);
+  focus.reset(start);
+  REQUIRE(focus.observe(start, Focus::forge) == NeutralResult::waiting);
+  REQUIRE(focus.observe(start + 1, Focus::forge) == NeutralResult::ready);
+
+  const auto returns_after_missing = [&](std::uint64_t first, std::uint64_t next) {
+    focus.reset(start);
+    REQUIRE(focus.observe(start, Focus::missing) == NeutralResult::waiting);
+    REQUIRE(focus.observe(start + first, Focus::forge) == NeutralResult::waiting);
+    REQUIRE(focus.observe(start + next, Focus::forge) == NeutralResult::ready);
+  };
+  returns_after_missing(246, 256);
+  returns_after_missing(600, 700);
+  returns_after_missing(999, 1000);
+
+  focus.reset(start);
+  REQUIRE(focus.observe(start + 1000, Focus::forge) == NeutralResult::waiting);
+  REQUIRE(focus.observe(start + 1001, Focus::forge) == NeutralResult::rejected);
+  focus.reset(start);
+  REQUIRE(focus.observe(start + 1001, Focus::forge) == NeutralResult::rejected);
+  focus.reset(start);
+  REQUIRE(focus.observe(start + 1000, Focus::missing) == NeutralResult::waiting);
+  REQUIRE(focus.observe(start + 1001, Focus::missing) == NeutralResult::rejected);
+
+  focus.reset(start);
+  REQUIRE(focus.observe(start, Focus::other) == NeutralResult::rejected);
+  for (const auto lost : {Focus::missing, Focus::other}) {
+    focus.reset(start);
+    REQUIRE(focus.observe(start + 246, Focus::forge) == NeutralResult::waiting);
+    REQUIRE(focus.observe(start + 256, lost) == NeutralResult::rejected);
+  }
 }
 } // namespace
 int main() {
