@@ -213,6 +213,10 @@ static void install(bool execute) noexcept {
   if (hooks.install(reinterpret_cast<std::uintptr_t>(&UbcFrameBridge))) {
     InterlockedExchange(&installed, 1);
     event("hooks_installed");
+#ifdef UBC_ENABLE_DNDR
+    if (dndr_active)
+      install_forge();
+#endif
   } else
     event("hooks_rejected");
 }

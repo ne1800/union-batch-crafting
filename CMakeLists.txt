@@ -112,6 +112,7 @@ foreach(
     engine/player_campaign
     stations/alchemy/dndr_alchemy
     stations/anvil/dndr_anvil
+    stations/forge/dndr_forge
     core/batch_session
     ui/batch_menu
     engine/amount_patch
@@ -734,6 +735,10 @@ if(WIN32)
     option(UBC_ENABLE_DNDR "Build the Night of the Raven campaign test DLL" OFF)
     if(UBC_ENABLE_DNDR)
         add_crafting_plugin(UnionBatchCraftingDndrTest "${version_resource}")
+        target_sources(
+            UnionBatchCraftingDndrTest
+            PRIVATE src/plugin/crafting/dndr_forge.cpp
+        )
         target_link_libraries(UnionBatchCraftingDndrTest PRIVATE shell32)
         target_compile_definitions(
             UnionBatchCraftingDndrTest

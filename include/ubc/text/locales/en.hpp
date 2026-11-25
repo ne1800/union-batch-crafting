@@ -19,6 +19,8 @@ inline constexpr SourceRow<Label> messages[] = {
     {Label::tool_full, U"No room to return the tool."},
     {Label::unavailable, U"Cannot craft this now."},
     {Label::unsupported_amount, U"Amount not supported. Please select 1."},
+    {Label::heat_steel, U"Heat raw steel"},
+    {Label::steel_progress, U"Heated steel: %u / %u"},
     {Label::max_short, U"Max"},
     {Label::selected_recipes, U"> Known recipes"},
     {Label::known_recipes, U"Known recipes"},

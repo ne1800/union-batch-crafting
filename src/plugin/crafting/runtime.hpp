@@ -3,6 +3,13 @@
 #include "state.hpp"
 
 namespace ubc_native {
+#ifdef UBC_ENABLE_DNDR
+void install_forge() noexcept;
+void forge_frame() noexcept;
+bool forge_event(void* menu, int key) noexcept;
+void forge_start(void* mob, void* npc) noexcept;
+void forge_end(void* mob, void* npc, int flag, std::uint32_t caller) noexcept;
+#endif
 struct Context {
   bool valid = false, identity_known = false, station_known = false, ownership_known = false;
   std::uint32_t game = 0, world = 0, hero = 0, station = 0;

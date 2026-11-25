@@ -4,6 +4,9 @@
 
 ## Unreleased
 
+- **English** The Night of the Raven test build adds a quantity selector for heating raw steel at a forge.
+- **Deutsch** Der Testbuild für Die Nacht des Raben enthält eine Mengenwahl zum Erhitzen von Rohstahl an der Esse.
+
 - **English** The Night of the Raven test build checks tobacco orders and their reserved flask at the alchemy bench.
 - **Deutsch** Der Testbuild für Die Nacht des Raben prüft Tabakaufträge und die reservierte Flasche am Alchemietisch.
 

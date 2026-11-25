@@ -522,6 +522,10 @@ void __fastcall after_frame(void* game, void* manager) {
       SetLastError(error);
       return;
     }
+#ifdef UBC_ENABLE_DNDR
+    if (dndr_active)
+      forge_frame();
+#endif
     initialize_extra(c);
     if (!dndr_active) {
       initialize_bow(c);
@@ -859,6 +863,12 @@ void __fastcall observe_add(void* view, void* text, int number) {
 
 int __fastcall observe_menu_event(void* menu, void*, int input) {
   const auto error = GetLastError();
+#ifdef UBC_ENABLE_DNDR
+  if (forge_event(menu, input)) {
+    SetLastError(error);
+    return 1;
+  }
+#endif
   if (own_thread() && ui.opened() && menu == ui.object()) {
     // Independently of the bounded diagnostics, every entry into our callback
     // revokes an active scope, including unknown, no-op or rejected input.
