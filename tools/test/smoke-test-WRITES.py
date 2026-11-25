@@ -712,37 +712,30 @@ def main() -> None:
                 print(run([str(activation_host), "--marker-absent"]), flush=True)
                 ini = payload / "Gothic.INI"
                 ini.unlink(missing_ok=True)
-                print(run([str(spoofed), windows_path(player_dll)]), flush=True)
-                idle = player_log.read_text().splitlines()
-                if len(idle) != 1 or json.loads(idle[0]) != {
-                    "event": "plugin_idle",
-                    "frame": 0,
-                    "detail": 0,
-                    "quantity": 0,
-                    "reason": "unsupported_scripts_without_marcello_lhiver",
-                }:
-                    raise RuntimeError("Foreign scripts did not leave the player idle")
                 player_marker.write_bytes(activation)
-                player_log.write_text("old")
-                print(
-                    run(
-                        [
-                            str(spoofed),
-                            windows_path(player_dll),
-                            "-game:Lhiver_marcello_de.ini",
-                        ]
-                    ),
-                    flush=True,
-                )
-                notice_log = player_log.read_text()
-                if (
-                    "script_profile_rejected" not in notice_log
-                    or "engine_station_disabled" not in notice_log
-                    or player_marker.read_bytes() != activation
+                for arguments, reason in (
+                    ([], "unsupported_scripts_without_marcello_lhiver"),
+                    (["-game:Lhiver_marcello_de.ini"], "unsupported_scripts"),
                 ):
-                    raise RuntimeError(
-                        "Repeated player activation or marker isolation failed"
+                    player_log.write_text("old")
+                    print(
+                        run([str(spoofed), windows_path(player_dll), *arguments]),
+                        flush=True,
                     )
+                    if (
+                        json.loads(player_log.read_text())
+                        != {
+                            "event": "plugin_idle",
+                            "frame": 0,
+                            "detail": 0,
+                            "quantity": 0,
+                            "reason": reason,
+                        }
+                        or player_marker.read_bytes() != activation
+                    ):
+                        raise RuntimeError(
+                            "Unrecognized scripts must leave the player idle and preserve its marker"
+                        )
                 player_log.unlink()
                 ini.write_text("[UNIONBATCHCRAFTING]\nEnabled=0\n")
                 print(run([str(spoofed), windows_path(player_dll)]), flush=True)
