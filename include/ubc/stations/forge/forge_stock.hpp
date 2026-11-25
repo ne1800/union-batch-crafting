@@ -6,45 +6,60 @@
 #include <string_view>
 
 namespace ubc::dndr::forge {
-inline constexpr std::array<PackedInventoryTarget, 2> steel{
-    {{"ITMISWORDRAW", cold}, {"ITMISWORDRAWHOT", hot}}};
+struct StationProfile {
+  Station kind;
+  const char* scheme;
+  const char* working_animation;
+  std::array<PackedInventoryTarget, 2> items;
+};
+inline constexpr StationProfile smithy{
+    Station::forge, "BSFIRE", "S_BSFIRE_S1", {{{"ITMISWORDRAW", cold}, {"ITMISWORDRAWHOT", hot}}}};
+inline constexpr StationProfile pan{
+    Station::pan, "PAN", "S_PAN_S1", {{{"ITFOMUTTONRAW", 6719}, {"ITFOMUTTON", 6721}}}};
 
-inline Hand hand_state(const StationRecipeHands& h, const HandObjectSnapshot& anchor) noexcept {
+inline Hand hand_state(const StationRecipeHands& h, const HandObjectSnapshot& anchor,
+                       const StationProfile& profile) noexcept {
   const auto& left = h.hands.left;
-  if (!h.interact_item_known || h.hands.right.state != 0 || left.state < 0 || anchor.state < 0)
+  const auto& right = h.hands.right;
+  if (!h.interact_item_known || left.state < 0 || right.state < 0 || anchor.state < 0)
     return Hand::unknown;
-  if (!left.state && !anchor.state)
+  if (!left.state && !right.state && !anchor.state)
     return Hand::empty;
   if (anchor.state != 1 || anchor.amount != 1)
     return Hand::unknown;
-  if (!left.state && anchor.symbol == cold)
+  const bool raw = anchor.symbol == profile.items[0].symbol;
+  if (!left.state && !right.state && raw)
     return Hand::reserved;
-  if (left.state != 1 || left.object != anchor.object || left.amount != 1 ||
-      left.symbol != anchor.symbol)
+  const bool in_right = raw && profile.kind == Station::pan;
+  const auto& held = in_right ? right : left;
+  const auto& free = in_right ? left : right;
+  if (free.state || held.state != 1 || held.object != anchor.object || held.amount != 1 ||
+      held.symbol != anchor.symbol)
     return Hand::unknown;
-  if (left.symbol == cold)
-    return Hand::left_cold;
-  return left.symbol == hot ? Hand::left_hot : Hand::unknown;
+  if (raw)
+    return inserted_hand(profile.kind);
+  return held.symbol == profile.items[1].symbol ? exchanged_hand(profile.kind) : Hand::unknown;
 }
 
 inline Stock stock_from(const PackedInventorySnapshotT<2>& inv,
-                        const PackedInventoryWorkspace& work, Hand hand) noexcept {
+                        const PackedInventoryWorkspace& work, Hand hand,
+                        const StationProfile& profile = smithy) noexcept {
   Stock out;
   out.hand = hand;
   if (inv.issue != PackedInventoryIssue::none || !inv.storage_totals_known ||
       !inv.snapshot_unchanged || !inv.stable_boundary_verified || hand == Hand::unknown)
     return out;
-  for (std::size_t i = 0; i < steel.size(); ++i)
+  for (std::size_t i = 0; i < profile.items.size(); ++i)
     if (inv.mixed_representation[i] || inv.packed_occurrences[i] > 1 ||
         inv.listed_occurrences[i] > 1 || inv.has_active_marker[i])
       return out;
   // Compare all unrelated entries, including packed names, amounts and equipped markers.
-  // Removing a steel entry can change list links and packed-string offsets.
+  // Removing a material entry can change list links and packed-string offsets.
   Sha256 digest;
   for (std::uint32_t i = 0; i < inv.listed_nodes; ++i) {
     const auto& fields = work.records[i].item_fields;
     const int symbol = packed_detail::little_i32(fields.data() + 4);
-    if (symbol != cold && symbol != hot)
+    if (symbol != profile.items[0].symbol && symbol != profile.items[1].symbol)
       digest.update(fields.data(), fields.size());
   }
   constexpr char separator = '\0';
@@ -54,7 +69,7 @@ inline Stock stock_from(const PackedInventorySnapshotT<2>& inv,
     const auto comma = packed.find(',');
     const auto entry = packed.substr(0, comma);
     const auto name = entry.substr(0, entry.find(':'));
-    if (name != steel[0].name && name != steel[1].name) {
+    if (name != profile.items[0].name && name != profile.items[1].name) {
       digest.update(entry.data(), entry.size());
       digest.update(&separator, 1);
     }
@@ -63,8 +78,8 @@ inline Stock stock_from(const PackedInventorySnapshotT<2>& inv,
     packed.remove_prefix(comma + 1);
   }
   out.other = digest.finish();
-  out.cold_count = inv.total[0];
-  out.hot_count = inv.total[1];
+  out.input_count = inv.total[0];
+  out.output_count = inv.total[1];
   out.unambiguous = true;
   return out;
 }

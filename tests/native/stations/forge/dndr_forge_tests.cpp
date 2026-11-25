@@ -60,7 +60,7 @@ void faults() {
         s.hand = Hand::unknown;
         break;
       case 4:
-        ++s.hot_count;
+        ++s.output_count;
         break;
       default:
         s.unambiguous = false;

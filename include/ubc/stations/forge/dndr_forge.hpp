@@ -5,24 +5,32 @@
 #include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <string_view>
 
 namespace ubc::dndr::forge {
 constexpr int cold = 6912, hot = 6913;
-// Largest order in the initial forge qualification matrix.
+// Largest order in the station qualification matrix.
 constexpr unsigned order_limit = 3;
-enum class Hand { unknown, empty, reserved, left_cold, left_hot };
+enum class Station { forge, pan };
+enum class Hand { unknown, empty, reserved, left_cold, left_hot, right_raw, left_cooked };
+constexpr Hand inserted_hand(Station station) noexcept {
+  return station == Station::pan ? Hand::right_raw : Hand::left_cold;
+}
+constexpr Hand exchanged_hand(Station station) noexcept {
+  return station == Station::pan ? Hand::left_cooked : Hand::left_hot;
+}
 struct Stock {
-  int cold_count = -1, hot_count = -1;
+  int input_count = -1, output_count = -1;
   std::array<std::uint8_t, 32> other{};
   Hand hand = Hand::unknown;
   bool unambiguous = false;
 };
 
 inline unsigned maximum(const Stock& s) noexcept {
-  if (!s.unambiguous || s.hand != Hand::empty || s.cold_count <= 0 || s.hot_count < 0)
+  if (!s.unambiguous || s.hand != Hand::empty || s.input_count <= 0 || s.output_count < 0)
     return 0;
   return static_cast<unsigned>(
-      std::min({s.cold_count, std::numeric_limits<int>::max() - s.hot_count,
+      std::min({s.input_count, std::numeric_limits<int>::max() - s.output_count,
                 static_cast<int>(order_limit)}));
 }
 
@@ -70,9 +78,10 @@ private:
 // Interruptions leave the entire material decision to the original game.
 class Order {
 public:
-  bool open(const Stock& s, unsigned count) noexcept {
+  bool open(const Stock& s, unsigned count, Station station = Station::forge) noexcept {
     if (!count || count > maximum(s) || active())
       return false;
+    station_ = station;
     baseline_ = s;
     selected_ = count;
     completed_ = 0;
@@ -86,16 +95,22 @@ public:
     phase_ = Phase::dispatched;
     return true;
   }
-  bool observe(Witness w, const Stock& s, std::uint64_t frame) noexcept {
+  bool observe(Witness w, const Stock& s, std::uint64_t frame,
+               std::string_view animation = {}) noexcept {
     if (!active())
       return false;
+    if (station_ == Station::pan) {
+      if ((w == Witness::insert && animation != "T_PAN_S0_2_S1") ||
+          ((w == Witness::exchange || w == Witness::remove) && animation != "T_PAN_S1_2_S0"))
+        return stop();
+    }
     switch (w) {
     case Witness::reservation:
       return advance(Phase::dispatched, Phase::reserved, s, 0, Hand::reserved);
     case Witness::insert:
-      return advance(Phase::reserved, Phase::inserted, s, 0, Hand::left_cold);
+      return advance(Phase::reserved, Phase::inserted, s, 0, inserted_hand(station_));
     case Witness::exchange:
-      return advance(Phase::inserted, Phase::exchanged, s, 0, Hand::left_hot);
+      return advance(Phase::inserted, Phase::exchanged, s, 0, exchanged_hand(station_));
     case Witness::remove:
       return advance(Phase::exchanged, Phase::returned, s, 1, Hand::empty);
     case Witness::end:
@@ -118,6 +133,14 @@ public:
   bool neutral_stock(const Stock& s) const noexcept {
     return phase_ == Phase::ended && matches(s, -1, 1, Hand::empty);
   }
+  bool awaiting_forward() const noexcept {
+    return selected_ > 1 &&
+           phase_ == (station_ == Station::pan ? Phase::inserted : Phase::exchanged);
+  }
+  bool pan_workpiece(const Stock& s) const noexcept {
+    return station_ == Station::pan && phase_ == Phase::inserted &&
+           matches(s, -1, 0, Hand::right_raw);
+  }
   Phase phase() const noexcept { return phase_; }
   unsigned selected() const noexcept { return selected_; }
   unsigned completed() const noexcept { return completed_; }
@@ -126,8 +149,8 @@ private:
   bool matches(const Stock& s, int debit, int credit, Hand hand) const noexcept {
     const int n = static_cast<int>(completed_);
     return s.unambiguous && s.hand == hand && s.other == baseline_.other &&
-           s.cold_count == baseline_.cold_count - n + debit &&
-           s.hot_count == baseline_.hot_count + n + credit;
+           s.input_count == baseline_.input_count - n + debit &&
+           s.output_count == baseline_.output_count + n + credit;
   }
   bool advance(Phase from, Phase to, const Stock& s, int credit, Hand hand) noexcept {
     if (phase_ != from || !matches(s, -1, credit, hand))
@@ -135,6 +158,7 @@ private:
     phase_ = to;
     return true;
   }
+  Station station_ = Station::forge;
   Stock baseline_{};
   unsigned selected_ = 0, completed_ = 0;
   std::uint64_t end_frame_ = 0;
