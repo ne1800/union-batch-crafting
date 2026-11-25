@@ -6,7 +6,7 @@
 
 Ein Union-Plugin für Gothic II: Die Nacht des Raben mit der Mod Marcello L’Hiver DE 2.0.4. Wähle an einer Werkstation ein gelerntes Rezept und eine Menge, prüfe Material und Vorschau und stelle alles auf einmal her, statt den Originaldialog für jedes Stück zu wiederholen.
 
-Im aktuellen Quellstand bleibt das Plugin untätig, wenn du ohne Marcello L’Hiver und mit anderen Skripten spielst. In *Gothic II – Die Nacht des Raben* ohne Kampagnenmod blieben die Originaldialoge am Alchemietisch und am Amboss erhalten. [Verträglichkeitsprüfung](TESTED-WITH.md#campaign-compatibility)
+Das Plugin bleibt untätig, wenn du ohne Marcello L’Hiver und mit anderen Skripten spielst. In *Gothic II – Die Nacht des Raben* ohne Kampagnenmod blieben die Originaldialoge am Alchemietisch und am Amboss erhalten. [Verträglichkeitsprüfung](TESTED-WITH.md#campaign-compatibility)
 
 ![Mengenmenü an der Säge. Fünf Lose verbrauchen fünf Holz und fünf Rohstahl für 150 Pfeile. Der Pfeilbestand steigt laut Vorschau von 881 auf 1031.](docs/images/quantity-menu-de.webp)
 

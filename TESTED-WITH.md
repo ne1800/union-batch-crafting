@@ -4,7 +4,13 @@ Gothic II: Night of the Raven / Die Nacht des Raben, Windows x86, 2.6 fix, Marce
 
 <a id="campaign-compatibility"></a>
 
-## Campaign compatibility · Kampagnenverträglichkeit (Unreleased)
+## Campaign compatibility · Kampagnenverträglichkeit
+
+**0.0.67** ran with the same player DLL in both campaigns. In Marcello L’Hiver DE 2.0.4, slot 14, one alchemy order made two swamp tobaccos. It used two apple tobaccos and two laboratory flasks. All 418 inventory counts matched and both hands were empty after leaving the table. In a new game of Night of the Raven without a campaign mod, the DLL logged `plugin_idle` once with reason `unsupported_scripts_without_marcello_lhiver`. All twelve hook sites retained their original bytes. The original alchemy dialogue made one honey tobacco from one apple tobacco and one flask. The honey was retained. No plugin notice or quantity menu appeared.
+
+**0.0.67** lief in beiden Kampagnen mit derselben Spieler-DLL. In Marcello L’Hiver DE 2.0.4, Slot 14, ergab ein Alchemieauftrag zwei Sumpftabake. Dafür wurden zwei Apfeltabake und zwei Laborwasserflaschen verbraucht. Alle 418 Inventarbestände stimmten, beide Hände waren nach dem Verlassen des Tisches leer. In einem neuen Spiel von *Die Nacht des Raben* ohne Kampagnenmod protokollierte die DLL einmal `plugin_idle` mit dem Grund `unsupported_scripts_without_marcello_lhiver`. Alle zwölf Hookstellen behielten ihre Originalbytes. Im Originaldialog am Alchemietisch entstand ein Honigtabak aus einem Apfeltabak und einer Flasche. Der Honig blieb erhalten. Es erschien weder ein Pluginhinweis noch ein Mengenmenü.
+
+### Earlier builds · Frühere Builds
 
 | In-game test / Spieltest | Player DLL SHA-256 / SHA-256 der Spieler-DLL |
 | --- | --- |
@@ -15,11 +21,11 @@ In Night of the Raven, the plugin loaded, logged one reason for staying idle and
 
 In *Gothic II – Die Nacht des Raben* lud das Plugin, protokollierte einmal den Grund für seine Untätigkeit und ließ das Hauptmenü sowie die Originaldialoge am Alchemietisch und am Amboss unverändert. Ein Honigtabak verbrauchte einen Apfeltabak und eine Laborwasserflasche. Der Honig blieb erhalten. Der endgültige Build erkennt auch das in diesem Lauf beobachtete Skriptverzeichnis. Seine Prüfung für Die Nacht des Raben wurde offline wiederholt. In Marcello L’Hiver DE 2.0.4 zeigte dieser Build das Mengenmenü an und stellte mit einem Auftrag zwei Sumpftabake aus zwei Einheiten Apfeltabak und zwei Laborwasserflaschen her.
 
-## Workshop archive · Workshop-Archiv (Unreleased)
+## Workshop archive · Workshop-Archiv
 
-With the slot-14 player DLL identified above, Gothic II opened `Data/UnionBatchCrafting.vdf`. Union loaded its DLL from `Data/$Templates$` and installed the hooks once. The loose autorun DLL was absent. After the main menu and loading slot 14, the alchemy table showed the quantity menu. One order made two swamp tobaccos. All 418 inventory balances matched and the game exited normally without saving.
+With the pre-release slot-14 player DLL (`0dc1cf7c…`), Gothic II opened `Data/UnionBatchCrafting.vdf`. Union loaded its DLL from `Data/$Templates$` and installed the hooks once. The loose autorun DLL was absent. After the main menu and loading slot 14, the alchemy table showed the quantity menu. One order made two swamp tobaccos. All 418 inventory balances matched and the game exited normally without saving.
 
-Mit der oben für Slot 14 genannten Spieler-DLL öffnete Gothic II die `Data/UnionBatchCrafting.vdf`. Union lud die DLL aus `Data/$Templates$` und installierte die Hooks einmal. Das lose Autorun-Verzeichnis enthielt keine Spieler-DLL. Nach Hauptmenü und Laden von Slot 14 erschien am Alchemietisch das Mengenmenü. Ein Auftrag ergab zwei Sumpftabake. Alle 418 Inventarbestände entsprachen der erwarteten Bilanz. Das Spiel endete regulär ohne Speichern.
+Mit der Vorab-DLL aus dem Slot-14-Test (`0dc1cf7c…`) öffnete Gothic II die `Data/UnionBatchCrafting.vdf`. Union lud die DLL aus `Data/$Templates$` und installierte die Hooks einmal. Das lose Autorun-Verzeichnis enthielt keine Spieler-DLL. Nach Hauptmenü und Laden von Slot 14 erschien am Alchemietisch das Mengenmenü. Ein Auftrag ergab zwei Sumpftabake. Alle 418 Inventarbestände entsprachen der erwarteten Bilanz. Das Spiel endete regulär ohne Speichern.
 
 ## Earlier in-game results · Frühere Spieltests
 
@@ -131,5 +137,7 @@ In Lauf 3 zeigte die Bogenbank beim Rezept für den ausgerüsteten Eichenbogen `
 | In-game ZIP / ZIP im Weltlauf (0.0.65) | `be01122a9c857b93e675e3e907bed36826c4bfa0e1cc40b808a2768177490b46` |
 | Player DLL / Spieler-DLL (0.0.66) | `cf8ae47e446b5c3d8086d06142e8eea32be9176f0fed709d7f6638b06f27e943` |
 | In-game ZIP / ZIP im Weltlauf (0.0.66) | `15f7c8e55f6db5621bf96db8274412f304e1ad2b9e708dd27b888e42b1ce46e7` |
+| Player DLL / Spieler-DLL (0.0.67) | `231aef958f46583a0255c6161efb806ec928c0ee03d5647b6342829becbd683b` |
+| In-game ZIP / ZIP im Weltlauf (0.0.67) | `fe08b6740f140b739960f209705e9d13b612a52e6cf31e9c96ba171b369f8437` |
 
 Each ZIP hash identifies one archive, including its documentation. Use the player DLL hash to match a release to an in-game test. Each release lists both hashes. · Der ZIP-Hash kennzeichnet ein einzelnes Archiv einschließlich seiner Dokumentation. Mit dem Hash der Spieler-DLL lässt sich ein Release einem Weltlauf zuordnen. Jedes Release nennt beide Prüfsummen.

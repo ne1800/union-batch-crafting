@@ -34,7 +34,7 @@ Language=auto
 
 ## Andere Versionen
 
-Mit dem aktuellen Quellstand kannst du die DLL beim Kampagnenwechsel installiert lassen. Weichen die Skripte ab und ist Marcello L’Hiver nicht gewählt, schreibt das Plugin eine einzige Logzeile und lässt Menüs, Dialoge und Inventar unverändert. Geprüft wurde das am Alchemietisch und am Amboss in *Gothic II – Die Nacht des Raben* ohne Kampagnenmod. Wählst du Marcello L’Hiver mit einem abweichenden Skriptstand, erscheint der Kompatibilitätshinweis. [Geprüfte Builds](TESTED-WITH.md#campaign-compatibility)
+Du kannst die DLL beim Kampagnenwechsel installiert lassen. Weichen die Skripte ab und ist Marcello L’Hiver nicht gewählt, schreibt das Plugin eine einzige Logzeile und lässt Menüs, Dialoge und Inventar unverändert. Geprüft wurde das am Alchemietisch und am Amboss in *Gothic II – Die Nacht des Raben* ohne Kampagnenmod. Wählst du Marcello L’Hiver mit einem abweichenden Skriptstand, erscheint der Kompatibilitätshinweis. [Geprüfte Builds](TESTED-WITH.md#campaign-compatibility)
 
 Das Plugin prüft die Kompatibilität der Engine und die für das Rezept benötigten Skriptfunktionen und Symbole. Bei Abweichungen bleibt die Originalauswahl zugänglich. Ein abweichendes gemeinsames Engine-Layout kann das ganze Plugin abschalten. Bei geladenem Plugin findest du die Diagnose des aktuellen Starts in `system/autorun/UnionBatchCraftingExtended.log`. Der autorun-Ordner muss zum Anlegen des Logs beschreibbar sein. Frühere Spielnachweise und den Prüfumfang dieser Version nennt die [Kompatibilitätsliste](TESTED-WITH.md).
 
