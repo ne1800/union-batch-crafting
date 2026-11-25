@@ -11,11 +11,7 @@ namespace ubc::player_campaign {
 enum class Mode { idle, notice, crafting };
 
 enum class Campaign { unknown, marcello, dndr };
-#ifdef UBC_ENABLE_DNDR
-inline constexpr bool enable_dndr = true;
-#else
-inline constexpr bool enable_dndr = false;
-#endif
+
 template <class Char> constexpr Char folded(Char c) noexcept {
   if (c == '/')
     return static_cast<Char>('\\');
@@ -70,12 +66,10 @@ inline bool marcello_ini(std::wstring_view ini) noexcept {
          equal_name(name, L"2847787799_Lhiver_marcello_de");
 }
 
-inline Mode mode(Campaign campaign, bool selected) noexcept {
-  if (campaign == Campaign::unknown)
-    return Mode::idle;
-  if (campaign == Campaign::marcello || (enable_dndr && campaign == Campaign::dndr))
+inline Mode mode(Campaign campaign, bool marcello_selected) noexcept {
+  if (campaign == Campaign::marcello || campaign == Campaign::dndr)
     return Mode::crafting;
-  return selected ? Mode::notice : Mode::idle;
+  return marcello_selected ? Mode::notice : Mode::idle;
 }
 
 // Hash the compiled DAT independently of changes made to the running VM.

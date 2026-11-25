@@ -4,7 +4,7 @@
 
 ## English
 
-- **0.0.68** The player DLL now supports German Gothic II: Night of the Raven 2.6 from Steam alongside Marcello L’Hiver DE 2.0.4. Choose quantities for 23 alchemy recipes, 13 anvil weapons, heating steel and roasting meat at the pan or stove. Each piece at the forge, pan and stove uses its original animation. A hard interruption after reservation can cost one raw meat at the stove, and Marvin F8 can cost one cold steel at the forge, as in the original game. Unknown script files leave the plugin idle. The Workshop addon requires Union. Marcello is optional.
+- **0.0.68** The player DLL now supports German Gothic II: Night of the Raven 2.6 from Steam alongside Marcello L’Hiver DE 2.0.4. Choose quantities for 23 alchemy recipes, 13 anvil weapons, heating steel and roasting meat at the pan or stove. Each piece at the forge, pan and stove uses its original animation. A hard interruption after reservation can cost one raw meat at the stove, and Marvin F8 can cost one cold steel at the forge, as in the original game. Selecting Marcello L’Hiver with an unsupported script version still shows the compatibility notice. With other campaigns, unknown script files leave the plugin idle. The Workshop addon requires Union. Marcello is optional.
 
 - **0.0.67** The plugin checks the compiled scripts loaded by the game. In other campaigns with different scripts, it leaves crafting to the game without showing a notice or installing hooks. Selecting Marcello L’Hiver with an unsupported script version still shows the compatibility notice. The new Steam Workshop package contains the player DLL and licence notices. The README clarifies the licence for the game and mod content shown in the screenshots.
 
@@ -40,7 +40,7 @@
 
 ## Deutsch
 
-- **0.0.68** Die Spieler-DLL unterstützt neben Marcello L’Hiver DE 2.0.4 jetzt die deutsche Steam-Fassung von Gothic II: Die Nacht des Raben 2.6. Die Mengenwahl gilt für 23 Alchemierezepte, 13 Ambosswaffen, Rohstahl an der Esse und Fleisch an Pfanne und Herd. Jedes Stück an Esse, Pfanne und Herd durchläuft seine Originalanimation. Wie im Original kann ein harter Abbruch nach der Reservierung am Herd ein Rohfleisch kosten, Marvin-F8 an der Esse einen kalten Rohstahl. Bei unbekannten Skripten bleibt das Plugin untätig. Das Workshop-Addon benötigt Union. Marcello ist optional.
+- **0.0.68** Die Spieler-DLL unterstützt neben Marcello L’Hiver DE 2.0.4 jetzt die deutsche Steam-Fassung von Gothic II: Die Nacht des Raben 2.6. Die Mengenwahl gilt für 23 Alchemierezepte, 13 Ambosswaffen, Rohstahl an der Esse und Fleisch an Pfanne und Herd. Jedes Stück an Esse, Pfanne und Herd durchläuft seine Originalanimation. Wie im Original kann ein harter Abbruch nach der Reservierung am Herd ein Rohfleisch kosten, Marvin-F8 an der Esse einen kalten Rohstahl. Wer Marcello L’Hiver mit einem unbekannten Skriptstand wählt, sieht weiterhin den Kompatibilitätshinweis. In anderen Kampagnen bleibt das Plugin bei unbekannten Skripten untätig. Das Workshop-Addon benötigt Union. Marcello ist optional.
 
 - **0.0.67** Das Plugin prüft die vom Spiel geladenen kompilierten Skripte. In anderen Kampagnen mit abweichenden Skripten bleibt die Herstellung beim Original, ohne Hinweis und ohne Hooks. Ist Marcello L’Hiver mit einem nicht unterstützten Skriptstand gewählt, erscheint weiterhin der Fehlerhinweis. Das neue Steam-Workshop-Paket enthält die Spieler-DLL und die Lizenzhinweise. Die README erläutert den Lizenzumfang für die auf den Screenshots gezeigten Spiel- und Modinhalte.
 

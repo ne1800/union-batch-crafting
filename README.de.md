@@ -6,7 +6,7 @@
 
 Wähle an der Werkstation ein gelerntes Rezept und die gewünschte Menge. Union Batch Crafting unterstützt Gothic II: Die Nacht des Raben ohne Kampagnenmod sowie Marcello L’Hiver DE 2.0.4.
 
-Geprüft ist die deutsche Version 2.6 mit der mitgelieferten losen `_work/Data/Scripts/_compiled/GOTHIC.DAT` aus Gothic II: Gold Classic auf Steam (Workshop-Zweig, Build 9820952). Bei einer unbekannten DAT bleibt das Plugin untätig. Das gilt auch für andere Sprach- und Patchstände.
+Geprüft ist die deutsche Version 2.6 mit der mitgelieferten losen `_work/Data/Scripts/_compiled/GOTHIC.DAT` aus Gothic II: Gold Classic auf Steam (Workshop-Zweig, Build 9820952). Bei einer unbekannten DAT erscheint ein Kompatibilitätshinweis, wenn du Marcello L’Hiver gewählt hast. Andernfalls bleibt das Plugin untätig, auch bei anderen Sprach- und Patchständen von Die Nacht des Raben.
 
 ![Mengenmenü an der Säge. Fünf Lose verbrauchen fünf Holz und fünf Rohstahl für 150 Pfeile. Der Pfeilbestand steigt laut Vorschau von 881 auf 1031.](docs/images/quantity-menu-de.webp)
 
