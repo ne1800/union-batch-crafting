@@ -20,6 +20,9 @@
 #error Die Stationsprobe benoetigt die Windows-x86-ABI.
 #endif
 
+void arm_animation_probe(HMODULE instance) noexcept;
+void close_animation_probe() noexcept;
+
 namespace {
 namespace win = ubc::windows_probe;
 namespace script = ubc::runtime_script;
@@ -765,12 +768,19 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
   if (reason == DLL_PROCESS_ATTACH) {
     own_module = instance;
     const auto error = GetLastError();
-    if (win::target_matches() &&
-        win::consume_marker(instance, L"UnionBatchCraftingStationProbe.enable-once",
-                            "STATION_OBSERVER_V1\n"))
-      install();
+    if (win::target_matches()) {
+      if (win::consume_marker(instance, L"UnionBatchCraftingStationProbe.enable-once",
+                              "STATION_OBSERVER_V1\n"))
+        install();
+      else if (win::consume_marker(instance, L"UnionBatchCraftingStationProbe.enable-once",
+                                   "DNDR_ANIMATION_V1\n"))
+        arm_animation_probe(instance);
+    }
     SetLastError(error);
-  } else if (reason == DLL_PROCESS_DETACH && diagnostic != INVALID_HANDLE_VALUE) {
+  } else if (reason == DLL_PROCESS_DETACH) {
+    close_animation_probe();
+    if (diagnostic == INVALID_HANDLE_VALUE)
+      return TRUE;
     if (exception_observer)
       RemoveVectoredExceptionHandler(exception_observer);
     CloseHandle(diagnostic);
