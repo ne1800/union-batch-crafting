@@ -236,7 +236,7 @@ struct Table {
     return items.find(static_cast<std::uint32_t>(symbol), (*this)[Label::unknown_item]);
   }
   constexpr const char* recipe(std::uint32_t id) const noexcept {
-    // Development campaign uses the localized item name in its recipe list.
+    // Night of the Raven uses the localized item name in its recipe list.
     if ((id >= 0x15001 && id <= 0x15005) || (id >= 0x16001 && id <= 0x16008) ||
         (id >= 0x1b001 && id <= 0x1b003))
       return recipes.find(id - 0x10000, (*this)[Label::select_recipe]);
