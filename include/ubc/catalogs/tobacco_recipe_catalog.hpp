@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 #pragma once
 #include "ubc/catalogs/alchemy_recipe_catalog.hpp"
+#include "ubc/catalogs/dndr_tobacco_contract.hpp"
 #include <algorithm>
 
 namespace ubc::tobacco {
@@ -54,25 +55,37 @@ inline constexpr Owner owner{
     view(conditions)};
 inline constexpr std::array<ItemAmount, 2> costs{{{apple, 1}, {flask, 1}}};
 inline constexpr std::array<AmountOperand, 1> output_operand{{{11, 1, 1, 0}}};
+struct Profile {
+  const Owner& owner;
+  int back;
+  unsigned hero;
+  std::array<ItemAmount, 2> costs;
+  constexpr int info() const noexcept { return static_cast<int>(owner.information->symbol); }
+  constexpr bool choice(int symbol) const noexcept { return symbol > back && symbol <= back + 3; }
+};
+inline constexpr Profile marcello_profile{owner, 20402, 1683, costs};
+inline constexpr Profile dndr_profile{
+    dndr_tobacco::owner, 10136, dndr::hero, {{{6956, 1}, {dndr::flask, 1}}}};
 struct Descriptor {
   std::uint32_t id;
   const char* name;
   std::array<PackedInventoryTarget, 4> targets;
   std::array<ItemAmount, 1> outputs;
   Callback callback;
+  const Profile& profile;
 };
 constexpr Descriptor recipe(std::uint32_t id, const char* name, PackedInventoryTarget additive,
-                            const lhiver::Function& product,
-                            const lhiver::Function& choice) noexcept {
+                            const lhiver::Function& product, const lhiver::Function& choice,
+                            const Profile& profile = marcello_profile) noexcept {
   return {id,
           name,
-          {{{"ITMI_APFELTABAK", apple},
-            {"ITMI_FLASK", flask},
+          {{{"ITMI_APFELTABAK", profile.costs[0].symbol},
+            {"ITMI_FLASK", profile.costs[1].symbol},
             additive,
             {product.name, static_cast<int>(product.symbol)}}},
           {{{static_cast<int>(product.symbol), 1}}},
           {&choice,
-           owner.instance,
+           profile.owner.instance,
            Invocation::choice,
            1,
            1,
@@ -83,14 +96,22 @@ constexpr Descriptor recipe(std::uint32_t id, const char* name, PackedInventoryT
            false,
            true,
            false,
-           true}};
+           true},
+          profile};
 }
 inline constexpr std::array<Descriptor, 3> recipes{
     {recipe(0xb001, "Honigtabak", {"ITFO_HONEY", 16393}, functions[9], functions[4]),
      recipe(0xb002, "Sumpftabak", {"ITPL_SWAMPHERB", 16706}, functions[10], functions[5]),
      recipe(0xb003, "Pilztabak", {"ITPL_MUSHROOM_01", 16726}, functions[8], functions[6])}};
+inline constexpr std::array<Descriptor, 3> dndr_recipes{
+    {recipe(0x1b001, "Honey tobacco", {"ITFO_HONEY", 6734}, dndr_tobacco::functions[9],
+            dndr_tobacco::functions[4], dndr_profile),
+     recipe(0x1b002, "Swampweed tobacco", {"ITPL_SWAMPHERB", 6999}, dndr_tobacco::functions[10],
+            dndr_tobacco::functions[5], dndr_profile),
+     recipe(0x1b003, "Mushroom tobacco", {"ITPL_MUSHROOM_01", 7019}, dndr_tobacco::functions[8],
+            dndr_tobacco::functions[6], dndr_profile)}};
 inline bool canonical(const Descriptor& recipe) noexcept {
-  for (const auto& known : recipes)
+  for (const auto& known : (&recipe.profile == &dndr_profile ? dndr_recipes : recipes))
     if (&known == &recipe)
       return true;
   return false;

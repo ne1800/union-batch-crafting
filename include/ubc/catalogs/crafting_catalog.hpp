@@ -274,8 +274,8 @@ inline constexpr auto recipes = [] {
   return result;
 }();
 inline constexpr auto dndr_recipes = [] {
-  std::array<Descriptor, dndr::recipes.size()> entries{};
-  for (std::size_t i = 0; i < entries.size(); ++i) {
+  std::array<Descriptor, dndr::recipes.size() + tobacco::dndr_recipes.size()> entries{};
+  for (std::size_t i = 0; i < dndr::recipes.size(); ++i) {
     const auto& r = dndr::recipes[i];
     entries[i] = {r.id,
                   r.name,
@@ -287,6 +287,20 @@ inline constexpr auto dndr_recipes = [] {
                   "Durchgaenge",
                   Completion::end_production};
     entries[i].dndr_recipe = &r;
+  }
+  for (std::size_t i = 0; i < tobacco::dndr_recipes.size(); ++i) {
+    const auto& r = tobacco::dndr_recipes[i];
+    auto& entry = entries[dndr::recipes.size() + i];
+    entry = {r.id,
+             r.name,
+             Station::alchemy,
+             Route::tobacco,
+             recipe_catalog::view(r.targets),
+             recipe_catalog::view(r.profile.costs),
+             recipe_catalog::view(r.outputs),
+             "Durchgaenge",
+             Completion::end_production};
+    entry.tobacco = &r;
   }
   return entries;
 }();
@@ -343,7 +357,7 @@ inline HandAmounts hand_amounts(const Descriptor& d, std::int32_t symbol) noexce
     return result;
   }
   if (d.tobacco) {
-    if (symbol == tobacco::flask)
+    if (symbol == d.tobacco->targets[1].symbol)
       result.consumed = 1;
     return result;
   }
@@ -640,8 +654,9 @@ inline bool bound_hands(const crafting_catalog::Descriptor& d,
       d.route == crafting_catalog::Route::spirit) {
     const auto& left = hands.hands.left;
     const auto& right = hands.hands.right;
-    const auto flask =
-        d.route == crafting_catalog::Route::dndr ? static_cast<int>(dndr::flask) : 16604;
+    const auto flask = d.route == crafting_catalog::Route::dndr ? static_cast<int>(dndr::flask)
+                       : d.tobacco                              ? d.tobacco->targets[1].symbol
+                                                                : 16604;
     return (d.route == crafting_catalog::Route::dndr || d.tobacco || d.alchemy_extra || d.spirit) &&
            hands.left_slot_known && hands.right_slot_known && hands.interact_item_known &&
            left.state == 0 && !left.object && right.state == 1 && right.object &&

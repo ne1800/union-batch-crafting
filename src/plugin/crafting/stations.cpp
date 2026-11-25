@@ -191,12 +191,14 @@ void initialize_extra(const Context& c) noexcept {
       collection_depth || handoff.active() || amount_patch.active())
     return;
   extra_initialized = true;
-  extra_catalogue_reader.emplace(GetCurrentThreadId());
-  tobacco_list.emplace(GetCurrentThreadId());
   const auto& locator = ubc::vob_locator_compat::module_profiles[0];
   tobacco_locator.acquire(L"UNION_VOB_LOCATOR.DLL", locator.image_size, locator.file_sha256, true);
-  spirit_catalogue_reader.emplace(GetCurrentThreadId());
   const bool modules = initialize_item_modules();
+  if (dndr_active)
+    return;
+  extra_catalogue_reader.emplace(GetCurrentThreadId());
+  tobacco_list.emplace(GetCurrentThreadId());
+  spirit_catalogue_reader.emplace(GetCurrentThreadId());
   xwriter::Config config;
   config.owner_thread = GetCurrentThreadId();
   config.memory = memory;
@@ -278,7 +280,7 @@ ubc::CraftingPage page(const Context& c, ubc::BowMenuTrace* trace) noexcept {
     return c.dialog.mode == 1 ? ubc::crafting_stove_page() : ubc::CraftingPage{};
   if (dndr_active && (c.kind == cat::Station::alchemy || c.kind == cat::Station::anvil)) {
     const bool at_anvil = c.kind == cat::Station::anvil;
-    if (c.dialog.mode != 1)
+    if (c.dialog.mode != 1 && (at_anvil || c.dialog.mode != 2))
       return {};
     unsigned selected = 0;
     for (const auto& category : ubc::dndr::station_categories(at_anvil)) {
@@ -291,6 +293,13 @@ ubc::CraftingPage page(const Context& c, ubc::BowMenuTrace* trace) noexcept {
           return {};
         selected = flag;
       }
+    }
+    if (c.dialog.mode == 2) {
+      const auto owner = ubc::read_selection_info(memory, c.dialog.info);
+      if (selected == 10120 && linked(owner) && owner.instance == active_tobacco().owner.instance &&
+          tobacco_owner.owns(key(c), c.dialog.view, c.dialog.info))
+        return {ubc::CraftingPageKind::tobacco_choices, static_cast<unsigned>(owner.instance)};
+      return {};
     }
     return {at_anvil ? ubc::CraftingPageKind::dndr_anvil : ubc::CraftingPageKind::dndr_alchemy,
             selected};

@@ -130,6 +130,20 @@ void capture_dndr(Capture& captured, const Context& c, bool boundary) noexcept {
     if (inv.packed[d::item_index(r.reserve)])
       row.maximum = (std::min)(row.maximum, 1u);
   }
+  if (!at_anvil) {
+    ubc::GrindCheck script_check;
+    const bool script = tobacco::verify_script(memory, script_check, true);
+    for (std::size_t i = 0; i < tobacco::dndr_recipes.size(); ++i) {
+      auto& state = captured.snapshot.recipes[d::recipes.size() + i];
+      auto check = script_check;
+      tobacco::Capture sample;
+      if (!read_tobacco_state(c, tobacco::dndr_recipes[i], script, state, sample, check) ||
+          !ubc::same_crafting_hands(captured.snapshot.hands, sample.hands))
+        state.contract = false;
+    }
+    if (!ubc::crafting_detail::stocks_agree(captured.snapshot))
+      captured.snapshot.issue = ubc::CraftingProjectionIssue::source;
+  }
 }
 
 void* run_dndr_amount(bc::WriterScope& scope, const ubc::AmountMemory& writable,

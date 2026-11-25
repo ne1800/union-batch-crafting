@@ -31,7 +31,7 @@ ubc::CraftingHandoffObservation observation(const Context& c, bool outer, bool m
     if (d && d->tobacco && handoff.active()) {
       ubc::GrindCheck check;
       tobacco::Capture sample;
-      const bool script = tobacco::verify_script(memory, check);
+      const bool script = tobacco::verify_script(memory, check, dndr_active);
       bool fresh = read_tobacco_state(c, *d->tobacco, script, out.materials, sample, check);
       if (fresh && tobacco_owner.ticket && tobacco_owner.key == out.key) {
         fresh = tobacco::match_stock(*d->tobacco, tobacco::stocks(request.material_snapshot),
@@ -466,7 +466,7 @@ void observe_result(const Context& c) noexcept {
   }
   if (recipe && recipe->tobacco && value.identity_known && value.station_known && !c.station) {
     ubc::GrindCheck check;
-    if (!tobacco::lab_flags(memory, c.hero, false, check)) {
+    if (!tobacco::lab_flags(memory, c.hero, false, check, dndr_active)) {
       log_tobacco_check(check, recipe->id);
       result_guard.fail(ubc::CraftingResultIssue::context);
     }

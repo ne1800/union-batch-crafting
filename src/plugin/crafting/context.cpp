@@ -193,6 +193,8 @@ bool foreign_dialog(const Context& c) noexcept {
 }
 const basecat::Owner* owner_for(std::int32_t instance) noexcept {
   if (dndr_active) {
+    if (instance == ubc::dndr_tobacco::owner.instance)
+      return &ubc::dndr_tobacco::owner;
     for (const auto& owner : ubc::dndr::anvil::owners)
       if (owner.instance == instance)
         return &owner;
@@ -264,10 +266,12 @@ bool linked_step_info(const ubc::SelectionInfo& info, const ubc::CraftingStep* s
       step->invocation != basecat::Invocation::info || step->owner_instance != info.instance ||
       step->function_symbol != info.function)
     return false;
-  if (info.instance == 20399)
-    return step->before == ubc::crafting_page(nav::Page::tobacco_info) &&
+  if (info.instance == active_tobacco().owner.instance)
+    return step->before == (dndr_active
+                                ? ubc::CraftingPage{ubc::CraftingPageKind::dndr_alchemy, 10120}
+                                : ubc::crafting_page(nav::Page::tobacco_info)) &&
            step->after.kind == ubc::CraftingPageKind::tobacco_choices &&
-           step->function_symbol == 20401;
+           step->function_symbol == active_tobacco().info();
   for (const auto& route : nav::routes)
     if (route.owner->instance == info.instance &&
         route.owner->information->symbol == static_cast<std::uint32_t>(info.function) &&

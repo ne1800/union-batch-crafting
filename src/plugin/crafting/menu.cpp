@@ -522,8 +522,8 @@ void __fastcall after_frame(void* game, void* manager) {
       SetLastError(error);
       return;
     }
+    initialize_extra(c);
     if (!dndr_active) {
-      initialize_extra(c);
       initialize_bow(c);
       initialize_cool(c);
       initialize_grind(c);

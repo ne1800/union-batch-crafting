@@ -21,13 +21,25 @@ void orders(const t::Descriptor& d) {
   REQUIRE(t::permitted_maximum(before, [](unsigned n) { return n < 6; }) == 5);
   REQUIRE(t::permitted_maximum(before, [](unsigned) { return false; }) == 1);
   REQUIRE(t::permitted_maximum(before, [](unsigned) { return true; }) == 6);
-  for (const auto n : {1u, 3u, 6u}) {
-    const auto plan =
-        ubc::make_crafting_plan(ubc::crafting_page(ubc::recipe_navigation::Page::root), d.id, n);
+  const bool vanilla = &d.profile == &t::dndr_profile;
+  const auto root = vanilla ? ubc::CraftingPage{ubc::CraftingPageKind::dndr_alchemy, 0}
+                            : ubc::crafting_page(ubc::recipe_navigation::Page::root);
+  for (const auto n : {1u, 2u, 3u, 6u}) {
+    const auto plan = ubc::make_crafting_plan(root, d.id, n);
     REQUIRE(ubc::valid_crafting_plan(plan) && plan.count == 3 &&
-            plan.steps[0].function_symbol == 20389);
-    REQUIRE(plan.steps[1].function_symbol == 20401 && plan.steps[1].owner_instance == 20399);
+            plan.steps[0].function_symbol == (vanilla ? 10123 : 20389));
+    REQUIRE(plan.steps[1].function_symbol == d.profile.info() &&
+            plan.steps[1].owner_instance == d.profile.owner.instance);
     REQUIRE(plan.effect()->function_symbol == static_cast<int>(d.callback.function->symbol));
+    if (vanilla) {
+      const auto foreign =
+          ubc::make_crafting_plan({ubc::CraftingPageKind::dndr_alchemy, 10057}, d.id, n);
+      REQUIRE(ubc::valid_crafting_plan(foreign) && foreign.count == 4 &&
+              foreign.steps[0].kind == ubc::CraftingStepKind::stop);
+      REQUIRE(
+          !ubc::make_crafting_plan(ubc::crafting_page(ubc::recipe_navigation::Page::root), d.id, n)
+               .valid());
+    }
     REQUIRE(!ubc::make_crafting_plan(plan.effect()->before, d.id, n).valid());
   }
   REQUIRE(t::maximum({12, 2, 1, 0}) == 3 && t::maximum({12, 0, 1, 0}) == 1);
@@ -36,11 +48,12 @@ void orders(const t::Descriptor& d) {
 void menu_and_payment(const t::Descriptor& d) {
   ubc::CraftingSnapshot preview;
   preview.key = {1, 2, 3, 4, 5, 6, ubc::crafting_catalog::Station::alchemy};
-  preview.hands.hands = {{0, -1, -1, 0}, {1, t::flask, 1, 900}};
+  preview.hands.hands = {{0, -1, -1, 0}, {1, d.targets[1].symbol, 1, 900}};
   preview.hands.left_slot_known = preview.hands.right_slot_known =
       preview.hands.interact_item_known = true;
   preview.hands.interact_item = 900;
-  auto& state = preview.recipes[ubc::crafting_catalog::tobacco_begin + d.id - 0xb001];
+  auto& state = preview.recipes[ubc::crafting_catalog::tobacco_begin + (d.id & 0xf) - 1];
+  state = ubc::make_crafting_state(d.id);
   state.evaluated = state.knowledge_read_valid = state.known = state.contract = state.actor_known =
       state.actor_matches = true;
   state.material_known = state.hand_known = state.material_verified = state.context_known =
@@ -62,23 +75,33 @@ void menu_and_payment(const t::Descriptor& d) {
   ubc::GrindCheck check;
   REQUIRE(t::match_stock(d, before, t::stocks(state), check));
   --state.materials[0].stored;
-  REQUIRE(!t::match_stock(d, before, t::stocks(state), check) && check.symbol == t::apple &&
-          check.expected == 6 && check.actual == 5);
-  t::OwnerTicket owner{
-      preview.key, 17, 38, 0, 150, 200, static_cast<int>(d.callback.function->symbol)};
+  REQUIRE(!t::match_stock(d, before, t::stocks(state), check) &&
+          check.symbol == d.targets[0].symbol && check.expected == 6 && check.actual == 5);
+  t::OwnerTicket owner{preview.key,
+                       17,
+                       38,
+                       0,
+                       150,
+                       200,
+                       static_cast<int>(d.callback.function->symbol),
+                       false,
+                       d.profile.owner.instance};
   REQUIRE(owner.owns(preview.key, 200, 150) && !owner.owns(preview.key, 200, 100) &&
           !owner.bind(38));
   owner.observe(false, false, 39, 1, 0);
   REQUIRE(owner.ticket == 17);
   owner.observe(false, true, 39, 2, 150);
   REQUIRE(owner.bind(39) && !owner.bind(40));
-  ubc::CraftingHandoffTicket child{
-      18,
-      100,
-      1,
-      200,
-      {true, ubc::recipe_catalog::Invocation::choice, 20399, owner.function, 0, 39}};
-  REQUIRE(owner.accepts(child, owner.function) && !owner.accepts(child, 20402));
+  ubc::CraftingHandoffTicket child{18,
+                                   100,
+                                   1,
+                                   200,
+                                   {true, ubc::recipe_catalog::Invocation::choice,
+                                    d.profile.owner.instance, owner.function, 0, 39}};
+  REQUIRE(owner.accepts(child, owner.function) && !owner.accepts(child, d.profile.back));
+  child.offer.owner = d.profile.owner.instance + 1;
+  REQUIRE(!owner.accepts(child, owner.function));
+  child.offer.owner = d.profile.owner.instance;
   ++child.offer.collection;
   REQUIRE(!owner.accepts(child, owner.function));
   --child.offer.collection;
@@ -134,7 +157,7 @@ struct Vm {
   int shortened = -1, missing = 0, remove_return = 1;
   unsigned prints = 0, ends = 0, flask_removals = 0;
   void run(const Ram& ram) {
-    const auto owner = t::owner.information->byte_offset,
+    const auto owner = recipe.profile.owner.information->byte_offset,
                child = recipe.callback.function->byte_offset;
     std::vector<unsigned> stack, returns;
     auto pop = [&] {
@@ -175,19 +198,19 @@ struct Vm {
           pc = arg;
       } else if (op == 64 || op == 65 || op == 67)
         stack.push_back(arg);
-      else if (op == 61 && arg == 672156)
+      else if (op == 61 && arg == (&recipe.profile == &t::dndr_profile ? 420245u : 672156u))
         ++ends;
       else if (op == 61) {
         returns.push_back(pc);
         pc = arg;
       } else if (op == 62 && arg == 12) {
-        REQUIRE(pop() == t::success_text.symbol);
+        REQUIRE(pop() == (&recipe.profile == &t::dndr_profile ? 4856u : t::success_text.symbol));
         ++prints;
       } else {
         REQUIRE(op == 62 && (arg == 160 || arg == 170 || arg == 184));
         int count = arg == 160 ? 0 : static_cast<int>(pop());
         const auto symbol = pop();
-        REQUIRE(pop() == 1683);
+        REQUIRE(pop() == recipe.profile.hero);
         unsigned i = 0;
         while (i < 4 && static_cast<unsigned>(recipe.targets[i].symbol) != symbol)
           ++i;
@@ -218,7 +241,7 @@ struct Vm {
 };
 
 void transaction(const Ram& sources, t::Descriptor const& d, unsigned n) {
-  auto owner = *t::owner.information, child = *d.callback.function;
+  auto owner = *d.profile.owner.information, child = *d.callback.function;
   owner.body_sha256 = bow_item_test::hash(sources.bytes.data() + owner_at, 189);
   child.body_sha256 = bow_item_test::hash(sources.bytes.data() + child_at, 36);
   const t::Stock before{{6, 5, 1, 3}};
@@ -227,7 +250,7 @@ void transaction(const Ram& sources, t::Descriptor const& d, unsigned n) {
     for (unsigned fault = 0; fault <= last; ++fault) {
       Ram f = sources;
       f.fail = fault;
-      t::Transaction tx;
+      t::Transaction tx(d.profile);
       t::Transaction::PaymentCode pay;
       t::Checks checks;
       bool ready = tx.owner_body.capture(f.adapter(), owner_at, owner);
@@ -256,7 +279,7 @@ void transaction(const Ram& sources, t::Descriptor const& d, unsigned n) {
   }
   {
     Ram f = sources;
-    t::Transaction tx;
+    t::Transaction tx(d.profile);
     t::Transaction::PaymentCode pay;
     t::Checks checks;
     REQUIRE(tx.owner_body.capture(f.adapter(), owner_at, owner) &&
@@ -271,7 +294,7 @@ void transaction(const Ram& sources, t::Descriptor const& d, unsigned n) {
   }
   {
     Ram f = sources;
-    t::Transaction tx;
+    t::Transaction tx(d.profile);
     t::Transaction::PaymentCode pay;
     t::Checks checks;
     REQUIRE(tx.owner_body.capture(f.adapter(), owner_at, owner) &&
@@ -288,7 +311,7 @@ void transaction(const Ram& sources, t::Descriptor const& d, unsigned n) {
   }
   auto exercise = [&](int slot, int missing, unsigned finish_fault, int remove_return) {
     Ram f = sources;
-    t::Transaction tx;
+    t::Transaction tx(d.profile);
     t::Transaction::PaymentCode pay;
     t::Checks checks;
     REQUIRE(tx.owner_body.capture(f.adapter(), owner_at, owner) &&
@@ -357,22 +380,22 @@ Ram example(const t::Descriptor& recipe) {
   auto* o = ram.bytes.data() + owner_at;
   auto* c = ram.bytes.data() + child_at;
   const auto op = t::Transaction::jump;
-  op(o, 67, 1683);
-  op(o + 5, 64, t::apple);
+  op(o, 67, recipe.profile.hero);
+  op(o + 5, 64, static_cast<unsigned>(recipe.targets[0].symbol));
   op(o + 10, 64, 1);
   op(o + 15, 62, 184);
   o[188] = 60;
   op(o + 50, 64, 1);
-  op(o + 55, 67, 1683);
+  op(o + 55, 67, recipe.profile.hero);
   op(o + 60, 64, 1);
   op(o + 65, 62, 160);
-  op(c, 67, 1683);
+  op(c, 67, recipe.profile.hero);
   op(c + 5, 64, static_cast<unsigned>(recipe.outputs[0].symbol));
   op(c + 10, 64, 1);
   op(c + 15, 62, 170);
-  op(c + 20, 65, t::success_text.symbol);
+  op(c + 20, 65, &recipe.profile == &t::dndr_profile ? 4856 : t::success_text.symbol);
   op(c + 25, 62, 12);
-  op(c + 30, 61, 672156);
+  op(c + 30, 61, &recipe.profile == &t::dndr_profile ? 420245 : 672156);
   c[35] = 60;
   return ram;
 }
@@ -489,18 +512,75 @@ void archive(const char* path) {
   REQUIRE(value.size() == t::success_text.length);
   REQUIRE(bow_item_test::hash(value.data(), value.size()) == t::success_text.digest);
 }
+void vanilla_bindings() {
+  namespace rt = ubc::runtime_script;
+  bow_test::Fixture fixture(ubc::bow_recipe_catalog::recipes[0]);
+  const auto memory = fixture.image.memory();
+  const auto& profile = ubc::dndr_tobacco::script_profile;
+  rt::detail::Layout layout{};
+  REQUIRE(rt::detail::read_layout(memory, profile.parser_address, profile, layout) ==
+          rt::Issue::none);
+  for (unsigned i = 0; i < 4; ++i) {
+    const auto& b = ubc::dndr_tobacco::bindings[i];
+    REQUIRE(b.flags == 0 && b.parent_index == 1474);
+    fixture.make_symbol(b.symbol, b.name, b.elements, b.type, 0, 0, 0, b.parent_index);
+    REQUIRE(rt::detail::check_binding(memory, layout, b) == rt::Issue::none);
+    fixture.image.put(bow_test::symbol(b.symbol) + 0x20,
+                      station_test::metadata(b.elements, b.type, 1));
+    REQUIRE(rt::detail::check_binding(memory, layout, b) != rt::Issue::none);
+  }
+}
+void vanilla_dat(const char* path) {
+  std::ifstream in(path, std::ios::binary | std::ios::ate);
+  REQUIRE(in && in.tellg() == ubc::dndr::dat_size);
+  std::vector<std::uint8_t> dat(ubc::dndr::dat_size);
+  in.seekg(0);
+  REQUIRE(in.read(reinterpret_cast<char*>(dat.data()), static_cast<std::streamsize>(dat.size()))
+              .good());
+  REQUIRE(bow_item_test::hash(dat.data(), dat.size()) == ubc::dndr::dat_digest);
+  const auto* code = dat.data() + dat.size() - ubc::dndr::profile.code_length;
+  REQUIRE(bow_item_test::hash(code, ubc::dndr::profile.code_length) ==
+          ubc::dndr::profile.code_sha256);
+  for (const auto& f : ubc::dndr_tobacco::functions) {
+    REQUIRE(f.byte_offset + f.byte_length <= ubc::dndr::profile.code_length &&
+            bow_item_test::hash(code + f.byte_offset, f.byte_length) == f.body_sha256);
+  }
+  const auto* owner = code + t::dndr_profile.owner.information->byte_offset;
+  for (std::size_t i = 0; i < t::dndr_recipes.size(); ++i) {
+    const auto& recipe = t::dndr_recipes[i];
+    const auto* child = code + recipe.callback.function->byte_offset;
+    REQUIRE(bow_item_test::u32(owner + 61 + 46 * i) ==
+            static_cast<unsigned>(recipe.targets[2].symbol));
+    Ram ram;
+    std::copy_n(owner, 189, ram.bytes.data() + owner_at);
+    std::copy_n(child, 36, ram.bytes.data() + child_at);
+    for (auto n : {1u, 2u, 3u, 6u})
+      transaction(ram, recipe, n);
+  }
+}
 }
 int main(int argc, char** argv) {
   REQUIRE(t::script_profile().valid());
   refund_failures();
-  for (const auto& d : t::recipes) {
-    orders(d);
-    menu_and_payment(d);
-    for (unsigned n : {1u, 2u, 3u, 6u})
-      transaction(example(d), d, n);
-  }
+  vanilla_bindings();
+  REQUIRE(t::dndr_maximum({0, 2, 1, 0}, false) == 0);
+  REQUIRE(t::dndr_maximum({6, 5, 1, 0}, true) == 1);
+  REQUIRE(t::dndr_maximum({6, 5, 0, 0}, true) == 0);
+  const auto limit = ubc::max_packed_inventory_nodes;
+  REQUIRE(!t::dndr_list_capacity(limit, 0, false) && t::dndr_list_capacity(limit, 0, true));
+  REQUIRE(!t::dndr_list_capacity(limit - 3, 3, false) &&
+          t::dndr_list_capacity(limit - 4, 3, false));
+  for (const auto* campaign : {&t::recipes, &t::dndr_recipes})
+    for (const auto& d : *campaign) {
+      orders(d);
+      menu_and_payment(d);
+      for (unsigned n : {1u, 2u, 3u, 6u})
+        transaction(example(d), d, n);
+    }
   if (argc == 3 && std::string(argv[1]) == "--local-archive")
     archive(argv[2]);
+  else if (argc == 3 && std::string(argv[1]) == "--local-dndr-dat")
+    vanilla_dat(argv[2]);
   else if (argc != 1)
     return 2;
 }
