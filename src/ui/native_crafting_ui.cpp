@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 #include "ubc/ui/native_crafting_ui.hpp"
+#ifdef UBC_ENABLE_DNDR
+#include "ubc/ui/station_quantity.hpp"
+#endif
 #include "ubc/ui/crafting_block_text.hpp"
 #include "ubc/stations/bow/bow_menu_trace.hpp"
 #include "ubc/core/crafting_result.hpp"
@@ -722,6 +725,43 @@ bool NativeCraftingUi::render(const CraftingSession& session, bool execution_ena
                               window_.texts()) &&
          submit();
 }
+#ifdef UBC_ENABLE_DNDR
+CraftingMenuAction NativeCraftingUi::station_action(int key) noexcept { return action(key); }
+
+bool NativeCraftingUi::render_station_quantity(const StationQuantity& menu) noexcept {
+  using L = ui_text::Label;
+  const auto& text = window_.texts();
+  frame_ = {};
+  char amount[128]{}, maximum[48]{}, controls[128]{};
+  std::snprintf(amount, sizeof(amount), text[L::quantity], menu.amount(), menu.maximum(), "< / >");
+  std::snprintf(maximum, sizeof(maximum), "%s (%u)", text[L::max_short], menu.maximum());
+  std::snprintf(controls, sizeof(controls), text[L::controls], text[L::key_confirm],
+                text[L::change_field]);
+  if (!owns_input() || !update_size() ||
+      !crafting_ui::append(frame_, 2300, 2000, text[L::heat_steel], 40))
+    return false;
+  const char* options[] = {"1", amount, maximum};
+  for (unsigned i = 0; i < 3; ++i)
+    if (!crafting_ui::choice(frame_, 2400, 3000 + 580 * static_cast<int>(i), options[i], 48,
+                             menu.row() == i ? ">" : nullptr))
+      return false;
+  frame_.valid = crafting_ui::wrapped(frame_, 1400, 5600, controls, 46);
+  return submit();
+}
+
+void NativeCraftingUi::show_forge_progress(unsigned completed, unsigned selected) noexcept {
+  auto* screen = pointer(m::screen_pointer);
+  if (!screen || !w::readable(screen, 4) ||
+      m::read<std::uintptr_t>(screen, 0) != m::menu_view_vtable ||
+      crafting_ui::verify_strings(engine_code))
+    return;
+  char line[64]{};
+  std::snprintf(line, sizeof(line), window_.texts()[ui_text::Label::steel_progress], completed,
+                selected);
+  Text message(line);
+  reinterpret_cast<m::ViewPrint>(m::view_print)(screen, 320, 1400, message.get());
+}
+#endif
 bool NativeCraftingUi::render_failure() noexcept {
   return mode_ == Mode::failure && update_size() &&
          crafting_ui::compose_failure(frame_, width_, height_, window_.texts()) && submit();

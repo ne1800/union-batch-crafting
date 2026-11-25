@@ -8,6 +8,7 @@
 #include "ubc/ui/native_selection_ui.hpp"
 
 namespace ubc {
+class StationQuantity;
 struct CraftingResultSuccess;
 struct NativeCraftingProduced {
   std::int32_t symbol = -1, amount = -1;
@@ -76,6 +77,11 @@ public:
   bool open_success(const NativeCraftingSuccess&) noexcept;
   void close() noexcept;
   bool render(const CraftingSession&, bool execution_enabled) noexcept;
+#ifdef UBC_ENABLE_DNDR
+  bool render_station_quantity(const StationQuantity&) noexcept;
+  static CraftingMenuAction station_action(int key) noexcept;
+  void show_forge_progress(unsigned completed, unsigned selected) noexcept;
+#endif
   bool render_failure() noexcept;
   bool render_success() noexcept;
   int handle(CraftingSession&, int key,

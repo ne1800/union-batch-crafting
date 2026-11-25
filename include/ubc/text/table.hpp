@@ -26,6 +26,8 @@ enum class Label {
   unavailable,
   unsupported_amount,
   max_short,
+  heat_steel,
+  steel_progress,
   selected_recipes,
   known_recipes,
   hint_no_known_recipes,

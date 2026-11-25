@@ -385,6 +385,10 @@ void __fastcall observe_start(void* mob, void*, void* npc) {
   if (own)
     ++station_depth;
   SetLastError(error);
+#ifdef UBC_ENABLE_DNDR
+  forge_start(mob, npc);
+  SetLastError(error);
+#endif
   original_start(mob, npc);
   const auto after = GetLastError();
   if (own)
@@ -477,6 +481,9 @@ void __fastcall observe_end(void* mob, void*, void* npc, int flag) {
   SetLastError(error);
   original_end(mob, npc, flag);
   const auto after = GetLastError();
+#ifdef UBC_ENABLE_DNDR
+  forge_end(mob, npc, flag, caller);
+#endif
   if (own) {
     if (end_sequence != UINT64_MAX)
       ++end_sequence;
