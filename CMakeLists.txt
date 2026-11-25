@@ -114,6 +114,7 @@ foreach(
     stations/anvil/dndr_anvil
     stations/forge/dndr_forge
     stations/pan/dndr_pan
+    stations/stove/dndr_stove
     core/batch_session
     ui/batch_menu
     engine/amount_patch

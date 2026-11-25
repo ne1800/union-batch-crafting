@@ -4,6 +4,9 @@
 
 ## Unreleased
 
+- **English** The Night of the Raven test build adds quantity selection at the stove. An interrupted original cooking animation can consume the reserved raw meat before a product reaches storage.
+- **Deutsch** Der Testbuild für Die Nacht des Raben ergänzt die Mengenwahl am Herd. Ein harter Abbruch der Originalanimation kann das reservierte Rohfleisch kosten, bevor ein Produkt ins Lager kommt.
+
 - **English** The Night of the Raven test build adds quantity selection at the frying pan. Each piece goes through the original cooking animation.
 - **Deutsch** Der Testbuild für Die Nacht des Raben ergänzt die Mengenwahl an der Pfanne. Jedes Stück durchläuft die originale Bratanimation.
 

@@ -728,7 +728,7 @@ bool NativeCraftingUi::render(const CraftingSession& session, bool execution_ena
 #ifdef UBC_ENABLE_DNDR
 CraftingMenuAction NativeCraftingUi::station_action(int key) noexcept { return action(key); }
 
-bool NativeCraftingUi::render_station_quantity(const StationQuantity& menu, bool pan) noexcept {
+bool NativeCraftingUi::render_station_quantity(const StationQuantity& menu, bool cooking) noexcept {
   using L = ui_text::Label;
   const auto& text = window_.texts();
   frame_ = {};
@@ -738,7 +738,7 @@ bool NativeCraftingUi::render_station_quantity(const StationQuantity& menu, bool
   std::snprintf(controls, sizeof(controls), text[L::controls], text[L::key_confirm],
                 text[L::change_field]);
   if (!owns_input() || !update_size() ||
-      !crafting_ui::append(frame_, 2300, 2000, pan ? text.recipe(0) : text[L::heat_steel], 40))
+      !crafting_ui::append(frame_, 2300, 2000, cooking ? text.recipe(0) : text[L::heat_steel], 40))
     return false;
   const char* options[] = {"1", amount, maximum};
   for (unsigned i = 0; i < 3; ++i)
@@ -750,14 +750,14 @@ bool NativeCraftingUi::render_station_quantity(const StationQuantity& menu, bool
 }
 
 void NativeCraftingUi::show_station_progress(unsigned completed, unsigned selected,
-                                             bool pan) noexcept {
+                                             bool cooking) noexcept {
   auto* screen = pointer(m::screen_pointer);
   if (!screen || !w::readable(screen, 4) ||
       m::read<std::uintptr_t>(screen, 0) != m::menu_view_vtable ||
       crafting_ui::verify_strings(engine_code))
     return;
   char line[64]{};
-  if (pan)
+  if (cooking)
     std::snprintf(line, sizeof(line), "%s %u / %u", window_.texts().recipe(0), completed, selected);
   else
     std::snprintf(line, sizeof(line), window_.texts()[ui_text::Label::steel_progress], completed,
