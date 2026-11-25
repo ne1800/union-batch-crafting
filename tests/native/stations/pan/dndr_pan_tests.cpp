@@ -110,25 +110,27 @@ void hands() {
 
 void packed() {
   static ubc::PackedInventoryWorkspace work{};
+  const auto set_packed = [&](const auto& literal) {
+    std::memcpy(work.packed_bytes.data(), literal, sizeof(literal));
+  };
   ubc::PackedInventorySnapshotT<2> inv;
   inv.storage_totals_known = inv.snapshot_unchanged = inv.stable_boundary_verified = true;
   inv.total = {3, 1};
   inv.packed_occurrences = {1, 1};
-  std::strcpy(reinterpret_cast<char*>(work.packed_bytes.data()),
-              "ITFOMUTTONRAW:3,OTHER:2,ITFOMUTTON:1");
+  set_packed("ITFOMUTTONRAW:3,OTHER:2,ITFOMUTTON:1");
   const auto sample = [&](Hand hand) { return stock_from(inv, work, hand, pan); };
   auto before = sample(Hand::empty);
   REQUIRE(maximum(before) == 3);
   inv.total[0] = 2;
   inv.packed_occurrences[0] = 0;
   inv.listed_occurrences[0] = 1;
-  std::strcpy(reinterpret_cast<char*>(work.packed_bytes.data()), "OTHER:2,ITFOMUTTON:1");
+  set_packed("OTHER:2,ITFOMUTTON:1");
   Order order;
   REQUIRE(order.open(before, 2, Station::pan) && order.start(before));
   REQUIRE(order.observe(Witness::reservation, sample(Hand::reserved), 1));
   REQUIRE(order.observe(Witness::insert, sample(Hand::right_raw), 2, "T_PAN_S0_2_S1"));
   REQUIRE(order.pan_workpiece(sample(Hand::right_raw)));
-  std::strcpy(reinterpret_cast<char*>(work.packed_bytes.data()), "OTHER:3,ITFOMUTTON:1");
+  set_packed("OTHER:3,ITFOMUTTON:1");
   REQUIRE(!order.pan_workpiece(sample(Hand::right_raw)));
   REQUIRE(!order.observe(Witness::exchange, sample(Hand::left_cooked), 3, "T_PAN_S1_2_S0"));
   for (unsigned i = 0; i < 2; ++i) {
