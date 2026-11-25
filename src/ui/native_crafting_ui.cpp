@@ -733,13 +733,20 @@ bool NativeCraftingUi::render_station_quantity(const StationQuantity& menu, bool
   const auto& text = window_.texts();
   frame_ = {};
   char amount[128]{}, maximum[48]{}, controls[128]{};
+  if (!owns_input() || !update_size() ||
+      !crafting_ui::append(frame_, 2300, 2000, cooking ? text.recipe(0) : text[L::heat_steel], 40))
+    return false;
+  if (menu.original_only()) {
+    std::snprintf(controls, sizeof(controls), text[L::controls_short], text[L::key_confirm]);
+    frame_.valid = crafting_ui::choice(frame_, 2400, 3000, text[L::original_controls], 48, ">") &&
+                   crafting_ui::wrapped(frame_, 1400, 4100, text[L::stove_stored_pan], 46) &&
+                   crafting_ui::wrapped(frame_, 1400, 5600, controls, 46);
+    return submit();
+  }
   std::snprintf(amount, sizeof(amount), text[L::quantity], menu.amount(), menu.maximum(), "< / >");
   std::snprintf(maximum, sizeof(maximum), "%s (%u)", text[L::max_short], menu.maximum());
   std::snprintf(controls, sizeof(controls), text[L::controls], text[L::key_confirm],
                 text[L::change_field]);
-  if (!owns_input() || !update_size() ||
-      !crafting_ui::append(frame_, 2300, 2000, cooking ? text.recipe(0) : text[L::heat_steel], 40))
-    return false;
   const char* options[] = {"1", amount, maximum};
   for (unsigned i = 0; i < 3; ++i)
     if (!crafting_ui::choice(frame_, 2400, 3000 + 580 * static_cast<int>(i), options[i], 48,

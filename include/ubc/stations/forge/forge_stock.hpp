@@ -31,6 +31,8 @@ inline Hand hand_state(const StationRecipeHands& h, const HandObjectSnapshot& an
   if (!h.interact_item_known || left.state < 0 || right.state < 0 || anchor.state < 0)
     return Hand::unknown;
   if (profile.kind == Station::stove) {
+    // The Night of the Raven stove creates the right-hand pan at level 1.
+    // Its recorded CREATE and S1 states only establish that lifetime.
     if (!h.left_slot_known || !h.right_slot_known || h.left_tmp_level != 0 ||
         h.right_tmp_level != (right.state ? 1 : 0) || h.interact_item != anchor.object)
       return Hand::unknown;
@@ -75,7 +77,7 @@ inline Stock stock_from(const PackedInventorySnapshotT<N>& inv,
     return out;
   if (inv.target_count != (profile.kind == Station::stove ? 3u : 2u) || inv.target_count > N)
     return out;
-  for (std::size_t i = 0; i < inv.target_count; ++i)
+  for (std::size_t i = 0; i < profile.items.size(); ++i)
     if (inv.mixed_representation[i] || inv.packed_occurrences[i] > 1 ||
         inv.listed_occurrences[i] > 1 || inv.has_active_marker[i])
       return out;
@@ -113,6 +115,11 @@ inline Stock stock_from(const PackedInventorySnapshotT<N>& inv,
   out.output_count = inv.total[1];
   if (profile.kind == Station::stove) {
     out.stored_pans = inv.total[2];
+    // DestroyInteractItem can also remove a stored instance. Even a listed
+    // zero-quantity PANFULL is an entry, independent of the material totals.
+    out.stored_pan_entry = inv.listed_occurrences[2] || inv.packed_occurrences[2] ||
+                           inv.duplicate_packed_target[2] || inv.has_active_marker[2] ||
+                           inv.mixed_representation[2];
     out.anchor = anchor;
     out.prop = prop;
   }

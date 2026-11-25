@@ -26,7 +26,7 @@ public:
         decision_ = action == A::back ? 0 : static_cast<int>(selected());
       return;
     }
-    if (!input_.armed())
+    if (!input_.armed() || original_only())
       return;
     switch (action) {
     case A::up:
@@ -49,6 +49,7 @@ public:
   unsigned row() const noexcept { return row_; }
   unsigned amount() const noexcept { return amount_.value(); }
   unsigned maximum() const noexcept { return amount_.maximum(); }
+  bool original_only() const noexcept { return maximum() == 0; }
   unsigned selected() const noexcept { return row_ == 0 ? 1 : row_ == 2 ? maximum() : amount(); }
   int decision() const noexcept { return decision_; }
   bool released() const noexcept { return input_.armed(); }
