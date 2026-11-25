@@ -43,6 +43,7 @@ enum class Witness { reservation, insert, exchange, remove, end, neutral };
 // EndInteraction briefly clears the hero's focus before the engine targets the forge again.
 enum class Focus { missing, forge, other };
 enum class NeutralResult { waiting, ready, rejected };
+constexpr std::uint64_t return_focus_window_ms = 1000;
 class ReturnFocus {
 public:
   void reset(std::uint64_t tick) noexcept {
@@ -50,7 +51,7 @@ public:
     seen_ = false;
   }
   NeutralResult observe(std::uint64_t tick, Focus focus) noexcept {
-    if (tick < start_ || tick - start_ > 250 || focus == Focus::other)
+    if (tick < start_ || tick - start_ > return_focus_window_ms || focus == Focus::other)
       return NeutralResult::rejected;
     if (focus == Focus::missing)
       return seen_ ? NeutralResult::rejected : NeutralResult::waiting;
