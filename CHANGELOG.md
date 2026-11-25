@@ -4,7 +4,7 @@
 
 ## English
 
-- **Unreleased** The plugin stays idle when another campaign uses different scripts. Selecting Marcello L’Hiver with an unsupported script version still shows the compatibility notice. Development builds include Night of the Raven profiles for potions, swampweed joints and anvil weapons.
+- **0.0.67** The plugin checks the compiled scripts loaded by the game. In other campaigns with different scripts, it leaves crafting to the game without showing a notice or installing hooks. Selecting Marcello L’Hiver with an unsupported script version still shows the compatibility notice. The new Steam Workshop package contains the player DLL and licence notices. The README clarifies the licence for the game and mod content shown in the screenshots.
 
 - **0.0.66** The grindstone preview now refreshes once when you open the menu and once per recipe, quantity or inventory change. A brief hitch of about 50 ms remains. In 0.0.65, opening the menu could cause repeated pauses, and a refresh could take a quarter of a second. If an ingredient is equipped, the recipe now shows `[equipped]` and asks you to unequip it first.
 
@@ -38,7 +38,7 @@
 
 ## Deutsch
 
-- **Unveröffentlicht** Bei einer anderen Kampagne mit abweichenden Skripten bleibt das Plugin untätig. Ist Marcello L’Hiver mit einem nicht unterstützten Skriptstand gewählt, erscheint weiterhin der Fehlerhinweis. Entwicklungsbuilds enthalten DNdR-Profile für Tränke, Sumpfkrautstängel und Waffen am Amboss.
+- **0.0.67** Das Plugin prüft die vom Spiel geladenen kompilierten Skripte. In anderen Kampagnen mit abweichenden Skripten bleibt die Herstellung beim Original, ohne Hinweis und ohne Hooks. Ist Marcello L’Hiver mit einem nicht unterstützten Skriptstand gewählt, erscheint weiterhin der Fehlerhinweis. Das neue Steam-Workshop-Paket enthält die Spieler-DLL und die Lizenzhinweise. Die README erläutert den Lizenzumfang für die auf den Screenshots gezeigten Spiel- und Modinhalte.
 
 - **0.0.66** Am Schleifstein wird die Vorschau beim Öffnen des Menüs und bei jedem Rezept-, Mengen- oder Bestandswechsel nur noch einmal berechnet. Ein kurzer Hänger von etwa 50 ms bleibt. In 0.0.65 konnte das Menü beim Öffnen mehrmals stocken, und eine Neuberechnung dauerte bis zu einer Viertelsekunde. Ist eine Zutat ausgerüstet, zeigt das Rezept jetzt `[ausgerüstet]` und bittet dich, sie zuerst abzulegen.
 
