@@ -170,6 +170,9 @@ enum class Label {
   molerat_dishes,
   dark_mushrooms,
   mushroom_dishes,
+#ifdef UBC_ENABLE_DNDR
+  stove_stored_pan,
+#endif
   count
 };
 

@@ -164,6 +164,10 @@ inline constexpr SourceRow<Label> messages[] = {
     {Label::molerat_dishes, U"Molerat dishes"},
     {Label::dark_mushrooms, U"Dark mushrooms"},
     {Label::mushroom_dishes, U"Mushroom dishes"},
+#ifdef UBC_ENABLE_DNDR
+    {Label::stove_stored_pan,
+     U"With a full pan in your inventory, you can only cook one piece at a time."},
+#endif
 };
 
 inline constexpr SourceRow<std::uint32_t> items[] = {

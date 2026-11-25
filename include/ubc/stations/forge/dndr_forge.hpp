@@ -36,14 +36,19 @@ struct Stock {
   // Stove identities are compared only within one interaction, without dereferencing them.
   std::uint32_t anchor = 0, prop = 0;
   int stored_pans = -1;
+  bool stored_pan_entry = false;
+  bool stove_pan_absent() const noexcept { return stored_pans == 0 && !stored_pan_entry; }
 };
 
-inline unsigned maximum(const Stock& s) noexcept {
+inline unsigned material_maximum(const Stock& s) noexcept {
   if (!s.unambiguous || s.hand != Hand::empty || s.input_count <= 0 || s.output_count < 0)
     return 0;
   return static_cast<unsigned>(
       std::min({s.input_count, std::numeric_limits<int>::max() - s.output_count,
                 static_cast<int>(order_limit)}));
+}
+inline unsigned maximum(const Stock& s, Station station = Station::forge) noexcept {
+  return station == Station::stove && !s.stove_pan_absent() ? 0 : material_maximum(s);
 }
 
 enum class Phase {
@@ -60,6 +65,19 @@ enum class Phase {
   stopped
 };
 enum class Witness { reservation, insert, exchange, remove, end, neutral, create, none };
+
+constexpr Witness material_message(std::string_view tag, Station station) noexcept {
+  if (tag == "DEF_INSERT_ITEM")
+    return Witness::insert;
+  if (tag == "DEF_REMOVE_ITEM")
+    return Witness::remove;
+  if (tag == "DEF_CREATE_ITEM" && station == Station::stove)
+    return Witness::create;
+  if (tag == "DEF_EXCHANGE_ITEM")
+    return Witness::exchange;
+  // The original stove returns via EXCHANGE then REMOVE. DESTROY never credits a piece.
+  return Witness::none;
+}
 
 // EndInteraction briefly clears the hero's focus before the engine targets the forge again.
 enum class Focus { missing, forge, other };
@@ -92,8 +110,7 @@ private:
 class Order {
 public:
   bool open(const Stock& s, unsigned count, Station station = Station::forge) noexcept {
-    if (!count || count > maximum(s) || active() ||
-        (station == Station::stove && s.stored_pans < 0))
+    if (!count || count > maximum(s, station) || active())
       return false;
     station_ = station;
     baseline_ = s;
@@ -104,7 +121,7 @@ public:
   }
   bool start(const Stock& s) noexcept {
     if (phase_ != Phase::ready || !matches(s, 0, 0, Hand::empty) ||
-        maximum(s) < selected_ - completed_)
+        maximum(s, station_) < selected_ - completed_)
       return stop();
     phase_ = Phase::dispatched;
     return true;
@@ -201,8 +218,8 @@ public:
 private:
   bool matches(const Stock& s, int debit, int credit, Hand hand) const noexcept {
     const int n = static_cast<int>(completed_);
-    return s.unambiguous && s.hand == hand && s.other == baseline_.other &&
-           s.stored_pans == baseline_.stored_pans &&
+    return s.unambiguous && (station_ != Station::stove || s.stove_pan_absent()) &&
+           s.hand == hand && s.other == baseline_.other && s.stored_pans == baseline_.stored_pans &&
            s.input_count == baseline_.input_count - n + debit &&
            s.output_count == baseline_.output_count + n + credit;
   }

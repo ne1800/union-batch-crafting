@@ -275,8 +275,8 @@ int __fastcall occupancy(void* object, void*, void* npc) {
           return actual;
         }
         opening_stock = sample();
-        const auto max = f::maximum(opening_stock);
-        if (max) {
+        if (f::material_maximum(opening_stock)) {
+          const auto max = f::maximum(opening_stock, station->kind);
           pending = locked = consume = true;
           closing = false;
           chooser.open(max);
@@ -303,17 +303,6 @@ __declspec(naked) void secondary_input() {
   __asm { call occupancy }
   __asm {push 0x6993c4} __asm { ret }
 }
-f::Witness material_message(const char* tag) noexcept {
-  if (tag == obs::tags[0])
-    return f::Witness::insert;
-  if (tag == obs::tags[1])
-    return f::Witness::remove;
-  if (tag == obs::tags[2] && station->kind == f::Station::stove)
-    return f::Witness::create;
-  if (tag == obs::tags[5])
-    return f::Witness::exchange;
-  return f::Witness::none;
-}
 void __fastcall item_message(void* npc, void*, void* msg, void* sender) {
   const auto saved = GetLastError();
   const bool watch = own_thread() && hero == addr(npc) && order.active();
@@ -322,8 +311,9 @@ void __fastcall item_message(void* npc, void*, void* msg, void* sender) {
   const auto* tag = watch ? obs::message_tag(memory, addr(msg)) : nullptr;
   if (tag && (++message_depth != 1 || integer(hero, 0x964) != static_cast<int>(mob)))
     stop("message_context");
-  // Only those manipulation messages are material witnesses. Unknown ones still reach the game.
-  const auto material = material_message(tag);
+  // DEF_DESTROY_ITEM is absent from the original stove animations and traces.
+  // Stop the order before an unexpected cleanup, then let the game handle it.
+  const auto material = tag ? f::material_message(tag, station->kind) : f::Witness::none;
   if (tag && order.active() && station->kind == f::Station::stove &&
       !order.stove_before(material, sample()))
     stop("workpiece_changed");
@@ -377,6 +367,16 @@ void __fastcall interact(void* object, void*, void* npc, int action, int up, int
   }
   SetLastError(saved);
   reinterpret_cast<Interact>(forge_hooks.original(3))(object, npc, action, up, down, left, right);
+}
+bool ready_for_entry() noexcept {
+  return !held(true) && release.armed() && ubc::NativeSelectionUi::callback_is_top(callback) &&
+         ready_place() && station_profile(mob) == station && !profile_issue();
+}
+void original_entry(unsigned piece, unsigned selected) noexcept {
+  station_event("original_entry", static_cast<int>(piece), static_cast<int>(selected));
+  // This original request reserves once and posts oCMobMsg(STARTINTERACTION, hero).
+  // It can return before StartInteraction. Never retry a dispatched request.
+  reinterpret_cast<Enter>(enter)(reinterpret_cast<void*>(mob), reinterpret_cast<void*>(hero), 1);
 }
 } // namespace
 
@@ -472,6 +472,13 @@ void forge_frame() noexcept {
       return;
     }
     window.close();
+    if (chooser.original_only()) {
+      if (ready_for_entry() && f::material_maximum(sample()))
+        original_entry(1, 1);
+      else
+        stop("restart_rejected");
+      return;
+    }
     if (!order.open(opening_stock, static_cast<unsigned>(chooser.decision()), station->kind)) {
       stop("order_rejected");
       return;
@@ -509,18 +516,12 @@ void forge_frame() noexcept {
       stop("timeout");
     return;
   }
-  if (held(true) || !release.armed() || !ubc::NativeSelectionUi::callback_is_top(callback) ||
-      !ready_place() || station_profile(mob) != station || profile_issue() ||
-      !order.start(sample())) {
+  if (!ready_for_entry() || !order.start(sample())) {
     stop("restart_rejected");
     return;
   }
   forward_sent = false;
   deadline = tick + 15000;
-  station_event("original_entry", static_cast<int>(order.completed() + 1),
-                static_cast<int>(order.selected()));
-  // This original request reserves once and posts oCMobMsg(STARTINTERACTION, hero).
-  // It can return before StartInteraction. Never retry a dispatched request.
-  reinterpret_cast<Enter>(enter)(reinterpret_cast<void*>(mob), reinterpret_cast<void*>(hero), 1);
+  original_entry(order.completed() + 1, order.selected());
 }
 } // namespace ubc_native
