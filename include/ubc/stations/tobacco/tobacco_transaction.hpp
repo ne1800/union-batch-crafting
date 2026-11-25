@@ -12,7 +12,10 @@ using ubc::ScriptWindow;
 struct Transaction {
   ScriptWindow<189> owner_body;
   ScriptWindow<36> child_body;
-  static constexpr auto owner_offset = functions[2].byte_offset;
+  explicit Transaction(const Profile& profile = marcello_profile) noexcept
+      : profile(profile), owner_offset(profile.owner.information->byte_offset) {}
+  const Profile& profile;
+  const std::uint32_t owner_offset;
   static void operand(std::uint8_t* bytes, std::uint32_t n) noexcept {
     for (unsigned i = 0; i < 4; ++i)
       bytes[i] = static_cast<std::uint8_t>(n >> (i * 8));
@@ -35,7 +38,7 @@ struct Transaction {
   };
   bool prepare_child(const Descriptor& recipe, std::uint32_t n, const Stock& before,
                      PaymentCode& pay) noexcept {
-    if (!canonical(recipe) || !n || n > maximum(before))
+    if (&recipe.profile != &profile || !canonical(recipe) || !n || n > maximum(before))
       return false;
     owner_body.prepared[0] = 60;
     owner_body.prefix = 1;
@@ -61,9 +64,10 @@ struct Transaction {
       jump(out + 46, 76, stop);
       at += 51;
     };
-    charge(apple, n, static_cast<unsigned>(before[0]));
+    charge(static_cast<unsigned>(recipe.targets[0].symbol), n, static_cast<unsigned>(before[0]));
     if (n > 1)
-      charge(flask, n - 1, static_cast<unsigned>(before[1]));
+      charge(static_cast<unsigned>(recipe.targets[1].symbol), n - 1,
+             static_cast<unsigned>(before[1]));
     pay.owner[at] = 60;
     static_assert(1 + 2 * 51 + 1 <= std::tuple_size<decltype(pay.owner)>::value);
     return true;
@@ -120,7 +124,7 @@ struct Transaction {
     // exactly the stored inventory from which settle() derived that amount.
     const auto item = static_cast<unsigned>(d.targets[i].symbol);
     jump(code.child.data(), 64, static_cast<unsigned>(observed[i]));
-    jump(code.child.data() + 5, 67, 1683);
+    jump(code.child.data() + 5, 67, profile.hero);
     jump(code.child.data() + 10, 64, item);
     jump(code.child.data() + 15, 62, 160);
     code.child[20] = 16;

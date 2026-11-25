@@ -179,8 +179,8 @@ void __fastcall observe_info(void* info, void*) {
       }
     }
     const bool owned_tobacco = allow && witness.decision == ubc::CraftingHandoffDecision::execute &&
-                               dispatched_ticket.offer.function == 20401 &&
-                               dispatched_ticket.offer.owner == 20399;
+                               dispatched_ticket.offer.function == active_tobacco().info() &&
+                               dispatched_ticket.offer.owner == active_tobacco().owner.instance;
     if (owned_tobacco) {
       tobacco_writer_entered = false;
       tobacco_owner_opened = false;
@@ -222,10 +222,11 @@ void __fastcall observe_info(void* info, void*) {
           result_guard.fail(ubc::CraftingResultIssue::contract);
       } else {
         if (witness.decision == ubc::CraftingHandoffDecision::execute) {
-          if (allow && handoff.step() && handoff.step()->function_symbol == 20401 &&
-              !handoff.cancelled() && dispatched_ticket.offer.function == 20401 &&
-              dispatched_ticket.offer.owner == 20399) {
-            event("tobacco_owner_returned", 20401, 1);
+          if (allow && handoff.step() &&
+              handoff.step()->function_symbol == active_tobacco().info() && !handoff.cancelled() &&
+              dispatched_ticket.offer.function == active_tobacco().info() &&
+              dispatched_ticket.offer.owner == active_tobacco().owner.instance) {
+            event("tobacco_owner_returned", active_tobacco().info(), 1);
           }
           if (!tobacco_clean_rejection || !handoff.reject_unpaid_tobacco(witness))
             handoff.callback_return(witness);
@@ -274,15 +275,15 @@ void __fastcall observe_choice(void* manager, void* choice) {
           actual_choice.valid,    basecat::Invocation::choice, actual_choice.info.instance,
           actual_choice.function, actual_choice.index,         rows.generation};
       const bool unpaid = tobacco_owner.ticket != 0;
-      const bool bound_page = unpaid && actual.valid && actual.owner == 20399 && linked(owner) &&
-                              tobacco_owner.owns(key(c), c.dialog.view, c.dialog.info) &&
-                              caller == a::choice_effect_return &&
-                              reinterpret_cast<std::uint32_t>(manager) == s::information_manager &&
-                              choice_depth == 1;
-      const bool back = bound_page && actual.function == 20402;
+      const bool bound_page =
+          unpaid && actual.valid && actual.owner == active_tobacco().owner.instance &&
+          linked(owner) && tobacco_owner.owns(key(c), c.dialog.view, c.dialog.info) &&
+          caller == a::choice_effect_return &&
+          reinterpret_cast<std::uint32_t>(manager) == s::information_manager && choice_depth == 1;
+      const bool back = bound_page && actual.function == active_tobacco().back;
       if (back) {
         handoff.cancel(ubc::CraftingHandoffIssue::cancelled);
-        tobacco_choice_call = 20402;
+        tobacco_choice_call = active_tobacco().back;
       } else if (callback_guarded(c, actual)) {
         auto verified = proof(caller, false);
         verified.canonical_caller =

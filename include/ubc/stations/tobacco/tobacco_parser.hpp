@@ -2,6 +2,7 @@
 #pragma once
 #include "ubc/stations/alchemy/alchemy_flask_runtime.hpp"
 #include "ubc/stations/cool/cool_predebit_checks.hpp"
+#include "ubc/catalogs/dndr_tobacco_contract.hpp"
 #include <algorithm>
 
 namespace ubc::tobacco {
@@ -13,9 +14,10 @@ struct AdmissionChecks : Checks {
 // The script call pushes HERO. The native post-debit needs the global Use
 // instance for its Restore additionally. The diagnosis separates both.
 inline bool parser_checks(const ReadOnlyMemory& memory, const alchemy_flask_debit::Context& ctx,
-                          Checks& checks, Checks& legacy) noexcept {
+                          Checks& checks, Checks& legacy, bool dndr_campaign = false) noexcept {
   namespace runtime = alchemy_flask_runtime;
   namespace script = runtime_script;
+  const auto& profile = dndr_campaign ? dndr_tobacco::script_profile : runtime::flask_profile;
   struct Sample {
     script::detail::Layout layout{};
     std::array<std::uint32_t, 5> address{}, value{};
@@ -25,14 +27,13 @@ inline bool parser_checks(const ReadOnlyMemory& memory, const alchemy_flask_debi
   for (unsigned pass = 0; pass < 2; ++pass) {
     Sample s;
     checks.flag("parser.context", alchemy_flask_debit::valid(ctx));
-    const auto layout =
-        script::detail::read_layout(memory, ctx.parser, runtime::flask_profile, s.layout);
+    const auto layout = script::detail::read_layout(memory, ctx.parser, profile, s.layout);
     checks.equal("parser.layout", 0, static_cast<int>(layout));
     const bool known = layout == script::Issue::none;
     constexpr const char* names[] = {"binding.self", "binding.other", "binding.victim",
                                      "binding.hero", "binding.npc"};
     for (unsigned i = 0; i < 5; ++i) {
-      const auto& b = runtime::flask_bindings[i];
+      const auto& b = dndr_campaign ? dndr_tobacco::bindings[i] : runtime::flask_bindings[i];
       script::detail::Symbol symbol{};
       const auto issue = known ? script::detail::check_binding(memory, s.layout, b) : layout;
       checks.equal(names[i], 0, static_cast<int>(issue), known);
@@ -93,8 +94,8 @@ inline bool parser_checks(const ReadOnlyMemory& memory, const alchemy_flask_debi
     legacy.test("legacy.self_symbol", "vorhanden", s.address[0], s.address[0] != 0, known);
     legacy.test("legacy.hero_symbol", "vorhanden", s.address[3], s.address[3] != 0, known);
     checks.equal("parser.layout_stable", 0,
-                 known ? static_cast<int>(script::detail::stable_layout(
-                             memory, ctx.parser, runtime::flask_profile, s.layout))
+                 known ? static_cast<int>(
+                             script::detail::stable_layout(memory, ctx.parser, profile, s.layout))
                        : -1,
                  known);
     if (pass)

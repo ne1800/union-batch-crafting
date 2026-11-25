@@ -57,13 +57,19 @@ const basecat::Callback* amount_callback(std::int32_t symbol) noexcept {
 bool __cdecl batch_signature(const bc::Call& call) noexcept {
   if (dndr_active) {
     const auto* recipe = ubc::dndr::callback(static_cast<unsigned>(call.symbol));
-    if (!recipe || reinterpret_cast<std::uintptr_t>(call.parser) != s::game_parser)
+    const auto& profile = active_tobacco();
+    const auto* function =
+        call.symbol == profile.info() ? profile.owner.information
+        : profile.choice(call.symbol)
+            ? tobacco::dndr_recipes[call.symbol - profile.back - 1].callback.function
+        : recipe ? recipe->effect->information
+                 : nullptr;
+    if (!function || reinterpret_cast<std::uintptr_t>(call.parser) != s::game_parser)
       return false;
     rt::detail::Layout layout{};
     return rt::detail::read_layout(memory, s::game_parser, ubc::dndr::profile, layout) ==
                rt::Issue::none &&
-           rt::detail::check_function(memory, layout, *recipe->effect->information) ==
-               rt::Issue::none;
+           rt::detail::check_function(memory, layout, *function) == rt::Issue::none;
   }
   const auto* entry = amount_callback(call.symbol);
   const ubc::lhiver::Function* registered = call.symbol == 20401 ? tobacco::owner.information
@@ -97,21 +103,22 @@ bool __cdecl batch_signature(const bc::Call& call) noexcept {
 }
 bool __cdecl reject_unexpected_cool_info(const bc::Call& call) noexcept {
   const bool protected_effect =
-      (call.symbol == 20401 || (call.symbol >= 20403 && call.symbol <= 20405)) &&
+      (call.symbol == active_tobacco().info() || active_tobacco().choice(call.symbol)) &&
       InterlockedCompareExchange(&tobacco_unpaid_page, 0, 0);
   if (protected_effect && (!own_thread() || call.caller != bc::choice_call_return))
     return true;
   if (own_thread()) {
-    const bool wrong_owner =
-        tobacco_owner_call && call.caller == bc::info_call_return && call.symbol != 20401;
+    const bool wrong_owner = tobacco_owner_call && call.caller == bc::info_call_return &&
+                             call.symbol != active_tobacco().info();
     const bool wrong_choice = tobacco_owner.ticket && call.caller == bc::choice_call_return &&
                               (!tobacco_choice_call || call.symbol != tobacco_choice_call);
     if (wrong_owner || wrong_choice) {
       char fields[128]{};
       std::snprintf(fields, sizeof(fields),
                     ",\"field\":\"call.bound_symbol\",\"soll\":\"%d\",\"ist\":\"%d\"",
-                    wrong_owner ? 20401 : tobacco_choice_call, call.symbol);
-      event("tobacco_check_value", wrong_owner ? 20401 : tobacco_owner.function, 0, fields);
+                    wrong_owner ? active_tobacco().info() : tobacco_choice_call, call.symbol);
+      event("tobacco_check_value", wrong_owner ? active_tobacco().info() : tobacco_owner.function,
+            0, fields);
       return true;
     }
   }
@@ -129,17 +136,19 @@ bool __cdecl reject_unexpected_cool_info(const bc::Call& call) noexcept {
 bc::Decision __cdecl select_batch_call(const bc::Call& call) noexcept {
   if (!own_thread())
     return bc::Decision::ordinary;
-  if (!tobacco_owner.ticket && call.caller == bc::choice_call_return && choice_depth == 1 &&
-      call.symbol >= 20403 && call.symbol <= 20405)
+  if (!dndr_active && !tobacco_owner.ticket && call.caller == bc::choice_call_return &&
+      choice_depth == 1 && call.symbol >= 20403 && call.symbol <= 20405)
     trace_tobacco_entry(context(), tobacco::recipes[call.symbol - 20403], call.symbol, nullptr,
                         "call.original", 1, 1);
   if (tobacco_owner_call) {
-    return call.symbol == 20401 && call.caller == bc::info_call_return && !handoff.cancelled()
+    return call.symbol == active_tobacco().info() && call.caller == bc::info_call_return &&
+                   !handoff.cancelled()
                ? bc::Decision::writer
                : bc::Decision::reject;
   }
   const auto* ticket = handoff.current_ticket();
-  if (tobacco_owner.ticket && call.caller == bc::choice_call_return && call.symbol != 20402 &&
+  if (tobacco_owner.ticket && call.caller == bc::choice_call_return &&
+      call.symbol != active_tobacco().back &&
       (!ticket || !tobacco_owner.accepts(*ticket, call.symbol) ||
        tobacco_choice_call != call.symbol))
     return bc::Decision::reject;
@@ -183,7 +192,7 @@ bool late_gate(ubc::GrindCheck* diagnostic, tobacco::Checks* trace) noexcept {
     const auto actor = rt::read_symbol_address(memory, s::game_parser, ubc::dndr::self);
     std::uint32_t bound = 0;
     if (!actor.valid || !field(actor.address, 0x1c, bound) || bound != c.hero ||
-        !current_info_effect(c) ||
+        (ticket->offer.mode == basecat::Invocation::info && !current_info_effect(c)) ||
         !ubc::bow_item_code::verify_externals(memory, s::game_parser).verified ||
         !rt::verify_local_contract(memory, s::game_parser,
                                    c.kind == cat::Station::anvil ? ubc::dndr::anvil::profile

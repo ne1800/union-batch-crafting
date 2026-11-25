@@ -7,7 +7,7 @@ struct Item {
   PackedInventoryTarget target;
   int localized_symbol;
 };
-inline constexpr std::array<Item, 61> items{{
+inline constexpr std::array<Item, 67> items{{
     {{"ITFO_ADDON_RUM", 6117}, 15673},
     {{"ITFO_ADDON_LOUSHAMMER", 6122}, 15678},
     {{"ITFO_ADDON_SCHLAFHAMMER", 6124}, 15680},
@@ -69,6 +69,12 @@ inline constexpr std::array<Item, 61> items{{
     {{"ITMISWORDRAW", 6912}, 16610},
     {{"ITMISWORDRAWHOT", 6913}, 16611},
     {{"ITMI_NUGGET", 6928}, 16626},
+    {{"ITFO_HONEY", 6734}, 16393},
+    {{"ITMI_APFELTABAK", 6956}, 16660},
+    {{"ITMI_PILZTABAK", 6957}, 16661},
+    {{"ITMI_HONIGTABAK", 6959}, 16663},
+    {{"ITMI_SUMPFTABAK", 6960}, 16664},
+    {{"ITPL_MUSHROOM_01", 7019}, 16726},
 }};
 inline constexpr std::size_t item_index(int symbol) noexcept {
   for (std::size_t i = 0; i < items.size(); ++i)

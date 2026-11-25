@@ -31,11 +31,19 @@ bool read_tobacco_state(const Context& c, const tobacco::Descriptor& d, bool scr
                        c.dialog.player == c.hero) ||
       !tobacco_reader.capture(memory, d, extra_context(c), sample, check))
     return false;
-  if (!tobacco::lab_flags(memory, c.hero, true, check) ||
+  if (!tobacco::lab_flags(memory, c.hero, true, check, dndr_active) ||
       !check.equal("station.end_path", 0, static_cast<int>(end_path(c.station).issue)))
     return false;
-  const auto actor = grt::actor(memory, s::game_parser, grt::assemble(gcat::recipes[0]), c.hero);
-  if (!check.equal("actor.hero", c.hero, actor.read_valid ? actor.hero : 0) ||
+  std::uint32_t actor_hero = 0;
+  if (dndr_active) {
+    const auto actor = rt::read_symbol_address(memory, s::game_parser, ubc::dndr::hero);
+    if (!actor.valid || !field(actor.address, 0x1c, actor_hero))
+      return false;
+  } else {
+    const auto actor = grt::actor(memory, s::game_parser, grt::assemble(gcat::recipes[0]), c.hero);
+    actor_hero = actor.read_valid ? actor.hero : 0;
+  }
+  if (!check.equal("actor.hero", c.hero, actor_hero) ||
       !check.equal("station.same", true, same_context(c, context())))
     return false;
   state.contract = state.actor_known = state.actor_matches = state.context_known =
@@ -45,7 +53,9 @@ bool read_tobacco_state(const Context& c, const tobacco::Descriptor& d, bool scr
     state.materials[i].stored = sample.stock[i];
   state.materials[1].consumed_reserve = 1;
   state.maximum = tobacco::maximum(sample.stock);
-  if (!tobacco_owner.ticket || !handoff.active()) {
+  if (dndr_active) {
+    state.maximum = tobacco::dndr_maximum(sample.stock, sample.packed_flask);
+  } else if (!tobacco_owner.ticket || !handoff.active()) {
     state.maximum = tobacco::permitted_maximum(sample.stock, [&](std::uint32_t quantity) {
       ubc::GrindCheck path;
       if (tobacco_quantity_path(c, d, sample, quantity, path))
@@ -81,11 +91,20 @@ void tobacco_module_checks(ubc::bow_item_native::BowDispatch& targets, bool empt
   if (tobacco_locator.observed())
     targets.locator = {tobacco_locator.base(), tobacco_locator.image_size(),
                        tobacco_locator.digest(), true, CraftingModule::executable_page};
-  const auto unpack = ubc::bow_item_native::detail::hasitems(
-      memory, modules, nullptr, nullptr, &targets,
-      ubc::bow_item_native::detail::PackedHasItems::observed_tobacco_wrapper);
-  checks.equal("module.hasitems", 0, static_cast<int>(unpack.issue));
-  checks.test("module.unpack_target", "gebunden", targets.unpack_target, unpack.verified);
+  const bool plain_hasitems =
+      dndr_active &&
+      ubc::bow_item_native::detail::plain(memory, ubc::bow_item_code::ranges[0]).verified;
+  if (plain_hasitems) {
+    constexpr std::uint32_t original = 0x70c970;
+    checks.flag("module.hasitems", !targets.unpack_target || targets.unpack_target == original);
+    targets.unpack_target = original;
+  } else {
+    const auto unpack = ubc::bow_item_native::detail::hasitems(
+        memory, modules, nullptr, nullptr, &targets,
+        ubc::bow_item_native::detail::PackedHasItems::observed_tobacco_wrapper);
+    checks.equal("module.hasitems", 0, static_cast<int>(unpack.issue));
+    checks.test("module.unpack_target", "gebunden", targets.unpack_target, unpack.verified);
+  }
   namespace insert = ubc::vob_inventory_insert_compat;
   std::uint32_t target = 0;
   const bool read_target = read(insert::slot_address, target);
@@ -102,8 +121,8 @@ void tobacco_preconditions(const Context& c, const tobacco::Descriptor& d,
                            tobacco::Checks& checks) noexcept {
   const auto ctx = extra_context(c);
   tobacco::AdmissionChecks admission(&tobacco_report);
-  tobacco::verify_script(memory, admission);
-  tobacco::lab_flags(memory, c.hero, true, admission);
+  tobacco::verify_script(memory, admission, dndr_active);
+  tobacco::lab_flags(memory, c.hero, true, admission, dndr_active);
   tobacco_reader.capture(memory, d, ctx, sample, admission);
   if (request)
     checks.flag("hand.same", ubc::same_crafting_hands(request->hands, sample.hands));
@@ -115,14 +134,19 @@ void tobacco_preconditions(const Context& c, const tobacco::Descriptor& d,
   const unsigned quantity = request ? request->quantity : 1;
   checks.test("stock.quantity", "1 bis Materialmaximum", quantity,
               quantity && quantity <= tobacco::maximum(sample.stock));
-  checks.flag("debit.reader", tobacco_list.has_value());
-  const auto modules = extra_modules();
-  for (unsigned i = 0; i < 2; ++i) {
-    tobacco::AdmissionChecks path(&tobacco_report);
-    if (tobacco_list)
-      ubc::tobacco_writer::debit_path(memory, *tobacco_list, ctx, modules, d, sample, i, quantity,
-                                      path);
-    checks.flag(i ? "debit.flask_path" : "debit.apple_path", tobacco_list && path.ok());
+  if (dndr_active) {
+    checks.flag("debit.packed_flask",
+                quantity <= tobacco::dndr_maximum(sample.stock, sample.packed_flask));
+  } else {
+    checks.flag("debit.reader", tobacco_list.has_value());
+    const auto modules = extra_modules();
+    for (unsigned i = 0; i < 2; ++i) {
+      tobacco::AdmissionChecks path(&tobacco_report);
+      if (tobacco_list)
+        ubc::tobacco_writer::debit_path(memory, *tobacco_list, ctx, modules, d, sample, i, quantity,
+                                        path);
+      checks.flag(i ? "debit.flask_path" : "debit.apple_path", tobacco_list && path.ok());
+    }
   }
   checks.flag("admission.complete", admission.ok());
   tobacco_module_checks(targets, sample.empty_pack, checks);
@@ -136,7 +160,7 @@ void trace_tobacco_entry(const Context& c, const tobacco::Descriptor& d, int sym
   tobacco_report.count = 0;
   tobacco_report.overflow = false;
   tobacco::Checks checks(&tobacco_report), legacy(&tobacco_report);
-  tobacco::parser_checks(memory, extra_context(c), checks, legacy);
+  tobacco::parser_checks(memory, extra_context(c), checks, legacy, dndr_active);
   tobacco::Capture sample;
   ubc::bow_item_native::BowDispatch targets{};
   tobacco_preconditions(c, d, request, targets, sample, checks);
@@ -155,7 +179,7 @@ void* execute_tobacco_amount(bc::WriterScope& scope, const tobacco::Descriptor& 
   tobacco_writer_entered = true;
   const auto error = GetLastError();
   const auto& request = handoff.request();
-  const bool child = scope.call.symbol != 20401;
+  const bool child = scope.call.symbol != d.profile.info();
   const auto c = context();
   const auto ctx = extra_context(c);
   const auto* ticket = handoff.current_ticket();
@@ -178,11 +202,13 @@ void* execute_tobacco_amount(bc::WriterScope& scope, const tobacco::Descriptor& 
             : (info_depth == 1 && !choice_depth && tobacco_owner_call && !tobacco_owner_opened));
   checks.equal("writer.caller", child ? bc::choice_call_return : bc::info_call_return,
                scope.call.caller);
-  checks.equal("writer.symbol", child ? d.callback.function->symbol : 20401u, scope.call.symbol);
-  checks.flag("writer.offer", ticket && ticket->offer.owner == 20399 &&
+  checks.equal("writer.symbol",
+               child ? d.callback.function->symbol : d.profile.owner.information->symbol,
+               scope.call.symbol);
+  checks.flag("writer.offer", ticket && ticket->offer.owner == d.profile.owner.instance &&
                                   ticket->offer.function == scope.call.symbol);
   checks.flag("writer.result_idle", result_guard.permits_next());
-  tobacco::parser_checks(memory, ctx, checks, legacy);
+  tobacco::parser_checks(memory, ctx, checks, legacy, dndr_active);
   if (child) {
     checks.flag("owner.ticket", ticket &&
                                     tobacco_owner.owns(request.key, ticket->view, c.dialog.info) &&
@@ -195,12 +221,12 @@ void* execute_tobacco_amount(bc::WriterScope& scope, const tobacco::Descriptor& 
   tobacco::Capture sample;
   tobacco_preconditions(c, d, &request, tobacco_targets, sample, checks);
   NativeAmountContext owner, choice;
-  owner.function = tobacco::owner.information;
+  owner.function = d.profile.owner.information;
   choice.function = d.callback.function;
   const auto layout = rt::detail::read_layout(memory, s::game_parser, layout_profile, owner.layout);
   choice.layout = owner.layout;
   checks.equal("call.layout", 0, static_cast<int>(layout));
-  tobacco::Transaction tx;
+  tobacco::Transaction tx(d.profile);
   tobacco::Transaction::PaymentCode pay;
   const auto capture = [&](auto& window, NativeAmountContext& binding) {
     const auto& f = *binding.function;
@@ -259,7 +285,8 @@ void* execute_tobacco_amount(bc::WriterScope& scope, const tobacco::Descriptor& 
   const auto read_stock = [&](tobacco::Stock& stock) {
     ubc::GrindCheck issue;
     tobacco::Capture fresh;
-    const bool read = may_refund && live() && tobacco::lab_flags(memory, c.hero, true, issue) &&
+    const bool read = may_refund && live() &&
+                      tobacco::lab_flags(memory, c.hero, true, issue, dndr_active) &&
                       tobacco_reader.capture(memory, d, ctx, fresh, issue) &&
                       ubc::same_crafting_hands(request.hands, fresh.hands) && live();
     checks.flag("settle.read", read);
@@ -271,7 +298,7 @@ void* execute_tobacco_amount(bc::WriterScope& scope, const tobacco::Descriptor& 
   };
   const auto adjust = [&](unsigned i, unsigned count, const tobacco::Stock& observed) {
     tobacco::Checks recovery(&tobacco_report), legacy_recovery(&tobacco_report);
-    tobacco::parser_checks(memory, ctx, recovery, legacy_recovery);
+    tobacco::parser_checks(memory, ctx, recovery, legacy_recovery, dndr_active);
     tobacco_module_checks(tobacco_targets, sample.empty_pack, recovery);
     const auto code = tx.adjustment(d, i, count, observed);
     if (!recovery.ok() || !live() || !tx.payment_program(code, checks) || !ready_to_call())
@@ -311,7 +338,7 @@ void* execute_tobacco_amount(bc::WriterScope& scope, const tobacco::Descriptor& 
   };
   const auto finish = [&](const tobacco::Stock& paid, bool& entered) {
     tobacco::Checks final_checks(&tobacco_report), old_checks(&tobacco_report);
-    tobacco::parser_checks(memory, ctx, final_checks, old_checks);
+    tobacco::parser_checks(memory, ctx, final_checks, old_checks, dndr_active);
     tobacco_module_checks(tobacco_targets, sample.empty_pack, final_checks);
     const bool permitted = output_returned && authorized();
     checks.equal("payment.collection", ticket ? ticket->offer.collection : 0, rows.generation);
@@ -366,7 +393,7 @@ void* execute_tobacco_amount(bc::WriterScope& scope, const tobacco::Descriptor& 
         settlement = tobacco::settle(initial, request.quantity, read_stock, adjust, finish, checks);
         if (vm_exception && settlement == tobacco::Settlement::unpaid) {
           tobacco::Checks recovery(&tobacco_report), old_checks(&tobacco_report);
-          tobacco::parser_checks(memory, ctx, recovery, old_checks);
+          tobacco::parser_checks(memory, ctx, recovery, old_checks, dndr_active);
           if (!recovery.ok() || !live())
             settlement = tobacco::Settlement::uncertain;
         }
@@ -377,7 +404,9 @@ void* execute_tobacco_amount(bc::WriterScope& scope, const tobacco::Descriptor& 
                          0,
                          tobacco_owner_call,
                          ticket->view,
-                         static_cast<int>(d.callback.function->symbol)};
+                         static_cast<int>(d.callback.function->symbol),
+                         false,
+                         d.profile.owner.instance};
         InterlockedExchange(&tobacco_unpaid_page, 1);
         result = scope.original(scope.call.parser, scope.call.symbol);
         saved = GetLastError();
@@ -391,7 +420,7 @@ void* execute_tobacco_amount(bc::WriterScope& scope, const tobacco::Descriptor& 
     const bool restored = tx.restore();
     scope.restore_verified = restored && !abnormal && settlement != tobacco::Settlement::uncertain;
     if (!scope.restore_verified) {
-      bc::quarantine(20401);
+      bc::quarantine(d.profile.info());
       bc::quarantine(d.callback.function->symbol);
       result_guard.fail(ubc::CraftingResultIssue::restore);
     }

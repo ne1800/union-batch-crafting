@@ -85,7 +85,8 @@ inline grind_recipe_navigation::PageEvidence crafting_grind_page(CraftingPage pa
 }
 inline bool valid_crafting_page(CraftingPage page) noexcept {
   if (page.kind == CraftingPageKind::tobacco_choices)
-    return page.value == 20399;
+    return page.value == static_cast<unsigned>(tobacco::owner.instance) ||
+           page.value == static_cast<unsigned>(dndr_tobacco::owner.instance);
   if (page.kind == CraftingPageKind::stove_info)
     return !page.value;
   if (page.kind == CraftingPageKind::alchemy)
@@ -169,16 +170,18 @@ inline CraftingPlan make_crafting_plan(CraftingPage source, crafting_catalog::Re
   }
   if (!crafting_catalog::has_output_branch(*recipe) && (branch_known || branch_value))
     return out;
-  if (recipe->route == crafting_catalog::Route::dndr) {
+  const bool dndr_choice = recipe->tobacco && &recipe->tobacco->profile == &tobacco::dndr_profile;
+  if (recipe->route == crafting_catalog::Route::dndr || dndr_choice) {
     const auto* r = recipe->dndr_recipe;
-    if (!r || r->id != target || !quantity || quantity > INT32_MAX ||
-        (r->branched() && !branch_known))
+    if ((!dndr_choice && (!r || r->id != target || (r->branched() && !branch_known))) ||
+        !quantity || quantity > INT32_MAX)
       return out;
-    const auto kind = r->at_anvil() ? CraftingPageKind::dndr_anvil : CraftingPageKind::dndr_alchemy;
+    const bool at_anvil = r && r->at_anvil();
+    const auto kind = at_anvil ? CraftingPageKind::dndr_anvil : CraftingPageKind::dndr_alchemy;
     if (source.kind != kind)
       return out;
     const CraftingPage root{kind, 0};
-    const CraftingPage desired{kind, r->category_flag};
+    const CraftingPage desired{kind, dndr_choice ? 10120u : r->category_flag};
     auto current = source;
     auto step = [&](CraftingStepKind kind, const recipe_catalog::Owner& owner, CraftingPage next) {
       out.steps[out.count++] = {kind,           recipe_catalog::Invocation::info,
@@ -187,12 +190,22 @@ inline CraftingPlan make_crafting_plan(CraftingPage source, crafting_catalog::Re
       current = next;
     };
     if (!(current == desired)) {
-      if (const auto* c = dndr::category(current.value, r->at_anvil()))
+      if (const auto* c = dndr::category(current.value, at_anvil))
         step(CraftingStepKind::stop, *c->stop, root);
-      if (const auto* c = dndr::category(desired.value, r->at_anvil()))
+      if (const auto* c = dndr::category(desired.value, at_anvil))
         step(CraftingStepKind::start, *c->start, desired);
     }
-    step(CraftingStepKind::effect, *r->effect, {});
+    if (dndr_choice) {
+      const CraftingPage choices{CraftingPageKind::tobacco_choices, dndr_tobacco::owner.instance};
+      step(CraftingStepKind::open_owner, dndr_tobacco::owner, choices);
+      out.steps[out.count++] = {CraftingStepKind::effect,
+                                recipe_catalog::Invocation::choice,
+                                dndr_tobacco::owner.instance,
+                                static_cast<int>(recipe->tobacco->callback.function->symbol),
+                                choices,
+                                {}};
+    } else
+      step(CraftingStepKind::effect, *r->effect, {});
   } else if (recipe->route == crafting_catalog::Route::base) {
     const bool stove = recipe->station == crafting_catalog::Station::stove;
     if (source.kind != (stove ? CraftingPageKind::stove_info : CraftingPageKind::alchemy)) {
@@ -654,7 +667,8 @@ inline bool page_mode(CraftingPage page, recipe_catalog::Invocation mode,
   if (!valid_crafting_page(page))
     return false;
   if (page.kind == CraftingPageKind::tobacco_choices)
-    return mode == recipe_catalog::Invocation::choice && owner == 20399;
+    return mode == recipe_catalog::Invocation::choice && valid_crafting_page(page) &&
+           owner == static_cast<int>(page.value);
   if (page.kind == CraftingPageKind::stove_info || page.kind == CraftingPageKind::dndr_alchemy ||
       page.kind == CraftingPageKind::dndr_anvil)
     return mode == recipe_catalog::Invocation::info;
@@ -904,9 +918,9 @@ public:
     if (!recipe || !recipe->tobacco || !cancelled_ || !callback_active_ ||
         witness.decision != CraftingHandoffDecision::execute || witness.ticket_id != ticket_.id ||
         witness.execution_id != execution_id_ ||
-        ticket_.offer.function != static_cast<int>(effect_started_
-                                                       ? recipe->tobacco->callback.function->symbol
-                                                       : tobacco::owner.information->symbol))
+        ticket_.offer.function !=
+            static_cast<int>(effect_started_ ? recipe->tobacco->callback.function->symbol
+                                             : recipe->tobacco->profile.owner.information->symbol))
       return false;
     // The unpaid owner guards the child page independently of the handoff.
     callback_active_ = effect_started_ = false;

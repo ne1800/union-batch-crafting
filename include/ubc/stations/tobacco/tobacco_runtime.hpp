@@ -26,7 +26,24 @@ inline alchemy_extra_execution::Profile script_profile() noexcept {
   return assembly;
 }
 template <class Check>
-inline bool verify_script(const ReadOnlyMemory& memory, Check& check) noexcept {
+inline bool verify_script(const ReadOnlyMemory& memory, Check& check,
+                          bool dndr_campaign = false) noexcept {
+  if (dndr_campaign) {
+    const auto& profile = dndr_tobacco::script_profile;
+    const auto result = script::verify_local_contract(memory, lhiver::game_parser, profile);
+    check.symbol = static_cast<int>(result.failed_symbol);
+    script::detail::Layout layout{};
+    const rt::StringContract message{4856, success_text.length, success_text.digest};
+    return check.equal("script.contract", 0, static_cast<int>(result.issue)) && result.matches &&
+           check.equal("script.layout", 0,
+                       static_cast<int>(script::detail::read_layout(memory, lhiver::game_parser,
+                                                                    profile, layout))) &&
+           check.equal("script.success_text", 0,
+                       static_cast<int>(rt::detail::string_once(memory, layout, message).issue)) &&
+           check.equal("script.stable", 0,
+                       static_cast<int>(script::detail::stable_layout(memory, lhiver::game_parser,
+                                                                      profile, layout)));
+  }
   const auto assembly = script_profile();
   const auto profile = assembly.view();
   const auto result = script::verify_local_contract(memory, lhiver::game_parser, profile);
@@ -68,24 +85,28 @@ inline bool choice_entry(const ReadOnlyMemory& memory, const alchemy_flask_debit
                      second.valid && rt::detail::same_parser(first, second));
 }
 template <class Check>
-inline bool lab_flags(const ReadOnlyMemory& memory, std::uint32_t hero, bool active,
-                      Check& check) noexcept {
+inline bool lab_flags(const ReadOnlyMemory& memory, std::uint32_t hero, bool active, Check& check,
+                      bool dndr_campaign = false) noexcept {
+  const auto& profile = dndr_campaign ? dndr_tobacco::script_profile : rt::flask_profile;
   script::detail::Layout layout{};
   if (!check.equal("lab.layout", 0,
-                   static_cast<int>(script::detail::read_layout(memory, lhiver::game_parser,
-                                                                rt::flask_profile, layout))))
+                   static_cast<int>(
+                       script::detail::read_layout(memory, lhiver::game_parser, profile, layout))))
     return false;
   constexpr const char* names[] = {"lab.npc_class", "lab.production_binding", "lab.aivar",
                                    "lab.invincible_binding"};
   unsigned name = 0;
-  for (const unsigned i : {4u, 7u, 8u, 9u})
+  for (const unsigned i : {4u, 7u, 8u, 9u}) {
+    const auto& binding = dndr_campaign ? dndr_tobacco::bindings[i] : rt::flask_bindings[i];
     if (!check.equal(names[name++], 0,
-                     static_cast<int>(
-                         script::detail::check_binding(memory, layout, rt::flask_bindings[i])))) {
-      check.symbol = static_cast<int>(rt::flask_bindings[i].symbol);
+                     static_cast<int>(script::detail::check_binding(memory, layout, binding)))) {
+      check.symbol = static_cast<int>(binding.symbol);
       return false;
     }
-  const auto prod = script::symbol_int(memory, lhiver::game_parser, lhiver::production_symbol);
+  }
+  const auto prod =
+      script::symbol_int(memory, lhiver::game_parser,
+                         dndr_campaign ? dndr::production : lhiver::production_symbol, profile);
   std::uint32_t invincible = 0;
   return check.equal("lab.production", active ? 4 : 0, prod.valid ? prod.value : -1) &&
          check.equal("lab.invincible_read", true,
@@ -93,7 +114,7 @@ inline bool lab_flags(const ReadOnlyMemory& memory, std::uint32_t hero, bool act
          check.equal("lab.invincible", active ? 1 : 0, invincible) &&
          check.equal("lab.stable", 0,
                      static_cast<int>(script::detail::stable_layout(memory, lhiver::game_parser,
-                                                                    rt::flask_profile, layout)));
+                                                                    profile, layout)));
 }
 template <class Probe> std::uint32_t permitted_maximum(const Stock& stock, Probe probe) {
   const auto maximum_by_stock = maximum(stock);
@@ -104,11 +125,21 @@ template <class Probe> std::uint32_t permitted_maximum(const Stock& stock, Probe
     return maximum_by_stock - 1;
   return 1;
 }
+// The owner may unpack all three flavour checks before the new product is inserted.
+inline bool dndr_list_capacity(unsigned listed, unsigned packed, bool existing_product) noexcept {
+  return std::uint64_t{listed} + packed + (existing_product ? 0u : 1u) <=
+         max_packed_inventory_nodes;
+}
+inline unsigned dndr_maximum(const Stock& stock, bool packed_flask) noexcept {
+  const auto limit = maximum(stock);
+  return packed_flask ? (std::min)(1u, limit) : limit;
+}
 struct Capture {
   Stock stock{{-1, -1, -1, -1}};
   std::array<std::uint32_t, 2> objects{};
   StationRecipeHands hands{};
   bool empty_pack = false;
+  bool packed_flask = false;
 };
 class Reader {
 public:
@@ -133,7 +164,16 @@ public:
     if (inv.storage_totals_known && inv.snapshot_unchanged)
       out.stock = inv.total;
     out.empty_pack = inv.packed_entries == 0;
-    for (std::size_t i = 0; i < 2; ++i) {
+    const bool dndr_campaign = &recipe.profile == &dndr_profile;
+    out.packed_flask = inv.packed[1] != 0;
+    if (dndr_campaign && (!check.equal("inventory.boundary", true, inv.stable_boundary_verified) ||
+                          !check.equal("inventory.list_capacity", true,
+                                       dndr_list_capacity(inv.listed_nodes, inv.packed_entries,
+                                                          inv.listed_occurrences[3] != 0)) ||
+                          !check.equal("inventory.packed_apple", 0, inv.packed[0]) ||
+                          !check.equal("inventory.packed_product", 0, inv.packed[3])))
+      return false;
+    for (std::size_t i = 0; i < (dndr_campaign ? 4u : 2u); ++i) {
       if (!check.equal("inventory.active", 0, inv.has_active_marker[i]) ||
           !check.equal("inventory.mixed", 0,
                        inv.mixed_representation[i] || inv.duplicate_packed_target[i] ||
@@ -147,13 +187,27 @@ public:
       if (!check.equal("hand.in_inventory", false, object == out.hands.interact_item))
         return false;
       const auto item = script::detail::u32(record.item_fields.data() + 4);
-      if (item != apple && item != flask)
+      const bool is_apple = item == static_cast<unsigned>(recipe.targets[0].symbol);
+      const bool is_flask = item == static_cast<unsigned>(recipe.targets[1].symbol);
+      const bool refundable_product =
+          dndr_campaign && item == static_cast<unsigned>(recipe.targets[3].symbol);
+      if (!is_apple && !is_flask && !refundable_product)
         continue;
       for (std::size_t slot = 0; slot < hands_.count; ++slot)
         if (!check.equal("stock.in_slot", false,
                          script::detail::u32(hands_.records[slot].fields.data() + 0x30) == object))
           return false;
-      out.objects[item == apple ? 0 : 1] = object;
+      if (dndr_campaign) {
+        std::uint32_t type = 0, flags = 0;
+        if (!check.equal("stock.item_type", hand_detail::item_vtable,
+                         rt::detail::word(memory, object, 0, type) ? type : 0) ||
+            !check.equal("stock.safe_stack", true,
+                         rt::detail::word(memory, object, 0x158, flags) && (flags & 0x00200000u) &&
+                             !(flags & 0x40000000u)))
+          return false;
+      }
+      if (!refundable_product)
+        out.objects[is_apple ? 0 : 1] = object;
     }
     return check.equal("hand.stable", true,
                        issue == StationHandReadIssue::none &&
@@ -188,6 +242,7 @@ struct OwnerTicket {
   std::uint32_t info = 0, view = 0;
   int function = 0;
   bool spent = false;
+  int owner_instance = owner.instance;
   // A new Collect of the same child side, focus loss, or a read gap
   // does not clear the unpaid Owner. BACK remains open as an exit.
   void observe(bool departed, bool ready, std::uint64_t collection, int mode,
@@ -211,8 +266,9 @@ struct OwnerTicket {
                    std::uint64_t current_collection) const noexcept {
     return ticket && function == symbol && child.id > ticket && child.view == view &&
            choice_collection && current_collection == choice_collection && child.offer.valid &&
-           child.offer.mode == recipe_catalog::Invocation::choice && child.offer.owner == 20399 &&
-           child.offer.function == function && child.offer.collection == choice_collection;
+           child.offer.mode == recipe_catalog::Invocation::choice &&
+           child.offer.owner == owner_instance && child.offer.function == function &&
+           child.offer.collection == choice_collection;
   }
   bool accepts(const CraftingHandoffTicket& child, int symbol) const noexcept {
     return !spent && bound_child(child, symbol, child.offer.collection);

@@ -2,6 +2,11 @@
 
 [English](#english) · [Deutsch](#deutsch)
 
+## Unreleased
+
+- **English** The Night of the Raven test build checks tobacco orders and their reserved flask at the alchemy bench.
+- **Deutsch** Der Testbuild für Die Nacht des Raben prüft Tabakaufträge und die reservierte Flasche am Alchemietisch.
+
 ## English
 
 - **0.0.67** The plugin checks the compiled scripts loaded by the game. In other campaigns with different scripts, it leaves crafting to the game without showing a notice or installing hooks. Selecting Marcello L’Hiver with an unsupported script version still shows the compatibility notice. The new Steam Workshop package contains the player DLL and licence notices. The README clarifies the licence for the game and mod content shown in the screenshots.

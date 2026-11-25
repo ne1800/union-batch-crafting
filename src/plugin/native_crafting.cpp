@@ -17,9 +17,13 @@ bool configure_batch_symbols(bc::Config& config) noexcept {
   if (config.symbol_count)
     return false;
   if (dndr_active) {
-    static_assert(ubc::dndr::recipes.size() <= std::tuple_size<decltype(config.symbols)>::value);
+    static_assert(ubc::dndr::recipes.size() + tobacco::dndr_recipes.size() + 1 <=
+                  std::tuple_size<decltype(config.symbols)>::value);
     for (const auto& recipe : ubc::dndr::recipes)
       config.symbols[config.symbol_count++] = static_cast<int>(recipe.effect->information->symbol);
+    config.symbols[config.symbol_count++] = active_tobacco().info();
+    for (const auto& recipe : tobacco::dndr_recipes)
+      config.symbols[config.symbol_count++] = static_cast<int>(recipe.callback.function->symbol);
     return true;
   }
   for (const auto& recipe : basecat::recipes)
@@ -196,8 +200,7 @@ static void install(bool execute) noexcept {
   config.signature = batch_signature;
   config.select = select_batch_call;
   config.writer = execute_amount;
-  if (!dndr_active)
-    config.reject_unexpected = reject_unexpected_cool_info;
+  config.reject_unexpected = reject_unexpected_cool_info;
   if (!configure_batch_symbols(config)) {
     event("hooks_rejected");
     return;

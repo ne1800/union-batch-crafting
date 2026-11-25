@@ -124,6 +124,9 @@ inline bool dndr_active = false;
 #else
 inline constexpr bool dndr_active = false;
 #endif
+inline const tobacco::Profile& active_tobacco() noexcept {
+  return dndr_active ? tobacco::dndr_profile : tobacco::marcello_profile;
+}
 inline unsigned hero_symbol() noexcept {
   return dndr_active ? ubc::dndr::hero : ubc::lhiver::hero_symbol;
 }
