@@ -37,7 +37,7 @@ Geprüft ist die deutsche Version 2.6 mit der mitgelieferten losen `_work/Data/S
 - **Die Nacht des Raben ohne Kampagnenmod** – Alchemietisch (20 Trank- und Sonderrezepte, drei Tabaksorten), Amboss (fünf normale und acht Erzwaffen), Esse, Pfanne und Herd.
 - **Marcello L’Hiver DE 2.0.4** – 98 Rezeptprofile an Herd, Alchemietisch, Lederbank, Säge, Esse, Amboss, Bogenbank, Kühlbecken und Schleifstein.
 
-In Die Nacht des Raben spielt jedes Stück an Esse, Pfanne und Herd seine Originalanimation. Ein Abbruch im Mengenmenü ist kostenlos. Marvin-F8 nach der Reservierung kann wie im Original an der Esse einen kalten Rohstahl und am Herd ein rohes Fleisch kosten. Auch bei einem anderen harten Abbruch der Herdanimation kann das reservierte Rohfleisch verloren gehen.
+In Die Nacht des Raben bieten Esse, Pfanne und Herd die Auswahl zwischen 1, freier Menge und Maximum. Jedes Stück durchläuft seine Originalanimation. Ein Abbruch im Mengenmenü ist kostenlos. Marvin-F8 nach der Reservierung kann wie im Original an der Esse einen kalten Rohstahl und am Herd ein rohes Fleisch kosten. Auch bei einem anderen harten Abbruch der Herdanimation kann das reservierte Rohfleisch verloren gehen.
 
 Das Plugin prüft die Kompatibilität der Engine und die für das Rezept benötigten Skriptfunktionen und Symbole. Bei Abweichungen bleibt die Originalauswahl zugänglich. Ein abweichendes gemeinsames Engine-Layout kann das ganze Plugin abschalten. Bei geladenem Plugin findest du die Diagnose des aktuellen Starts in `system/autorun/UnionBatchCraftingExtended.log`. Der autorun-Ordner muss zum Anlegen des Logs beschreibbar sein. Frühere Spielnachweise und den Prüfumfang dieser Version nennt die [Kompatibilitätsliste](TESTED-WITH.md).
 

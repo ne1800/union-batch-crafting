@@ -37,7 +37,7 @@ The supported unmodded edition is German 2.6, using the loose `_work/Data/Script
 - **Night of the Raven without a campaign mod** – alchemy table (20 potion and specialty recipes, three tobacco blends), anvil (five regular and eight ore weapons), forge, frying pan and stove.
 - **Marcello L’Hiver DE 2.0.4** – 98 recipe profiles across the stove, alchemy table, leather bench, saw, forge, anvil, bow bench, cooling tub and grindstone.
 
-In Night of the Raven, each piece at the forge, frying pan and stove plays its original animation. Cancelling in the quantity menu costs nothing. As in the original game, pressing Marvin F8 after reservation can cost one cold raw steel at the forge or one raw meat at the stove. A hard interruption of the stove animation can also consume the reserved meat.
+In Night of the Raven, the forge, frying pan and stove offer 1, a custom quantity or the maximum. Each piece plays its original animation. Cancelling in the quantity menu costs nothing. As in the original game, pressing Marvin F8 after reservation can cost one cold raw steel at the forge or one raw meat at the stove. A hard interruption of the stove animation can also consume the reserved meat.
 
 The plugin checks engine compatibility and the script functions and symbols needed for each recipe. A mismatch leaves the original crafting selection available. A shared engine-layout mismatch can disable the entire plugin. For a loaded plugin, `system/autorun/UnionBatchCraftingExtended.log` contains the current run's diagnostics. The autorun folder must be writable to create the log. Earlier in-game results and the scope of this build's tests are listed in [Tested with](TESTED-WITH.md).
 

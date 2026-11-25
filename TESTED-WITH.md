@@ -1,10 +1,19 @@
 # Tested with · Getestet mit
 
-Gothic II: Night of the Raven / Die Nacht des Raben, Windows x86, 2.6 fix, Marcello L’Hiver **DE 2.0.4**, Union **1.0m**.
+Gothic II: Night of the Raven / Die Nacht des Raben, Windows x86, 2.6 fix, Union **1.0m**.
 
 <a id="campaign-compatibility"></a>
 
 ## Campaign compatibility · Kampagnenverträglichkeit
+
+**0.0.68** used the same player DLL in both campaigns. A new German Night of the Raven 2.6 game used the loose `_work/Data/Scripts/_compiled/GOTHIC.DAT` from the Steam Gothic II: Gold Classic Workshop branch, build 9820952. At the alchemy table one order made two essences of healing and a second made two honey tobaccos, retaining the honey. The anvil made two ore longswords. The forge heated two raw steel blanks. The frying pan and stove each cooked two pieces of meat. Cancelling in the stove menu preserved every item. Each order matched its full inventory balance. In Marcello L’Hiver DE 2.0.4, slot 14, two swamp tobaccos consumed two apple tobaccos and two flasks. All 418 inventory counts matched. Both games exited without saving. Physical controller testing is pending.
+
+**0.0.68** lief in beiden Kampagnen mit derselben Spieler-DLL. Ein neues Spiel der deutschen Version 2.6 von Die Nacht des Raben verwendete die lose `_work/Data/Scripts/_compiled/GOTHIC.DAT` aus Gothic II: Gold Classic auf Steam, Workshop-Zweig, Build 9820952. Ein Auftrag am Alchemietisch ergab zwei Heilessenzen, ein weiterer zwei Honigtabake. Der Honig blieb im Inventar. Der Amboss ergab zwei Erz-Langschwerter, die Esse zwei heiße Rohstähle, Pfanne und Herd jeweils zwei gebratene Fleischstücke. Der Menüabbruch am Herd kostete nichts. Nach jedem Auftrag stimmte die vollständige Inventarbilanz. In Marcello L’Hiver DE 2.0.4, Slot 14, verbrauchten zwei Sumpftabake zwei Apfeltabake und zwei Laborwasserflaschen. Alle 418 Bestände stimmten. Beide Spiele endeten ohne Speichern. Die Prüfung mit einem physischen Controller steht aus.
+
+| File / Datei | SHA-256 |
+| --- | --- |
+| Player DLL / Spieler-DLL (0.0.68) | `eefb4375bea5c0d892f0403af639ec76f28423955fd9da13a183dab1ca8633a7` |
+| German Night of the Raven 2.6 / Die Nacht des Raben 2.6 (DE), GOTHIC.DAT | `b9e18ac81e08f9eac5942e23adff180f8ca239730eb4c4937b87a4f5bf7beda8` |
 
 **0.0.67** ran with the same player DLL in both campaigns. In Marcello L’Hiver DE 2.0.4, slot 14, one alchemy order made two swamp tobaccos. It used two apple tobaccos and two laboratory flasks. All 418 inventory counts matched and both hands were empty after leaving the table. In a new game of Night of the Raven without a campaign mod, the DLL logged `plugin_idle` once with reason `unsupported_scripts_without_marcello_lhiver`. All twelve hook sites retained their original bytes. The original alchemy dialogue made one honey tobacco from one apple tobacco and one flask. The honey was retained. No plugin notice or quantity menu appeared.
 
@@ -22,6 +31,8 @@ In Night of the Raven, the plugin loaded, logged one reason for staying idle and
 In *Gothic II – Die Nacht des Raben* lud das Plugin, protokollierte einmal den Grund für seine Untätigkeit und ließ das Hauptmenü sowie die Originaldialoge am Alchemietisch und am Amboss unverändert. Ein Honigtabak verbrauchte einen Apfeltabak und eine Laborwasserflasche. Der Honig blieb erhalten. Der endgültige Build erkennt auch das in diesem Lauf beobachtete Skriptverzeichnis. Seine Prüfung für Die Nacht des Raben wurde offline wiederholt. In Marcello L’Hiver DE 2.0.4 zeigte dieser Build das Mengenmenü an und stellte mit einem Auftrag zwei Sumpftabake aus zwei Einheiten Apfeltabak und zwei Laborwasserflaschen her.
 
 ## Workshop archive · Workshop-Archiv
+
+For 0.0.68, the offline archive check verified the player DLL used in both games and the two licence texts inside the VDF. · Für 0.0.68 bestätigte die Offline-Prüfung die in beiden Kampagnen getestete Spieler-DLL und beide Lizenztexte im VDF.
 
 With the pre-release slot-14 player DLL (`0dc1cf7c…`), Gothic II opened `Data/UnionBatchCrafting.vdf`. Union loaded its DLL from `Data/$Templates$` and installed the hooks once. The loose autorun DLL was absent. After the main menu and loading slot 14, the alchemy table showed the quantity menu. One order made two swamp tobaccos. All 418 inventory balances matched and the game exited normally without saving.
 
