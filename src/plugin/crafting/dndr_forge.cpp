@@ -16,20 +16,28 @@ using Interact = void(__thiscall*)(void*, void*, int, int, int, int, int);
 using Enter = int(__thiscall*)(void*, void*, int);
 using Notify = void(__thiscall*)(void*, void*);
 constexpr Address enter = 0x721f00;
-constexpr std::array<s::HookSite, 5> forge_sites{
+constexpr Address input_state = 0x4d4d30, input_toggled = 0x4d5020;
+constexpr unsigned short use_key = 5;
+constexpr std::array<s::HookSite, 7> forge_sites{
     {{0x6990b2, 6, 14, {{0xff, 0x90, 0xe4, 0, 0, 0, 0x85, 0xc0, 0x0f, 0x85, 0x31, 4, 0, 0}}},
      {0x74b020, 7, 14, {{0x6a, 0xff, 0x68, 0xda, 0x57, 0x82, 0, 0x64, 0xa1, 0, 0, 0, 0, 0x50}}},
      {0x720ce0, 5, 12, {{0x83, 0xec, 0x18, 0x53, 0x56, 0x8b, 0x74, 0x24, 0x24, 0x57, 0x8b, 0xf9}}},
      {0x71f210, 8, 12, {{0x53, 0x55, 0x56, 0x57, 0x8b, 0x7c, 0x24, 0x14, 0x8b, 0xf1, 0x8b, 0x06}}},
-     {0x6993be,
-      6,
-      14,
-      {{0xff, 0x90, 0xe4, 0, 0, 0, 0x85, 0xc0, 0x75, 0x78, 0x8b, 0x85, 0x2c, 1}}}}};
+     {0x6993be, 6, 14, {{0xff, 0x90, 0xe4, 0, 0, 0, 0x85, 0xc0, 0x75, 0x78, 0x8b, 0x85, 0x2c, 1}}},
+     {input_state,
+      5,
+      13,
+      {{0xa1, 0x64, 0x1d, 0x8d, 0, 0x85, 0xc0, 0x53, 0x55, 0x56, 0x57, 0x8b, 0xd9}}},
+     {input_toggled,
+      5,
+      13,
+      {{0xa1, 0x64, 0x1d, 0x8d, 0, 0x85, 0xc0, 0x53, 0x55, 0x56, 0x57, 0x8b, 0xf9}}}}};
 w::Hooks<s::HookSite, forge_sites.size()> forge_hooks(forge_sites);
 ubc::NativeCraftingUi window;
 ubc::StationQuantity chooser;
 ubc::SelectionInput release;
 f::Order order;
+f::ReturnFocus return_focus;
 f::Stock opening_stock;
 ubc::PackedInventoryWorkspace inventory;
 ubc::station_recipe_snapshot_detail::HandWorkspace hands;
@@ -74,12 +82,13 @@ bool world_ok() noexcept {
          read(0x8d1e40, menus) && menus == 0 && field(s::information_manager, 0x2c, done) &&
          done == 1 && window.focused();
 }
-bool ready_place() noexcept {
+bool ready_place(bool require_focus = true) noexcept {
   Address node{}, pos{}, next{}, occupant{}, focus{}, linked{};
   std::array<float, 16> actor{}, place{};
-  if (!field(hero, 0x9ac, focus) || focus != mob || !field(hero, 0x964, linked) || linked ||
-      !field(mob, 0x18c, node) || !field(node, 0, pos) || !field(node, 4, next) || next ||
-      !field(pos, 0x44, occupant) || occupant || !field(hero, 0x3c, actor) || !field(pos, 0, place))
+  if ((require_focus && (!field(hero, 0x9ac, focus) || focus != mob)) ||
+      !field(hero, 0x964, linked) || linked || !field(mob, 0x18c, node) || !field(node, 0, pos) ||
+      !field(node, 4, next) || next || !field(pos, 0x44, occupant) || occupant ||
+      !field(hero, 0x3c, actor) || !field(pos, 0, place))
     return false;
   float sum = 0;
   for (unsigned i : {3u, 7u, 11u}) {
@@ -104,6 +113,10 @@ Address branch(Address where, std::uint8_t op) noexcept {
 }
 const char* profile_issue() noexcept {
   Address table{}, method{};
+  Address device{};
+  if (!read(m::input_pointer, device) || !read(device, table) || !field(table, 4, method) ||
+      method != input_state || !field(table, 12, method) || method != input_toggled)
+    return "forge_input_device_rejected";
   if (!read(mob, table) || !field(table, 0xec, method) || method != enter ||
       !field(table, 0xd0, method) || method != forge_sites[3].address ||
       !field(table, 0xe0, method) || method != 0x720f40)
@@ -142,7 +155,7 @@ bool held(bool directions = false) noexcept {
   using KeyState = float(__thiscall*)(void*, unsigned short);
   auto state = reinterpret_cast<KeyState>(method);
   auto* device = reinterpret_cast<void*>(input);
-  if (state(device, 5) != 0)
+  if (state(device, use_key) != 0)
     return true;
   if (directions)
     for (unsigned short key : {m::game_left, m::game_right, m::game_up, m::game_down,
@@ -150,6 +163,27 @@ bool held(bool directions = false) noexcept {
       if (state(device, key) != 0)
         return true;
   return false;
+}
+// Gameplay also polls movement independently of zCMenu::HandleEvent. Keep raw
+// key events and the plugin's own release checks available to the menu.
+bool menu_direction(Address caller, unsigned short key) noexcept {
+  // oCAIHuman's player-control methods, from Pressed through DoAI.
+  if (caller < 0x695540 || caller > 0x69c38e || !own_thread() || (!pending && !window.opened()))
+    return false;
+  return key == use_key || key == m::game_left || key == m::game_right || key == m::game_up ||
+         key == m::game_down || key == m::game_strafe_left || key == m::game_strafe_right;
+}
+float __fastcall world_key_state(void* device, void*, unsigned short key) {
+  if (menu_direction(addr(_ReturnAddress()), key))
+    return 0.0f;
+  using GetState = float(__thiscall*)(void*, unsigned short);
+  return reinterpret_cast<GetState>(forge_hooks.original(5))(device, key);
+}
+int __fastcall world_key_toggled(void* device, void*, unsigned short key) {
+  if (menu_direction(addr(_ReturnAddress()), key))
+    return 0;
+  using GetToggled = int(__thiscall*)(void*, unsigned short);
+  return reinterpret_cast<GetToggled>(forge_hooks.original(6))(device, key);
 }
 bool witness(f::Witness what) noexcept {
   const auto stock = sample();
@@ -298,7 +332,8 @@ void install_forge() noexcept {
   }
   installed_forge =
       forge_hooks.prepare({addr(&primary_input), addr(&item_message), addr(&interrupted),
-                           addr(&interact), addr(&secondary_input)}) &&
+                           addr(&interact), addr(&secondary_input), addr(&world_key_state),
+                           addr(&world_key_toggled)}) &&
       forge_hooks.install(addr(&primary_input));
   event(installed_forge ? "forge_hooks_installed" : "forge_hooks_rejected");
 }
@@ -310,8 +345,10 @@ void forge_end(void* object, void* npc, int flag, Address caller) noexcept {
   if (!flag && belongs(object, npc)) {
     if (caller != ubc::station_end_contract::completed_return || integer(hero, 0x964) != 0)
       stop("forge_end_rejected");
-    else if (witness(f::Witness::end))
+    else if (witness(f::Witness::end)) {
       ended_frame = frame;
+      return_focus.reset(GetTickCount64());
+    }
   }
 }
 bool forge_event(void* menu, int key) noexcept {
@@ -373,11 +410,12 @@ void forge_frame() noexcept {
     }
     if (!chooser.released())
       return;
-    window.close();
     if (!chooser.decision()) {
       stop("forge_menu_cancelled");
+      window.close();
       return;
     }
+    window.close();
     if (!order.open(opening_stock, static_cast<unsigned>(chooser.decision()))) {
       stop("forge_order_rejected");
       return;
@@ -385,10 +423,22 @@ void forge_frame() noexcept {
     event("forge_order_selected", static_cast<int>(order.selected()));
   }
   if (order.phase() == f::Phase::ended && frame > ended_frame) {
-    if (!ready_place() || !release.armed() || !ubc::NativeSelectionUi::callback_is_top(callback)) {
+    Address focus{};
+    if (!field(hero, 0x9ac, focus) || !ready_place(false) || held(true) || !release.armed() ||
+        !ubc::NativeSelectionUi::callback_is_top(callback) || !order.neutral_stock(sample())) {
       stop("forge_neutral_rejected");
       return;
     }
+    const auto target = !focus         ? f::Focus::missing
+                        : focus == mob ? f::Focus::forge
+                                       : f::Focus::other;
+    const auto result = return_focus.observe(tick, target);
+    if (result == f::NeutralResult::rejected) {
+      stop("forge_return_focus_rejected");
+      return;
+    }
+    if (result == f::NeutralResult::waiting)
+      return;
     if (!witness(f::Witness::neutral))
       return;
     if (order.selected() > 1)
