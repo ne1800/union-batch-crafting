@@ -48,6 +48,8 @@ struct FunctionRecord {
   bool ignore_text = false;
 };
 
+// check_text compares the text of a constant string (type 3, flags 1, one
+// element) by length and SHA-256, for constants whose text a verifier reads.
 struct DataRecord {
   std::uint32_t name;
   std::uint32_t type;
@@ -58,6 +60,9 @@ struct DataRecord {
   std::int32_t offset = 0;
   bool check_value = false;
   std::int32_t value = 0;
+  bool check_text = false;
+  std::uint32_t text_length = 0;
+  Digest text_sha256{};
 };
 
 // Records every recipe of one station depends on: entry, end owner,
@@ -83,7 +88,8 @@ struct RecipeGroup {
 
 // An anonymous text an adapter reads. The loaded parser names anonymous
 // symbols differently than the DAT, so the text is found by position: the
-// symbol operand of the instruction at offset in a confirmed function.
+// symbol operand of the instruction at offset in a confirmed function. That
+// function record must bind texts (ignore_text false).
 struct AnonymousText {
   std::uint32_t reference_index;
   std::uint32_t function;
@@ -234,7 +240,12 @@ inline bool valid_profile(const ReferenceProfile& profile) noexcept {
       return false;
   }
   for (std::size_t i = 0; i < profile.data_count; ++i) {
-    if (!known(profile.data[i].name, false) || !known(profile.data[i].parent, true))
+    const auto& record = profile.data[i];
+    if (!known(record.name, false) || !known(record.parent, true))
+      return false;
+    if (record.check_text && (record.type != 3 || record.flags != 1 || record.elements != 1 ||
+                              record.parent != no_name || record.check_value ||
+                              record.text_length > script_fingerprint::max_text_length))
       return false;
   }
   // A recipe is active only on proven code: every recipe needs a function in
@@ -280,10 +291,13 @@ inline bool valid_profile(const ReferenceProfile& profile) noexcept {
   }
   if (profile.text_count && !profile.texts)
     return false;
+  // live_text reads the five-byte instruction at offset; the text content is
+  // proven only by a function record that binds texts.
   for (std::size_t i = 0; i < profile.text_count; ++i) {
     const auto& text = profile.texts[i];
     if (text.function >= profile.function_count ||
-        text.offset >= profile.functions[text.function].byte_length ||
+        std::uint64_t{text.offset} + 5u > profile.functions[text.function].byte_length ||
+        profile.functions[text.function].ignore_text ||
         (i && profile.texts[i - 1].reference_index >= text.reference_index))
       return false;
   }
@@ -328,28 +342,15 @@ struct Context {
   std::size_t entries;
 };
 
-// Anonymous text constants are matched by content, never by their name:
-// the loaded parser names them differently than the compiled DAT.
-inline Issue anonymous_text(const Context& context, std::uint32_t index,
-                            script_fingerprint::Operand& operand) noexcept {
-  const auto& memory = *context.memory;
-  rs::Symbol symbol{};
-  if (rs::lookup(memory, *context.layout, index, symbol) != runtime_script::Issue::none)
-    return Issue::symbol_unreadable;
-  if (symbol.type != 3 || symbol.flags != 1 || symbol.elements != 1 || symbol.parent ||
-      symbol.name_length == 0)
-    return Issue::unknown_symbol;
-  std::uint8_t first = 0;
-  if (!memory.copy(symbol.name_data, &first, 1))
-    return Issue::name_unreadable;
-  if (first != 0xffu)
-    return Issue::unknown_symbol;
+// Length and SHA-256 of the zSTRING object at address: bounded by
+// max_text_length, read in 1024-byte blocks, terminator required.
+inline Issue string_digest(const ReadOnlyMemory& memory, std::uint32_t address,
+                           std::uint32_t& length, Digest& digest) noexcept {
   std::array<std::uint8_t, 20> object{};
-  if (!rs::range(symbol.data, object.size()) ||
-      !memory.copy(symbol.data, object.data(), object.size()))
+  if (!rs::range(address, object.size()) || !memory.copy(address, object.data(), object.size()))
     return Issue::text_unreadable;
   const auto data = rs::u32(object.data() + 8);
-  const auto length = rs::u32(object.data() + 12);
+  length = rs::u32(object.data() + 12);
   if (length > script_fingerprint::max_text_length)
     return Issue::text_unreadable;
   Sha256 hash;
@@ -371,9 +372,34 @@ inline Issue anonymous_text(const Context& context, std::uint32_t index,
       position += count;
     }
   }
+  digest = hash.finish();
+  return Issue::none;
+}
+
+// Anonymous text constants are matched by content, never by their name:
+// the loaded parser names them differently than the compiled DAT.
+inline Issue anonymous_text(const Context& context, std::uint32_t index,
+                            script_fingerprint::Operand& operand) noexcept {
+  const auto& memory = *context.memory;
+  rs::Symbol symbol{};
+  if (rs::lookup(memory, *context.layout, index, symbol) != runtime_script::Issue::none)
+    return Issue::symbol_unreadable;
+  if (symbol.type != 3 || symbol.flags != 1 || symbol.elements != 1 || symbol.parent ||
+      symbol.name_length == 0)
+    return Issue::unknown_symbol;
+  std::uint8_t first = 0;
+  if (!memory.copy(symbol.name_data, &first, 1))
+    return Issue::name_unreadable;
+  if (first != 0xffu)
+    return Issue::unknown_symbol;
+  std::uint32_t length = 0;
+  Digest digest{};
+  const auto issue = string_digest(memory, symbol.data, length, digest);
+  if (issue != Issue::none)
+    return issue;
   operand.kind = script_fingerprint::OperandKind::text;
   operand.text_length = length;
-  operand.text_sha256 = hash.finish();
+  operand.text_sha256 = digest;
   return Issue::none;
 }
 
@@ -481,7 +507,8 @@ inline bool code_symbol(const rs::Symbol& symbol) noexcept {
   return symbol.type == 6 || ((symbol.type == 5 || symbol.type == 7) && (symbol.flags & 1u) != 0);
 }
 
-inline Issue check_data(const Workspace& workspace, const DataRecord& record) noexcept {
+inline Issue check_data(const ReadOnlyMemory& memory, const Workspace& workspace,
+                        const DataRecord& record) noexcept {
   auto issue = named(workspace, record.name);
   if (issue != Issue::none)
     return issue;
@@ -497,6 +524,17 @@ inline Issue check_data(const Workspace& workspace, const DataRecord& record) no
   if (record.check_value && (record.type != 2 || record.elements != 1 || record.flags != 1 ||
                              symbol.data != static_cast<std::uint32_t>(record.value)))
     return Issue::symbol_value;
+  if (record.check_text) {
+    if (record.type != 3 || record.elements != 1 || record.flags != 1)
+      return Issue::symbol_value;
+    std::uint32_t length = 0;
+    Digest digest{};
+    issue = string_digest(memory, symbol.data, length, digest);
+    if (issue != Issue::none)
+      return issue;
+    if (length != record.text_length || digest != record.text_sha256)
+      return Issue::symbol_value;
+  }
   return Issue::none;
 }
 
@@ -703,7 +741,7 @@ inline Relocation relocate(const ReadOnlyMemory& memory, std::uint32_t parser,
 
   const detail::Context context{&memory, &layout, &profile, &workspace, indexed, entries};
   for (std::size_t i = 0; i < profile.data_count; ++i)
-    workspace.data[i].issue = detail::check_data(workspace, profile.data[i]);
+    workspace.data[i].issue = detail::check_data(memory, workspace, profile.data[i]);
   for (std::size_t i = 0; i < profile.data_count; ++i)
     if (workspace.data[i].issue == Issue::none)
       workspace.data[i].live_index = workspace.names[profile.data[i].name].live_index;

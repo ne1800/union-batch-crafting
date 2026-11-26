@@ -666,6 +666,125 @@ void test_station_shares_and_lookups() {
     far[0].offset = 0xffffu;
     broken.texts = far.data();
     require(!sr::detail::valid_profile(broken), "text outside its function is rejected");
+    far[0].offset = profile.functions[potion_body].byte_length - 4u;
+    require(!sr::detail::valid_profile(broken),
+            "text instruction past the function end is rejected");
+    far[0].offset = profile.functions[potion_body].byte_length - 5u;
+    require(sr::detail::valid_profile(broken), "last five bytes of a function are allowed");
+    broken.texts = texts.data();
+    w.reference.functions()[potion_body].ignore_text = true;
+    require(!sr::detail::valid_profile(broken), "text carrier must bind its texts");
+    w.reference.functions()[potion_body].ignore_text = false;
+    require(sr::detail::valid_profile(broken), "restored text carrier is valid");
+  }
+}
+
+// Named string constants whose text a verifier reads are compared by length
+// and SHA-256 of their zSTRING text, bounded like anonymous texts.
+t::Script text_script(const std::string& done) {
+  t::Script s;
+  s.data("PRINT", 5, 8 | 1, 1);
+  s.text("UBC_DONE", done);
+  s.data("UBC_COUNT", 2, 1, 1, {}, 2);
+  {
+    t::Assembler a;
+    a.push_var("UBC_DONE").call_external("PRINT").ret();
+    s.function("RECIPE_DONE", a);
+  }
+  {
+    t::Assembler a;
+    a.push_var("UBC_COUNT").ret();
+    s.function("RECIPE_COUNT", a);
+  }
+  return s;
+}
+
+const std::vector<t::Recipe> text_recipes{{apple, {"RECIPE_DONE"}, {"UBC_DONE", "PRINT"}},
+                                          {potion, {"RECIPE_COUNT"}, {"UBC_COUNT"}}};
+
+void test_named_texts() {
+  const std::string done = "Gut gebraut";
+  const auto reference_script = text_script(done);
+  auto reference_build = t::build(reference_script);
+  t::Reference reference{reference_build, reference_script, text_recipes};
+  const auto profile = reference.profile();
+  const auto& record = reference.data()[reference.data_id("UBC_DONE")];
+  require(sr::detail::valid_profile(profile) && record.check_text &&
+              record.text_length == done.size() && !record.check_value,
+          "named text record carries length and digest");
+  require(relocate(reference_build, profile).result.identity, "named text keeps the identity");
+  {
+    auto live = t::build(text_script(done), shifted);
+    const auto run = relocate(live, profile);
+    require(run.result.valid && run.result.active == 2 && !run.result.identity,
+            "named text matches in a shifted image");
+  }
+  {
+    auto live = t::build(text_script("Gut gebrauT"));
+    require(relocate(live, profile).only_inactive(apple, Issue::symbol_value),
+            "changed named text rejects its recipe");
+  }
+  {
+    auto live = t::build(text_script("Gut gebraut!"));
+    require(relocate(live, profile).only_inactive(apple, Issue::symbol_value),
+            "longer named text rejects its recipe");
+  }
+  {
+    auto live = t::build(text_script(done));
+    const auto object = live.image.get(live.symbol_address(live.index.at("UBC_DONE")) + 0x18);
+    const auto text = live.image.get(object + 8);
+    live.image.bytes.at(text + done.size()) = '!';
+    require(relocate(live, profile).only_inactive(apple, Issue::text_unreadable),
+            "unterminated named text rejects its recipe");
+  }
+  {
+    auto live = t::build(text_script(done));
+    const auto object = live.image.get(live.symbol_address(live.index.at("UBC_DONE")) + 0x18);
+    live.image.deny(live.image.get(object + 8) + 3u, 1);
+    require(relocate(live, profile).only_inactive(apple, Issue::text_unreadable),
+            "unreadable named text rejects its recipe");
+    auto oversized = live.image.get(object + 0xc);
+    live.image.denied.clear();
+    live.image.put(object + 0xc, ubc::script_fingerprint::max_text_length + 1u);
+    require(relocate(live, profile).only_inactive(apple, Issue::text_unreadable),
+            "named text above the limit is not read");
+    live.image.put(object + 0xc, oversized);
+    require(relocate(live, profile).result.active == 2, "restored named text matches");
+  }
+  {
+    const std::string long_text(2500, 'x');
+    const auto long_script = text_script(long_text);
+    auto long_build = t::build(long_script);
+    t::Reference long_reference{long_build, long_script, text_recipes};
+    auto live = t::build(text_script(long_text), shifted);
+    require(relocate(live, long_reference.profile()).result.active == 2,
+            "named text across read blocks matches");
+    auto changed = t::build(text_script(long_text.substr(0, 2499) + "y"), shifted);
+    require(relocate(changed, long_reference.profile()).only_inactive(apple, Issue::symbol_value),
+            "last byte of a long named text counts");
+  }
+  {
+    auto unchecked = reference.data();
+    unchecked[reference.data_id("UBC_DONE")].check_text = false;
+    auto without = profile;
+    without.data = unchecked.data();
+    auto live = t::build(text_script("Gut gebrauT"));
+    require(relocate(live, without).result.active == 2,
+            "without check_text only the signature is compared");
+  }
+  {
+    auto broken = reference.data();
+    auto invalid = profile;
+    invalid.data = broken.data();
+    broken[reference.data_id("UBC_COUNT")].check_text = true;
+    require(!sr::detail::valid_profile(invalid), "text check on an integer is rejected");
+    broken[reference.data_id("UBC_COUNT")].check_text = false;
+    broken[reference.data_id("UBC_DONE")].check_value = true;
+    require(!sr::detail::valid_profile(invalid), "text check with a value check is rejected");
+    broken[reference.data_id("UBC_DONE")].check_value = false;
+    broken[reference.data_id("UBC_DONE")].text_length =
+        ubc::script_fingerprint::max_text_length + 1u;
+    require(!sr::detail::valid_profile(invalid), "text check above the limit is rejected");
   }
 }
 } // namespace
@@ -682,6 +801,7 @@ int main() {
   test_reads_and_layout();
   test_profile_checks();
   test_station_shares_and_lookups();
+  test_named_texts();
   std::printf("script relocation: %u checks, %u failures\n", checks, failures);
   return failures == 0 ? 0 : 1;
 }
