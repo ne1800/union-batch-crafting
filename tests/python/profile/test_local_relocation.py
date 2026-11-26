@@ -29,7 +29,7 @@ sys.path.insert(0, str(TOOLS))
 import catalog_literals  # noqa: E402
 import parser_image  # noqa: E402
 import script_profile  # noqa: E402
-from datfile import OP_PUSH_INT, DatFile  # noqa: E402
+from datfile import OP_PUSH_INT, STRING, SYMBOL_OPERANDS, DatFile  # noqa: E402
 
 BLOCK_ROUTES = ("tobacco", "dndr")
 BLOCK_ROLES = ("owner", "choice")
@@ -38,6 +38,10 @@ HEADERS = {
     "marcello": "marcello_204_fingerprints.hpp",
     "dndr": "dndr_26_fingerprints.hpp",
 }
+# Literals of the other campaign that match the reference by chance and are
+# ignored: DNdR contract bindings in Marcello; Marcello bow, grind and flask
+# bindings in DNdR.
+FOREIGN_MATCHES = {"marcello": 11, "dndr": 44}
 CXX = os.environ.get("CXX", "c++")
 
 
@@ -76,7 +80,11 @@ class Campaign:
             else {}
         )
         image = self.work / f"{self.name}-{label}-reads.img"
-        return parser_image.record(self.recorder, self.name, dat, image, names)
+        recipes = parser_image.record(self.recorder, self.name, dat, image, names)
+        outside = [hex(r["id"]) for r in recipes if r["outside"]]
+        if outside:
+            raise AssertionError(f"{label}: verifiers read outside the image {outside}")
+        return recipes
 
     def exact_rejects(self, dat: DatFile, label: str) -> set[int]:
         """Recipes the plugin's exact verifiers reject on dat."""
@@ -241,6 +249,68 @@ class Campaign:
                 return DatFile.parse(self._with_code(bytes(patched))), {symbol.index}
         raise AssertionError(f"{function}: no literal {external} argument")
 
+    def anonymous_text(self, instruction) -> bool:
+        symbols = self.dat.symbols
+        return (
+            instruction.opcode in SYMBOL_OPERANDS
+            and 0 <= instruction.operand < len(symbols)
+            and symbols[instruction.operand].anonymous
+            and symbols[instruction.operand].type == STRING
+        )
+
+    def text_user(self, consumer: str) -> tuple[int, int] | None:
+        """First verifier-read profile function that hands an anonymous text
+        to consumer (assigns it to that member or passes it to that external):
+        (function index, code offset of the text operand)."""
+        reads = script_profile.merged(
+            span for recipe in self.recipes for span in recipe["code"]
+        )
+        for record in sorted(self.profile.functions, key=lambda r: r["start"]):
+            start, end = record["start"], record["start"] + record["length"]
+            if not any(a < end and start < b for a, b in reads):
+                continue
+            code = self.dat.instructions(start, end)
+            for k, instruction in enumerate(code[:-1]):
+                follower = code[k + 1]
+                if (
+                    self.anonymous_text(instruction)
+                    and follower.opcode in SYMBOL_OPERANDS
+                    and 0 <= follower.operand < len(self.dat.symbols)
+                    and self.dat.symbols[follower.operand].name == consumer
+                ):
+                    return record["index"], instruction.offset
+        return None
+
+    def first_text(self, function: str) -> tuple[int, int] | None:
+        if function not in self.dat.by_name:
+            return None
+        symbol = self.dat[function]
+        start, end = self.dat.extent(symbol)
+        for instruction in self.dat.instructions(start, end):
+            if self.anonymous_text(instruction):
+                return symbol.index, instruction.offset
+        raise AssertionError(f"{function}: no anonymous text")
+
+    def text_swap_mutation(
+        self, place: tuple[int, int] | None
+    ) -> tuple[DatFile, set[int]] | None:
+        """Point one anonymous text operand to the next text with other content."""
+        if place is None:
+            return None
+        function, offset = place
+        symbols = self.dat.symbols
+        old = symbols[int.from_bytes(self.dat.code[offset + 1 : offset + 5], "little")]
+        new = next(
+            s
+            for s in symbols[old.index + 1 :]
+            if s.anonymous
+            and (s.type, s.flags, s.elements) == (old.type, old.flags, old.elements)
+            and s.content != old.content
+        )
+        patched = bytearray(self.dat.code)
+        patched[offset + 1 : offset + 5] = new.index.to_bytes(4, "little")
+        return DatFile.parse(self._with_code(bytes(patched))), {function}
+
     def text_mutation(self, constant: str) -> tuple[DatFile, set[int]] | None:
         """Change the last byte of a named string constant."""
         if constant not in self.dat.by_name:
@@ -339,12 +409,16 @@ class LocalRelocationTest(unittest.TestCase):
     def test_verifier_reads_are_covered(self):
         for campaign in self.campaigns():
             gaps = campaign.coverage_gaps()
+            summary = campaign.profile.summary
             print(
                 f"{campaign.name} coverage: {len(campaign.recipes)} recipes, "
-                f"{len(gaps)} gaps",
+                f"{len(gaps)} gaps, {summary['foreign_matches']} foreign literals "
+                "ignored",
                 file=sys.stderr,
             )
             self.assertEqual(gaps[:10], [])
+            self.assertEqual(summary["foreign_matches"], FOREIGN_MATCHES[campaign.name])
+            self.assertFalse(any(r["ignore_text"] for r in campaign.profile.functions))
 
     def test_review_mutations(self):
         tobacco = {
@@ -375,6 +449,32 @@ class LocalRelocationTest(unittest.TestCase):
                         self.assertEqual(rejected, set(range(0x9001, 0x9017)))
                     if label == "tobacco_text":
                         self.assertEqual(rejected, tobacco[campaign.name])
+
+    def test_anonymous_text_swaps(self):
+        """Every anonymous text operand of a profiled function is bound."""
+        named = {"marcello": "PC_FRYINGMEAT_ADDON", "dndr": "PC_BOOZE_START"}
+        consumers = ("C_ITEM.SCEMENAME", "C_ITEM.EFFECT", "C_ITEM.VISUAL")
+        consumers += ("WLD_STOPEFFECT", "PRINT")
+        for campaign in self.campaigns():
+            cases = [(named[campaign.name], campaign.first_text(named[campaign.name]))]
+            cases += [(c, campaign.text_user(c)) for c in consumers]
+            swapped = 0
+            for label, place in cases:
+                case = campaign.text_swap_mutation(place)
+                if case is None:
+                    continue
+                dat, mutated = case
+                name = campaign.dat.symbols[place[0]].name
+                with self.subTest(campaign=campaign.name, text=label, function=name):
+                    _, rejected, exact = self.parity(
+                        campaign, dat, f"text {label} in {name}", mutated
+                    )
+                    self.assertTrue(rejected)
+                    if label == named[campaign.name]:
+                        self.assertTrue(exact)
+                        self.assertEqual(rejected, exact)
+                swapped += 1
+            self.assertGreaterEqual(swapped, 3)
 
     def test_generator_reproduces_header(self):
         for name in HEADERS:
