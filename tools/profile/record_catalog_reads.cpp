@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Read-only recorder for tools/profile/generate-script-profile-WRITES.py.
 // Runs the plugin's own per-recipe verifiers against a parser image (see
-// tools/profile/parser_image.py) and prints, per recipe, every symbol slot
-// and code range they read together with the catalog items. The image holds
+// tools/profile/parser_image.py) and prints, per recipe, every symbol slot,
+// code range and heap range (zSTRING objects, texts, arrays) they read
+// together with the catalog items. The image holds
 // game data; this program only reads it and writes JSON to stdout.
 // Usage: record_catalog_reads <marcello|dndr> <image>
 #include "ubc/catalogs/crafting_catalog.hpp"
@@ -31,6 +32,7 @@ using ubc::lhiver::Function;
 
 constexpr std::uint32_t table_address = 0x20000000;
 constexpr std::uint32_t code_address = 0x25000000;
+constexpr std::uint32_t heap_address = 0x28000000;
 
 struct Region {
   std::uint32_t address = 0;
@@ -41,6 +43,7 @@ struct Recorder {
   std::vector<Region> regions;
   std::set<std::uint32_t> slots;
   std::map<std::uint32_t, std::uint32_t> code; // begin -> farthest end
+  std::map<std::uint32_t, std::uint32_t> heap; // absolute begin -> farthest end
   unsigned outside = 0;
 };
 
@@ -59,6 +62,10 @@ bool read(void*, std::uint32_t address, void* output, std::size_t size) noexcept
     if (region.address == code_address) {
       auto& end = recorder.code[offset];
       end = std::max<std::uint32_t>(end, static_cast<std::uint32_t>(offset + size));
+    }
+    if (region.address == heap_address && size) {
+      auto& end = recorder.heap[address];
+      end = std::max<std::uint32_t>(end, static_cast<std::uint32_t>(address + size));
     }
     return true;
   }
@@ -141,12 +148,19 @@ void finish(bool matches, const Own& own, const std::string& extra) {
     std::printf("%s[%u,%u]", first ? "" : ",", offset, end);
     first = false;
   }
+  std::printf("],\"heap\":[");
+  first = true;
+  for (const auto& [address, end] : recorder.heap) {
+    std::printf("%s[%u,%u]", first ? "" : ",", address, end);
+    first = false;
+  }
   std::printf("]}");
 }
 
 void reset() {
   recorder.slots.clear();
   recorder.code.clear();
+  recorder.heap.clear();
   recorder.outside = 0;
 }
 

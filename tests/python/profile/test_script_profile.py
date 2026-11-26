@@ -1,6 +1,7 @@
 """Profile generator over a synthetic script and the committed profile headers."""
 
 from pathlib import Path
+import dataclasses
 import re
 import struct
 import sys
@@ -57,7 +58,7 @@ class Script:
         return bytes(out + struct.pack("<I", len(self.code)) + self.code)
 
 
-def synthetic(text_bytes=b"Fertig gut"):
+def synthetic(text_bytes=b"Fertig gut", done_bytes=b"Gut gebraut"):
     s = Script()
     s.add("C_ITEM", CLASS, 0, 2, 0)
     s.add("C_ITEM.AMOUNT", INT, 4, 1, None, 0, 0x14)
@@ -82,6 +83,7 @@ def synthetic(text_bytes=b"Fertig gut"):
         word(61, s.symbols[say][4]) + word(61, s.symbols[helper][4]) + bytes((60,))
     )
     main = s.function("UBC_RECIPE", bytes(recipe))
+    done = s.add("UBC_DONE", STRING, 1, 1, [done_bytes])
     return s, {
         "item": item,
         "other": other,
@@ -89,6 +91,7 @@ def synthetic(text_bytes=b"Fertig gut"):
         "helper": helper,
         "recipe": main,
         "text": text,
+        "done": done,
     }
 
 
@@ -110,6 +113,24 @@ def recorded(dat, ids):
             "code": [[start, end]],
         }
     ]
+
+
+def reading(dat, recipe_id, station, route, own, functions, strings=()):
+    """Recorded reads of one recipe: whole functions and string texts."""
+    return {
+        "id": recipe_id,
+        "station": station,
+        "route": script_profile.ROUTES.index(route),
+        "targets": [],
+        "costs": [],
+        "outputs": [],
+        "own": [[role, index] for role, index in own],
+        "matches": True,
+        "outside": 0,
+        "slots": sorted(set(functions) | set(strings)),
+        "code": [list(dat.extent(dat.symbols[index])) for index in functions],
+        "strings": list(strings),
+    }
 
 
 CONFIG = {"title": "synthetic", "namespace": "synthetic", "parser": 0x00AB40C0}
@@ -224,6 +245,116 @@ class SyntheticProfileTest(unittest.TestCase):
         self.assertIn('{"UBC_K\\344SE", 5},', first)
         self.assertNotIn("Fertig", first)
         self.assertTrue(first.isascii())
+
+    def group_functions(self, profile, k, with_share=True):
+        group = profile.groups[k]
+        ids = group["functions"] + (
+            profile.stations[group["station"]]["functions"] if with_share else []
+        )
+        return {profile.functions[i]["index"] for i in ids}
+
+    def test_block_skips_only_owners_of_its_own_block(self):
+        ids, dat = self.ids, self.dat
+        recipes = [
+            reading(dat, 1, 1, "base", [("station_entry", ids["say"])], [ids["say"]]),
+            reading(
+                dat,
+                2,
+                1,
+                "tobacco",
+                [("owner", ids["recipe"])],
+                [ids["recipe"], ids["say"], ids["other"]],
+            ),
+            reading(dat, 3, 1, "tobacco", [("owner", ids["other"])], [ids["other"]]),
+        ]
+        profile = script_profile.Builder("synthetic", dat, recipes, ([], [])).build()
+        # The base recipe's station entry is no owner in the tobacco block.
+        self.assertIn(ids["say"], self.group_functions(profile, 1))
+        # The other tobacco recipe's owner is checked by that recipe only.
+        self.assertNotIn(ids["other"], self.group_functions(profile, 1))
+        self.assertIn(ids["other"], self.group_functions(profile, 2))
+
+    def test_split_and_partial_reads_record_the_function(self):
+        start, end = self.dat.extent(self.dat.symbols[self.ids["recipe"]])
+        middle = start + 20
+        for code in ([[middle, end], [start, middle]], [[middle, middle + 5]]):
+            recipes = recorded(self.dat, self.ids)
+            recipes[0]["code"] = code
+            builder = script_profile.Builder("synthetic", self.dat, recipes, ([], []))
+            self.assertIn(self.ids["recipe"], self.group_functions(builder.build(), 0))
+
+    def test_code_read_outside_the_groups_fails(self):
+        recipes = recorded(self.dat, self.ids)
+        recipes[0]["code"].append(
+            list(self.dat.extent(self.dat.symbols[self.ids["other"]]))
+        )
+        builder = script_profile.Builder("synthetic", self.dat, recipes, ([], []))
+        with self.assertRaisesRegex(script_profile.ProfileError, "outside every group"):
+            builder.build()  # ITMI_OTHER's slot was never read
+
+    def test_function_above_the_limit_is_refused(self):
+        script = Script()
+        big = script.function("UBC_BIG", bytes((60,)) * (64 * 1024 + 1))
+        builder = script_profile.Builder(
+            "synthetic", DatFile.parse(script.bytes()), [], ([], [])
+        )
+        with self.assertRaisesRegex(script_profile.ProfileError, "UBCF1 limit"):
+            builder.function(big)
+
+    def test_read_text_gets_a_text_record_for_its_reader(self):
+        import hashlib
+
+        ids, dat = self.ids, self.dat
+        recipes = [
+            reading(dat, 1, 0, "base", [], [ids["recipe"]], [ids["done"]]),
+            reading(dat, 2, 0, "base", [], [ids["say"]]),
+        ]
+        profile = script_profile.Builder("synthetic", dat, recipes, ([], [])).build()
+        records = [r for r in profile.data if r["index"] == ids["done"]]
+        self.assertEqual(
+            sorted(bool(r["text"]) for r in records), [False, True], "plain and text"
+        )
+        text_id = next(k for k, r in enumerate(profile.data) if r["text"])
+        self.assertEqual(
+            profile.data[text_id]["text"],
+            (11, hashlib.sha256(b"Gut gebraut").hexdigest()),
+        )
+        self.assertIn(text_id, profile.groups[0]["data"])
+        self.assertNotIn(text_id, profile.groups[1]["data"])
+        self.assertNotIn(text_id, profile.stations[0]["data"])
+        header = script_profile.render(profile, CONFIG)
+        self.assertIn(
+            f', true, 11, h("{hashlib.sha256(b"Gut gebraut").hexdigest()}")}}', header
+        )
+        self.assertNotIn("Gut gebraut", header)
+        script, ids = synthetic(done_bytes=b"Gut\xffgebraut")
+        dat = DatFile.parse(script.bytes())
+        recipes = [reading(dat, 1, 0, "base", [], [ids["recipe"]], [ids["done"]])]
+        with self.assertRaises(script_profile.ProfileError):
+            script_profile.Builder("synthetic", dat, recipes, ([], [])).build()
+
+    def test_literals_of_the_other_campaign_are_ignored(self):
+        [say], [text] = self.say_literals()
+        foreign = dataclasses.replace(say, source="include/ubc/catalogs/dndr_x.hpp")
+        profile = self.build(([foreign], []))
+        self.assertNotIn(
+            self.ids["say"], self.group_functions(profile, 0, with_share=True)
+        )
+        self.assertEqual(profile.anonymous_texts, [])
+        dndr = script_profile.Builder(
+            "dndr", self.dat, recorded(self.dat, self.ids), ([say], [text])
+        ).build()
+        self.assertEqual(dndr.anonymous_texts, [])
+
+    def test_unplaced_literal_fails(self):
+        [say], [text] = self.say_literals()
+        bow = "include/ubc/stations/bow/x.hpp"
+        for literals in (
+            ([], [dataclasses.replace(text, source=bow)]),
+            ([dataclasses.replace(say, source=bow)], []),
+        ):
+            with self.assertRaisesRegex(script_profile.ProfileError, "every station"):
+                self.build(literals)
 
     def test_unmatched_verifiers_fail(self):
         recipes = recorded(self.dat, self.ids)
