@@ -21,19 +21,27 @@ Group of a recipe ("medium" width):
 Every code byte a verifier reads must lie in a function of the group, of
 the station share or of that block exemption; otherwise the build fails.
 PUSH_INT operands count as symbol indices only in slots whose values are
-symbol indices throughout the script (stack consumer analysis).
+symbol indices throughout the script (stack consumer analysis). Every
+anonymous text operand of every function record enters its fingerprint with
+the length and SHA-256 of the text (no ignore_text); the relocation reads
+those texts through the live operand, since the loaded parser names
+anonymous symbols differently than the DAT. Constant INT and FLOAT scalars
+are compared by value (FLOAT as its raw 32-bit pattern).
 
 Catalog literals belong to one campaign: sources whose file name starts with
 dndr_ describe Night of the Raven, all others Marcello. A literal of the
-other campaign can match an index or name by chance and is ignored. A
-literal or text of the campaign that reaches no station with recipes is an
-error.
+other campaign can match an index or name by chance; it is ignored and
+counted in the summary (foreign_matches). A literal of the campaign that
+does not match the reference script, or that reaches no station with
+recipes, is an error, and so is a verifier read outside the parser image.
 """
 
 from __future__ import annotations
 
 import hashlib
+import math
 import re
+import struct
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 
@@ -42,6 +50,7 @@ from catalog_literals import BindingLiteral, FunctionLiteral
 from datfile import (
     CLASSVAR,
     EXTERNAL,
+    FLOAT,
     FUNC,
     INSTANCE,
     INT,
@@ -396,36 +405,52 @@ class Builder:
         )
 
     # --- catalog facts --------------------------------------------------
-    def matching_literals(self) -> tuple[list[FunctionLiteral], list[BindingLiteral]]:
+    def function_matches(self, literal: FunctionLiteral) -> bool:
         dat = self.dat
-        functions = []
-        for literal in self.function_literals:
-            if not campaign_source(self.campaign, literal.source):
-                continue
-            if (
-                literal.symbol >= len(dat.symbols)
-                or dat.symbols[literal.symbol].name != literal.name
-            ):
-                continue
-            body = dat.code[literal.start : literal.start + literal.length]
-            if hashlib.sha256(body).hexdigest() == literal.raw_sha256:
-                functions.append(literal)
-        bindings = []
-        for literal in self.binding_literals:
-            if not campaign_source(
-                self.campaign, literal.source
-            ) or literal.symbol >= len(dat.symbols):
-                continue
-            symbol = dat.symbols[literal.symbol]
-            same_name = symbol.name == literal.name or (
-                symbol.anonymous and literal.name.startswith("\xff")
+        if (
+            literal.symbol >= len(dat.symbols)
+            or dat.symbols[literal.symbol].name != literal.name
+        ):
+            return False
+        body = dat.code[literal.start : literal.start + literal.length]
+        return hashlib.sha256(body).hexdigest() == literal.raw_sha256
+
+    def binding_matches(self, literal: BindingLiteral) -> bool:
+        if literal.symbol >= len(self.dat.symbols):
+            return False
+        symbol = self.dat.symbols[literal.symbol]
+        same_name = symbol.name == literal.name or (
+            symbol.anonymous and literal.name.startswith("\xff")
+        )
+        return same_name and (symbol.type, symbol.flags, symbol.elements) == (
+            literal.type,
+            literal.flags,
+            literal.elements,
+        )
+
+    def matching_literals(self) -> tuple[list[FunctionLiteral], list[BindingLiteral]]:
+        """Literals of this campaign; each must match the reference script.
+        Literals of the other campaign that match by chance are counted in
+        self.foreign_matches and ignored."""
+        functions, bindings, unmatched = [], [], []
+        self.foreign_matches = 0
+        for literals, matches, out in (
+            (self.function_literals, self.function_matches, functions),
+            (self.binding_literals, self.binding_matches, bindings),
+        ):
+            for literal in literals:
+                matched = matches(literal)
+                if not campaign_source(self.campaign, literal.source):
+                    self.foreign_matches += matched
+                elif matched:
+                    out.append(literal)
+                else:
+                    unmatched.append(f"{literal.source}: {literal.name!r}")
+        if unmatched:
+            raise ProfileError(
+                f"{len(unmatched)} catalog literals do not match the reference "
+                f"script: {unmatched[:3]}"
             )
-            if same_name and (symbol.type, symbol.flags, symbol.elements) == (
-                literal.type,
-                literal.flags,
-                literal.elements,
-            ):
-                bindings.append(literal)
         return functions, bindings
 
     def source_stations(self, source: str) -> set[int]:
@@ -461,6 +486,11 @@ class Builder:
         recipes = self.recipes
         if not recipes or not all(recipe["matches"] for recipe in recipes):
             raise ProfileError("the plugin verifiers do not match the reference script")
+        outside = [f"{r['id']:#x}" for r in recipes if r.get("outside", 0)]
+        if outside:
+            raise ProfileError(
+                f"verifiers read outside the parser image: {outside[:5]}"
+            )
         block_owned: dict[tuple[int, int], set[int]] = defaultdict(set)
         for recipe in recipes:
             key = block_key(recipe)
@@ -687,6 +717,15 @@ class Builder:
         if gaps:
             raise ProfileError(f"verifier code reads outside every group: {gaps[:5]}")
 
+    def scalar_bits(self, symbol: Symbol) -> int:
+        """Value of a constant INT, or the raw 32-bit pattern of a FLOAT."""
+        value = symbol.content[0]
+        if symbol.type == INT:
+            return value
+        if math.isnan(value):
+            raise ProfileError(f"{symbol.name}: NaN constant")
+        return struct.unpack("<i", struct.pack("<f", value))[0]
+
     def text_record(self, index: int) -> tuple[int, str]:
         """Length and SHA-256 of a named string constant a verifier reads."""
         symbol = self.dat.symbols[index]
@@ -797,17 +836,15 @@ class Builder:
                 symbol.offset if symbol.type == FUNC else 0,
                 dat.parent_name(symbol),
             )
-            ignore = index not in text_functions
-            texts = SymbolNames(dat, not ignore)
             result = fp.fingerprint(
                 dat.code,
                 symbol.address,
                 length,
                 header,
-                texts,
+                SymbolNames(dat),
                 EntryNames(dat),
                 facts.symbolic,
-                ignore,
+                False,
             )
             functions.append(
                 {
@@ -823,7 +860,7 @@ class Builder:
                     "return_type": header.return_type,
                     "parent": name_id[symbol.parent] if symbol.parent >= 0 else None,
                     "symbolic": facts.symbolic,
-                    "ignore_text": ignore,
+                    "ignore_text": False,
                 }
             )
         function_id = {record["index"]: k for k, record in enumerate(functions)}
@@ -848,13 +885,13 @@ class Builder:
             checks = binding_checks.get(index, {})
             check_offset = bool(symbol.flags & CLASSVAR) or "offset" in checks
             scalar = (
-                symbol.type == INT
+                symbol.type in (INT, FLOAT)
                 and symbol.flags == 1
                 and symbol.elements == 1
                 and isinstance(symbol.content, list)
             )
             check_value = scalar or "value" in checks
-            value = symbol.content[0] if scalar else checks.get("value", 0)
+            value = self.scalar_bits(symbol) if scalar else checks.get("value", 0)
             text = self.text_record(index) if read_text else None
             if "value" in checks and checks["value"] != value:
                 raise ProfileError(
@@ -942,6 +979,10 @@ class Builder:
             "catalog_functions": len({f.symbol for f in literal_functions}),
             "catalog_bindings": len({b.symbol for b in literal_bindings}),
             "text_checks": sum(1 for r in data if r["text"]),
+            "float_checks": sum(
+                1 for r in data if r["check_value"] and r["type"] == FLOAT
+            ),
+            "foreign_matches": self.foreign_matches,
         }
         return Profile(
             self.campaign,

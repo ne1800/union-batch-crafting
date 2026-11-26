@@ -13,7 +13,7 @@ import catalog_literals  # noqa: E402
 import fingerprint  # noqa: E402
 import script_profile  # noqa: E402
 from catalog_literals import BindingLiteral, FunctionLiteral  # noqa: E402
-from datfile import CLASS, FUNC, INSTANCE, INT, STRING, DatFile  # noqa: E402
+from datfile import CLASS, FLOAT, FUNC, INSTANCE, INT, STRING, DatFile  # noqa: E402
 
 GENERATED = ROOT / "include/ubc/catalogs/generated"
 HEADERS = ("marcello_204_fingerprints.hpp", "dndr_26_fingerprints.hpp")
@@ -50,6 +50,8 @@ class Script:
             )
             if kind == INT and not flags & 4:
                 out += struct.pack(f"<{elements}i", *content)
+            elif kind == FLOAT:
+                out += struct.pack(f"<{elements}f", *content)
             elif kind == STRING:
                 out += b"".join(text + b"\n" for text in content)
             elif kind in (CLASS, FUNC, 6, INSTANCE):
@@ -84,6 +86,7 @@ def synthetic(text_bytes=b"Fertig gut", done_bytes=b"Gut gebraut"):
     )
     main = s.function("UBC_RECIPE", bytes(recipe))
     done = s.add("UBC_DONE", STRING, 1, 1, [done_bytes])
+    speed = s.add("UBC_SPEED", FLOAT, 1, 1, [1.5])
     return s, {
         "item": item,
         "other": other,
@@ -92,6 +95,7 @@ def synthetic(text_bytes=b"Fertig gut", done_bytes=b"Gut gebraut"):
         "recipe": main,
         "text": text,
         "done": done,
+        "speed": speed,
     }
 
 
@@ -176,7 +180,7 @@ class SyntheticProfileTest(unittest.TestCase):
         profile = self.build()
         record = next(r for r in profile.functions if r["index"] == self.ids["recipe"])
         self.assertEqual(record["symbolic"], [5, 25, 45])
-        self.assertTrue(record["ignore_text"])
+        self.assertFalse(record["ignore_text"])
 
     def test_group_hull_records_and_digests(self):
         profile = self.build()
@@ -234,7 +238,6 @@ class SyntheticProfileTest(unittest.TestCase):
         script, ids = synthetic(b"Fertig\xffgut")
         self.ids, self.dat = ids, DatFile.parse(script.bytes())
         self.assertEqual(self.dat.symbols[ids["text"]].content, [b"Fertig\xffgut"])
-        self.build()  # unbound text: only its kind enters the digest
         with self.assertRaises(script_profile.ProfileError):
             self.build(self.say_literals())
 
@@ -355,6 +358,39 @@ class SyntheticProfileTest(unittest.TestCase):
         ):
             with self.assertRaisesRegex(script_profile.ProfileError, "every station"):
                 self.build(literals)
+
+    def test_float_constant_compares_its_bits(self):
+        ids, dat = self.ids, self.dat
+        recipes = [reading(dat, 1, 0, "base", [], [ids["recipe"]])]
+        recipes[0]["slots"].append(ids["speed"])
+        profile = script_profile.Builder("synthetic", dat, recipes, ([], [])).build()
+        speed = next(r for r in profile.data if r["index"] == ids["speed"])
+        self.assertTrue(speed["check_value"])
+        self.assertEqual(speed["value"], struct.unpack("<i", struct.pack("<f", 1.5))[0])
+        self.assertEqual(profile.summary["float_checks"], 1)
+
+    def test_read_outside_the_image_fails(self):
+        recipes = recorded(self.dat, self.ids)
+        recipes[0]["outside"] = 1
+        builder = script_profile.Builder("synthetic", self.dat, recipes, ([], []))
+        with self.assertRaisesRegex(script_profile.ProfileError, "outside the parser"):
+            builder.build()
+
+    def test_foreign_matches_are_counted_and_own_mismatches_fail(self):
+        [say], [text] = self.say_literals()
+        foreign = dataclasses.replace(say, source="include/ubc/catalogs/dndr_x.hpp")
+        self.assertEqual(self.build(([foreign], [])).summary["foreign_matches"], 1)
+        wrong = dataclasses.replace(say, raw_sha256="0" * 64)
+        with self.assertRaisesRegex(script_profile.ProfileError, "do not match"):
+            self.build(([wrong], []))
+        renamed = dataclasses.replace(text, type=INT)
+        with self.assertRaisesRegex(script_profile.ProfileError, "do not match"):
+            self.build(([], [renamed]))
+
+    def test_every_function_binds_its_texts(self):
+        profile = self.build()
+        self.assertTrue(profile.functions)
+        self.assertFalse(any(r["ignore_text"] for r in profile.functions))
 
     def test_unmatched_verifiers_fail(self):
         recipes = recorded(self.dat, self.ids)
