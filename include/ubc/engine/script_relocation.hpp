@@ -48,8 +48,10 @@ struct FunctionRecord {
   bool ignore_text = false;
 };
 
-// check_text compares the text of a constant string (type 3, flags 1, one
-// element) by length and SHA-256, for constants whose text a verifier reads.
+// check_value compares a constant scalar (flags 1, one element): an INT
+// (type 2) by value, a FLOAT (type 1) by its raw 32-bit pattern. check_text
+// compares the text of a constant string (type 3, flags 1, one element) by
+// length and SHA-256, for constants whose text a verifier reads.
 struct DataRecord {
   std::uint32_t name;
   std::uint32_t type;
@@ -521,8 +523,9 @@ inline Issue check_data(const ReadOnlyMemory& memory, const Workspace& workspace
     return issue;
   if (record.check_offset && symbol.offset != static_cast<std::uint32_t>(record.offset))
     return Issue::symbol_signature;
-  if (record.check_value && (record.type != 2 || record.elements != 1 || record.flags != 1 ||
-                             symbol.data != static_cast<std::uint32_t>(record.value)))
+  if (record.check_value &&
+      ((record.type != 1 && record.type != 2) || record.elements != 1 || record.flags != 1 ||
+       symbol.data != static_cast<std::uint32_t>(record.value)))
     return Issue::symbol_value;
   if (record.check_text) {
     if (record.type != 3 || record.elements != 1 || record.flags != 1)
