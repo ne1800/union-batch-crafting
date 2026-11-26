@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 #include "../helpers/parser_image.hpp"
 #include "ubc/engine/script_relocation.hpp"
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <string>
@@ -545,6 +546,128 @@ void test_profile_checks() {
               "duplicate_name",
           "relocation issues have names");
 }
+
+// Station shares gate every recipe of a station, the permutation replaces
+// the linear lookup and anonymous texts resolve by position.
+void test_station_shares_and_lookups() {
+  World w;
+  const auto base = w.reference.profile();
+  const std::uint32_t say = w.reference.function_id("B_SAY");
+  const std::uint32_t potion_body = w.reference.function_id("RECIPE_POTION");
+  const std::vector<std::uint32_t> share_functions{say};
+  const std::vector<sr::StationShare> stations{{4, share_functions.data(), 1, nullptr, 0}};
+  std::vector<sr::RecipeGroup> groups(base.groups, base.groups + base.group_count);
+  groups[0].station = 0; // apple
+  groups[1].station = 0; // potion
+  std::vector<std::uint32_t> by_reference(base.name_count);
+  for (std::uint32_t i = 0; i < base.name_count; ++i)
+    by_reference[i] = i;
+  std::sort(by_reference.begin(), by_reference.end(), [&base](std::uint32_t l, std::uint32_t r) {
+    return base.names[l].reference_index < base.names[r].reference_index;
+  });
+  // RECIPE_POTION pushes its text after three PUSH_INT, ADD and CALL_EXTERNAL.
+  const std::uint32_t text_offset = 3u * 5u + 1u + 5u;
+  const auto text_index = [&](const t::Built& built) {
+    for (const auto& text : built.texts)
+      if (text.second == "Trank fertig")
+        return text.first;
+    return 0u;
+  };
+  const std::vector<sr::AnonymousText> texts{
+      {text_index(w.reference_build), potion_body, text_offset}};
+  auto profile = base;
+  profile.groups = groups.data();
+  profile.by_reference = by_reference.data();
+  profile.stations = stations.data();
+  profile.station_count = stations.size();
+  profile.texts = texts.data();
+  profile.text_count = texts.size();
+  require(sr::detail::valid_profile(profile), "profile with station shares is valid");
+
+  auto run = relocate(w.reference_build, profile);
+  require(run.result.identity && run.result.active == 3, "station shares keep the identity");
+  std::uint32_t live = 0;
+  require(sr::live_text(w.reference_build.memory(), run.result, profile, run.storage.workspace(),
+                        texts[0].reference_index, live) &&
+              live == texts[0].reference_index,
+          "identity text resolves to itself");
+
+  auto moved = t::build(script(), shifted);
+  run = relocate(moved, profile);
+  require(run.result.valid && run.result.active == 3, "shifted image keeps station recipes");
+  require(sr::live_symbol(profile, run.storage.workspace(),
+                          w.reference_build.index.at("ITMI_FLASK"), live) &&
+              live == moved.index.at("ITMI_FLASK"),
+          "permutation translates a reference index");
+  require(!sr::live_symbol(profile, run.storage.workspace(), 0xfffffff0u, live),
+          "permutation rejects an unknown index");
+  require(sr::live_text(moved.memory(), run.result, profile, run.storage.workspace(),
+                        texts[0].reference_index, live) &&
+              live == text_index(moved) && live != texts[0].reference_index,
+          "text resolves by position in the shifted image");
+  require(!sr::live_text(moved.memory(), run.result, profile, run.storage.workspace(),
+                         texts[0].reference_index + 1u, live),
+          "unlisted text is rejected");
+
+  {
+    Options o;
+    o.apple_unknown_callee = true;
+    auto live_build = t::build(script(o), shifted);
+    const auto changed = relocate(live_build, profile);
+    require(changed.result.valid && changed.result.active == 2 && !changed.recipe(apple).active &&
+                changed.recipe(potion).active,
+            "recipe share failure stays in its recipe");
+    require(!changed.recipe(apple).station, "recipe share failure is not a station failure");
+  }
+  {
+    Options o;
+    o.potion_text = "Potion ready";
+    auto live_build = t::build(script(o), shifted);
+    auto changed = relocate(live_build, profile);
+    require(!changed.recipe(potion).active &&
+                !sr::live_text(live_build.memory(), changed.result, profile,
+                               changed.storage.workspace(), texts[0].reference_index, live),
+            "changed text blocks its recipe and its lookup");
+  }
+  {
+    auto changed_share = share_functions;
+    changed_share[0] = w.reference.function_id("RECIPE_HELPER");
+    const std::vector<sr::StationShare> helper{{4, changed_share.data(), 1, nullptr, 0}};
+    auto with_helper = profile;
+    with_helper.stations = helper.data();
+    Options o;
+    o.constant = 4; // RECIPE_HELPER is unchanged; UBC_AMOUNT is apple data.
+    auto live_build = t::build(script(o));
+    const auto changed = relocate(live_build, with_helper);
+    require(changed.only_inactive(apple, Issue::symbol_value), "share is checked with recipes");
+  }
+  {
+    Options o;
+    o.flask_jump_inside = true;
+    std::vector<std::uint32_t> flask_share{w.reference.function_id("RECIPE_FLASK")};
+    const std::vector<sr::StationShare> flask_station{{4, flask_share.data(), 1, nullptr, 0}};
+    auto with_flask = profile;
+    with_flask.stations = flask_station.data();
+    auto live_build = t::build(script(o));
+    const auto changed = relocate(live_build, with_flask);
+    require(changed.result.valid && changed.result.active == 0 && changed.recipe(apple).station &&
+                changed.recipe(potion).station && !changed.recipe(flask).station,
+            "failing station share blocks the whole station");
+  }
+  {
+    auto broken = profile;
+    std::swap(by_reference[0], by_reference[1]);
+    require(!sr::detail::valid_profile(broken), "unsorted permutation is rejected");
+    std::swap(by_reference[0], by_reference[1]);
+    groups[2].station = 1;
+    require(!sr::detail::valid_profile(broken), "unknown station share is rejected");
+    groups[2].station = sr::no_name;
+    auto far = texts;
+    far[0].offset = 0xffffu;
+    broken.texts = far.data();
+    require(!sr::detail::valid_profile(broken), "text outside its function is rejected");
+  }
+}
 } // namespace
 
 int main() {
@@ -558,6 +681,7 @@ int main() {
   test_long_texts();
   test_reads_and_layout();
   test_profile_checks();
+  test_station_shares_and_lookups();
   std::printf("script relocation: %u checks, %u failures\n", checks, failures);
   return failures == 0 ? 0 : 1;
 }
