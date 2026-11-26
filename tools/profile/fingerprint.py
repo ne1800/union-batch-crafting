@@ -150,7 +150,11 @@ def fingerprint(
 
     symbols maps a symbol index to its name or to the Text of an anonymous
     string constant; entries maps a code offset to the function whose entry
-    is exactly there. Raises FingerprintError with the C++ issue name.
+    is exactly there. As in the native relocation, constant FUNC and
+    INSTANCE symbols and every PROTOTYPE (compiled prototypes carry no
+    constant flag) own an entry unless they are class members or externals;
+    an offset claimed twice belongs to no callee.
+    Raises FingerprintError with the C++ issue name.
     """
     listed = list(symbolic_ints)
     if not _bytes(header.name) or any(

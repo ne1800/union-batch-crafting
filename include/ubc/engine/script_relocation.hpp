@@ -206,9 +206,12 @@ inline bool valid_profile(const ReferenceProfile& profile) noexcept {
     if (!known(profile.data[i].name, false) || !known(profile.data[i].parent, true))
       return false;
   }
+  // A recipe is active only on proven code: every group needs a function.
+  if (profile.group_count == 0)
+    return false;
   for (std::size_t i = 0; i < profile.group_count; ++i) {
     const auto& group = profile.groups[i];
-    if ((group.function_count && !group.functions) || (group.data_count && !group.data))
+    if (group.function_count == 0 || !group.functions || (group.data_count && !group.data))
       return false;
     for (std::size_t j = 0; j < group.function_count; ++j)
       if (group.functions[j] >= profile.function_count)
@@ -400,8 +403,15 @@ inline Issue scan(const ReadOnlyMemory& memory, const rs::Layout& layout,
   return Issue::none;
 }
 
+// Constant FUNC and INSTANCE symbols and every PROTOTYPE own a code entry;
+// compiled prototypes carry no constant flag. Class members (classvar),
+// externals and variables such as SELF also carry type 5..7, but their data
+// is no code offset; counting them would mark a real entry at the same offset
+// as ambiguous.
 inline bool code_symbol(const rs::Symbol& symbol) noexcept {
-  return symbol.type >= 5 && symbol.type <= 7 && (symbol.flags & 8u) == 0;
+  if ((symbol.flags & (4u | 8u)) != 0)
+    return false;
+  return symbol.type == 6 || ((symbol.type == 5 || symbol.type == 7) && (symbol.flags & 1u) != 0);
 }
 
 inline Issue check_data(const Workspace& workspace, const DataRecord& record) noexcept {
