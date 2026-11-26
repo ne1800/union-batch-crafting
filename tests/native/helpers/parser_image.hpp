@@ -150,6 +150,9 @@ struct ScriptSymbol {
   std::int32_t value = 0;
   bool function = false;
   Assembler body;
+  // Named string constant (type 3, flags 1) with its zSTRING text.
+  bool text_constant = false;
+  std::string text;
 };
 
 struct Script {
@@ -168,6 +171,12 @@ struct Script {
     symbol.offset = offset;
     symbols.push_back(symbol);
     return symbols.back();
+  }
+  ScriptSymbol& text(const std::string& name, const std::string& content) {
+    auto& symbol = data(name, 3, 1);
+    symbol.text_constant = true;
+    symbol.text = content;
+    return symbol;
   }
   ScriptSymbol& function(const std::string& name, const Assembler& body, std::uint32_t type = 5,
                          std::uint32_t flags = 1, std::uint32_t argc = 0,
@@ -236,7 +245,7 @@ inline Built build(const Script& script, const Layout& layout = {}) {
     if (i == layout.shift_at)
       for (std::uint32_t k = 0; k < layout.symbol_shift; ++k)
         order.push_back({"UBC_FILLER_" + std::to_string(k), nullptr, {}});
-    order.push_back({script.symbols[i].name, &script.symbols[i], {}});
+    order.push_back({script.symbols[i].name, &script.symbols[i], script.symbols[i].text});
   }
   // Anonymous texts follow the named symbols, one per occurrence.
   std::map<std::pair<std::string, std::uint32_t>, std::uint32_t> text_symbols;
@@ -358,8 +367,17 @@ inline Built build(const Script& script, const Layout& layout = {}) {
       continue;
     }
     const auto& model = *entry.model;
-    image.put(symbol + 0x18,
-              model.function ? built.start[model.name] : static_cast<std::uint32_t>(model.value));
+    if (model.text_constant) {
+      const auto object = strings + i * 0x20u;
+      image.put(symbol + 0x18, object);
+      image.put(object + 8, text_cursor);
+      image.put(object + 0xc, static_cast<std::uint32_t>(entry.text.size()));
+      std::memcpy(image.bytes.data() + text_cursor, entry.text.c_str(), entry.text.size() + 1);
+      text_cursor += align(static_cast<std::uint32_t>(entry.text.size()) + 1u, 4);
+    } else {
+      image.put(symbol + 0x18,
+                model.function ? built.start[model.name] : static_cast<std::uint32_t>(model.value));
+    }
     image.put(symbol + 0x1c, model.offset);
     image.put(symbol + 0x20, metadata(model.elements, model.type, model.flags));
     if (!model.parent.empty()) {
@@ -413,6 +431,13 @@ public:
         record.offset = static_cast<std::int32_t>(symbol.offset);
         record.check_value = symbol.type == 2 && symbol.flags == 1 && symbol.elements == 1;
         record.value = symbol.value;
+        if (symbol.text_constant) {
+          Sha256 hash;
+          hash.update(symbol.text.data(), symbol.text.size());
+          record.check_text = true;
+          record.text_length = static_cast<std::uint32_t>(symbol.text.size());
+          record.text_sha256 = hash.finish();
+        }
         data_.push_back(record);
       }
     }
@@ -475,6 +500,13 @@ public:
     model_error("unknown function record", text);
   }
   std::vector<script_relocation::FunctionRecord>& functions() { return functions_; }
+  std::vector<script_relocation::DataRecord>& data() { return data_; }
+  std::uint32_t data_id(const std::string& text) const {
+    for (std::size_t i = 0; i < data_.size(); ++i)
+      if (texts_[data_[i].name] == text)
+        return static_cast<std::uint32_t>(i);
+    model_error("unknown data record", text);
+  }
   std::vector<script_relocation::Name>& names() { return names_; }
 
 private:
