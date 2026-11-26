@@ -429,7 +429,8 @@ public:
                                              symbol.elements, parent(symbol.parent)};
         record.check_offset = (symbol.flags & 4u) != 0;
         record.offset = static_cast<std::int32_t>(symbol.offset);
-        record.check_value = symbol.type == 2 && symbol.flags == 1 && symbol.elements == 1;
+        record.check_value =
+            (symbol.type == 1 || symbol.type == 2) && symbol.flags == 1 && symbol.elements == 1;
         record.value = symbol.value;
         if (symbol.text_constant) {
           Sha256 hash;

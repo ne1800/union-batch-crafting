@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <utility>
 #include <vector>
@@ -787,6 +788,59 @@ void test_named_texts() {
     require(!sr::detail::valid_profile(invalid), "text check above the limit is rejected");
   }
 }
+// Constant FLOAT scalars are compared by their raw 32-bit pattern.
+std::int32_t float_bits(float value) {
+  std::int32_t bits = 0;
+  std::memcpy(&bits, &value, sizeof bits);
+  return bits;
+}
+
+t::Script float_script(float speed) {
+  t::Script s;
+  s.data("UBC_SPEED", 1, 1, 1, {}, float_bits(speed));
+  s.data("UBC_COUNT", 2, 1, 1, {}, 2);
+  {
+    t::Assembler a;
+    a.push_var("UBC_SPEED").ret();
+    s.function("RECIPE_FAST", a);
+  }
+  {
+    t::Assembler a;
+    a.push_var("UBC_COUNT").ret();
+    s.function("RECIPE_COUNT", a);
+  }
+  return s;
+}
+
+void test_float_constants() {
+  const std::vector<t::Recipe> float_recipes{{apple, {"RECIPE_FAST"}, {"UBC_SPEED"}},
+                                             {potion, {"RECIPE_COUNT"}, {"UBC_COUNT"}}};
+  const auto reference_script = float_script(1.5f);
+  auto reference_build = t::build(reference_script);
+  t::Reference reference{reference_build, reference_script, float_recipes};
+  const auto profile = reference.profile();
+  const auto& record = reference.data()[reference.data_id("UBC_SPEED")];
+  require(record.check_value && record.value == float_bits(1.5f),
+          "float record carries its raw pattern");
+  require(relocate(reference_build, profile).result.identity, "float constant keeps the identity");
+  {
+    auto live = t::build(float_script(1.5f), shifted);
+    require(relocate(live, profile).result.active == 2, "float constant matches when shifted");
+  }
+  {
+    auto live = t::build(float_script(1.75f), shifted);
+    require(relocate(live, profile).only_inactive(apple, Issue::symbol_value),
+            "changed float constant rejects its recipe");
+  }
+  {
+    const auto zero_script = float_script(0.0f);
+    auto zero_build = t::build(zero_script);
+    t::Reference zero{zero_build, zero_script, float_recipes};
+    auto live = t::build(float_script(-0.0f));
+    require(relocate(live, zero.profile()).only_inactive(apple, Issue::symbol_value),
+            "float constants compare bits, not numeric equality");
+  }
+}
 } // namespace
 
 int main() {
@@ -802,6 +856,7 @@ int main() {
   test_profile_checks();
   test_station_shares_and_lookups();
   test_named_texts();
+  test_float_constants();
   std::printf("script relocation: %u checks, %u failures\n", checks, failures);
   return failures == 0 ? 0 : 1;
 }
