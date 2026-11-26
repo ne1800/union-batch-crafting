@@ -6,6 +6,7 @@
   "package:probe-WRITES",
   "package:verify-workshop",
   "package:workshop-WRITES",
+  "profile:generate-WRITES",
   "release:prepare-WRITES",
   "setup:windows-WRITES",
   "test:core",
