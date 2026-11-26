@@ -34,6 +34,7 @@ struct Options {
   bool duplicate_flask = false;
   bool rename_learned = false;
   std::uint32_t flask_argc = 0;
+  std::uint32_t value_offset = 0x10;
   std::string apple_parent = "C_ITEM";
 };
 
@@ -43,7 +44,7 @@ struct Options {
 t::Script script(const Options& o = {}) {
   t::Script s;
   s.data("C_ITEM", 4, 0, 2, {}, 0, 0x120);
-  s.data("C_ITEM.VALUE", 2, 4, 1, "C_ITEM", 0, 0x10);
+  s.data("C_ITEM.VALUE", 2, 4, 1, "C_ITEM", 0, o.value_offset);
   s.data("C_OTHER", 4, 0, 1, {}, 0, 0x40);
   s.data("CREATEINVITEMS", 5, 8 | 1, 3);
   s.data("PRINT", 5, 8 | 1, 1);
@@ -253,6 +254,15 @@ void test_recipe_changes() {
     require(relocate(live, profile).only_inactive(apple, Issue::symbol_parent),
             "changed parent rejects its recipe");
   }
+  {
+    Options o;
+    o.value_offset = 0x14;
+    auto live = t::build(script(o), shifted);
+    const auto run = relocate(live, profile);
+    require(run.only_inactive(flask, Issue::symbol_signature) &&
+                run.recipe(flask).kind == sr::RecordKind::data,
+            "changed member offset rejects its recipe");
+  }
 }
 
 void test_invalid_code() {
@@ -284,6 +294,16 @@ void test_invalid_code() {
     require(relocate(live, profile).only_inactive(apple, Issue::unknown_callee),
             "call to an unknown entry is rejected");
   }
+  {
+    auto live = t::build(script(), shifted);
+    const auto helper = live.symbol_address(live.index.at("RECIPE_HELPER"));
+    live.image.put(helper + 0x18, live.code_length - 1u);
+    const auto run = relocate(live, profile);
+    require(run.result.valid && !run.recipe(flask).active &&
+                run.storage.functions[w.reference.function_id("RECIPE_HELPER")].issue ==
+                    Issue::function_range,
+            "function past the code end is rejected");
+  }
 }
 
 void test_names() {
@@ -312,6 +332,120 @@ void test_names() {
     require(run.only_inactive(flask, Issue::unknown_symbol),
             "missing name rejects only its recipe");
     require(run.result.names_missing == 1, "missing name is counted");
+  }
+  {
+    auto live = t::build(script(), shifted);
+    const auto text = live.texts.rbegin()->first; // the potion text is the last one
+    live.image.bytes.at(live.image.get(live.symbol_address(text) + 8)) = 'X';
+    require(relocate(live, profile).only_inactive(potion, Issue::unknown_symbol),
+            "named string constant is no anonymous text");
+  }
+}
+
+// Class members, externals and variables of type 5..7 carry data 0 like the
+// function at code offset 0; only constant code symbols own an entry.
+t::Script entry_script(bool alias) {
+  t::Script s;
+  s.data("C_INFO", 4, 0, 2, {}, 0, 0x20);
+  s.data("C_NPC", 4, 0, 1, {}, 0, 0x40);
+  s.data("C_INFO.INFORMATION", 5, 4, 1, "C_INFO", 0, 0x10); // var func member
+  s.data("C_INFO.CONDITION", 5, 1 | 4, 1, "C_INFO", 0, 0x14);
+  s.data("SELF", 7, 0, 0, "C_NPC");
+  s.data("PRINT", 5, 8 | 1, 1);
+  if (alias)
+    s.data("B_ALIAS", 5, 1, 0); // a second constant entry at offset 0
+  {
+    t::Assembler a;
+    a.push_text("Hilfe").call_external("PRINT").ret();
+    s.function("B_HELPER", a);
+  }
+  {
+    t::Assembler a;
+    a.push_var("C_INFO.INFORMATION").push_var("SELF").call("B_HELPER").ret();
+    s.function("RECIPE_X", a);
+  }
+  // Compiled prototypes carry no constant flag; an instance calls its
+  // prototype first, so the prototype must still own its entry.
+  {
+    t::Assembler a;
+    a.ret();
+    s.function("PROTO_X", a, 6, 0, 0, "C_INFO");
+  }
+  {
+    t::Assembler a;
+    a.call("PROTO_X").ret();
+    s.function("INST_X", a, 7, 1, 0, "PROTO_X");
+  }
+  return s;
+}
+
+void test_code_entries() {
+  const std::vector<t::Recipe> entry_recipes{{apple,
+                                              {"RECIPE_X", "B_HELPER", "INST_X"},
+                                              {"C_INFO.INFORMATION", "C_INFO.CONDITION", "SELF"}}};
+  const auto reference_script = entry_script(false);
+  auto reference_build = t::build(reference_script);
+  t::Reference reference{reference_build, reference_script, entry_recipes};
+  const auto profile = reference.profile();
+  require(reference_build.start.at("B_HELPER") == 0, "helper owns code offset 0");
+  auto run = relocate(reference_build, profile);
+  require(run.result.valid && run.result.identity && run.result.active == 1,
+          "members, variables and externals leave the entry at offset 0 unique; "
+          "the prototype keeps its entry");
+  for (const auto& layout : {t::Layout{5, 1, 0, 0x30000, 0x80}, shifted}) {
+    auto live = t::build(reference_script, layout);
+    run = relocate(live, profile);
+    require(run.result.valid && !run.result.identity && run.result.active == 1,
+            "moved members and variables keep the helper call");
+  }
+  const auto alias_script = entry_script(true);
+  auto alias_build = t::build(alias_script);
+  t::Reference alias{alias_build, alias_script, entry_recipes};
+  require(relocate(alias_build, alias.profile()).only_inactive(apple, Issue::unknown_callee),
+          "two constant entries at one offset are ambiguous");
+}
+
+// The symbol table is read in blocks of 1024 pointers; named symbols past the
+// first blocks must keep their own index.
+void test_table_blocks() {
+  World w;
+  const auto profile = w.reference.profile();
+  for (const std::uint32_t total : {1024u, 1025u, 2048u, 2049u, 3073u}) {
+    auto live = t::build(script(), t::Layout{total - w.reference_build.count, 1, 0, 0x40000, 0x40});
+    const auto run = relocate(live, profile);
+    bool bound = live.count == total && run.result.valid && run.result.active == 3 &&
+                 live.index.at("RECIPE_FLASK") + 1024u > total;
+    for (std::size_t i = 0; i < profile.name_count; ++i)
+      bound = bound && run.storage.names[i].live_index == live.index.at(profile.names[i].text);
+    const auto message = "table of " + std::to_string(total) + " symbols binds every live index";
+    require(bound, message.c_str());
+  }
+}
+
+// Texts are hashed in blocks of 1024 bytes; every block starts at its own
+// position and the terminator may fall into a block of its own.
+void test_long_texts() {
+  for (const std::uint32_t length : {1023u, 1024u, 1025u, 2047u, 2048u, 65536u, 65537u}) {
+    Options o;
+    o.potion_text.assign(length, 'a');
+    for (std::uint32_t i = 0; i < length; ++i)
+      o.potion_text[i] = static_cast<char>('a' + (i * 7u) % 26u);
+    const auto reference_script = script(o);
+    auto reference_build = t::build(reference_script);
+    t::Reference reference{reference_build, reference_script, recipes};
+    const auto profile = reference.profile();
+    auto live = t::build(reference_script, shifted);
+    const auto same = relocate(live, profile);
+    o.potion_text.back() = o.potion_text.back() == 'q' ? 'r' : 'q';
+    auto changed_build = t::build(script(o), shifted);
+    const auto changed = relocate(changed_build, profile);
+    const bool limit = length > ubc::script_fingerprint::max_text_length;
+    const bool ok = limit ? same.only_inactive(potion, Issue::text_unreadable) &&
+                                changed.only_inactive(potion, Issue::text_unreadable)
+                          : same.result.valid && same.result.active == 3 &&
+                                changed.only_inactive(potion, Issue::fingerprint_mismatch);
+    const auto message = "text of " + std::to_string(length) + " bytes is hashed in place";
+    require(ok, message.c_str());
   }
 }
 
@@ -391,6 +525,20 @@ void test_profile_checks() {
             "empty function record is rejected");
     functions[0].byte_length = saved;
   }
+  {
+    // A group without a function record proves nothing about the script.
+    const std::vector<std::vector<t::Recipe>> empty{
+        {}, {{apple, {}, {}}}, {{apple, {}, {"UBC_AMOUNT"}}}, {recipes[0], {potion, {}, {}}}};
+    for (const auto& groups : empty) {
+      const auto reference_script = script();
+      auto reference_build = t::build(reference_script);
+      t::Reference reference{reference_build, reference_script, groups};
+      const auto run = relocate(reference_build, reference.profile());
+      require(!run.result.valid && run.result.issue == Issue::invalid_profile &&
+                  run.result.active == 0,
+              "every profile group needs a function record");
+    }
+  }
   const auto run = relocate(w.reference_build, w.reference.profile());
   require(run.result.identity, "restored profile is the identity again");
   require(std::string(ubc::script_fingerprint::issue_name(Issue::duplicate_name)) ==
@@ -405,6 +553,9 @@ int main() {
   test_recipe_changes();
   test_invalid_code();
   test_names();
+  test_code_entries();
+  test_table_blocks();
+  test_long_texts();
   test_reads_and_layout();
   test_profile_checks();
   std::printf("script relocation: %u checks, %u failures\n", checks, failures);
