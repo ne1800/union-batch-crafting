@@ -60,14 +60,38 @@ struct DataRecord {
   std::int32_t value = 0;
 };
 
-struct RecipeGroup {
-  std::uint32_t recipe;
+// Records every recipe of one station depends on: entry, end owner,
+// navigation, categories and adapter texts. When one of them fails, every
+// recipe of the station keeps the original dialog.
+struct StationShare {
+  std::uint32_t station;
   const std::uint32_t* functions;
   std::size_t function_count;
   const std::uint32_t* data;
   std::size_t data_count;
 };
 
+// Recipe share; station indexes ReferenceProfile::stations or is no_name.
+struct RecipeGroup {
+  std::uint32_t recipe;
+  const std::uint32_t* functions;
+  std::size_t function_count;
+  const std::uint32_t* data;
+  std::size_t data_count;
+  std::uint32_t station = no_name;
+};
+
+// An anonymous text an adapter reads. The loaded parser names anonymous
+// symbols differently than the DAT, so the text is found by position: the
+// symbol operand of the instruction at offset in a confirmed function.
+struct AnonymousText {
+  std::uint32_t reference_index;
+  std::uint32_t function;
+  std::uint32_t offset;
+};
+
+// by_reference, when set, lists all name ids ordered by reference index.
+// texts are sorted by reference index.
 struct ReferenceProfile {
   std::uint32_t parser_address;
   const Name* names;
@@ -78,6 +102,11 @@ struct ReferenceProfile {
   std::size_t data_count;
   const RecipeGroup* groups;
   std::size_t group_count;
+  const std::uint32_t* by_reference = nullptr;
+  const StationShare* stations = nullptr;
+  std::size_t station_count = 0;
+  const AnonymousText* texts = nullptr;
+  std::size_t text_count = 0;
 };
 
 enum class NameState : std::uint8_t { missing, found, duplicate };
@@ -114,6 +143,8 @@ struct RecipeState {
   Issue reason = Issue::not_evaluated;
   RecordKind kind = RecordKind::none;
   std::uint32_t record = 0;
+  // The failing record belongs to the station share.
+  bool station = false;
 };
 
 // by_index and by_entry hold name_capacity keys each.
@@ -206,19 +237,55 @@ inline bool valid_profile(const ReferenceProfile& profile) noexcept {
     if (!known(profile.data[i].name, false) || !known(profile.data[i].parent, true))
       return false;
   }
-  // A recipe is active only on proven code: every group needs a function.
+  // A recipe is active only on proven code: every recipe needs a function in
+  // its own group or in its station share.
   if (profile.group_count == 0)
     return false;
+  const auto records = [&profile](const std::uint32_t* functions, std::size_t function_count,
+                                  const std::uint32_t* data, std::size_t data_count) noexcept {
+    if ((function_count && !functions) || (data_count && !data))
+      return false;
+    for (std::size_t j = 0; j < function_count; ++j)
+      if (functions[j] >= profile.function_count)
+        return false;
+    for (std::size_t j = 0; j < data_count; ++j)
+      if (data[j] >= profile.data_count)
+        return false;
+    return true;
+  };
+  if (profile.station_count && !profile.stations)
+    return false;
+  for (std::size_t i = 0; i < profile.station_count; ++i) {
+    const auto& share = profile.stations[i];
+    if (!records(share.functions, share.function_count, share.data, share.data_count))
+      return false;
+  }
   for (std::size_t i = 0; i < profile.group_count; ++i) {
     const auto& group = profile.groups[i];
-    if (group.function_count == 0 || !group.functions || (group.data_count && !group.data))
+    if (!records(group.functions, group.function_count, group.data, group.data_count) ||
+        (group.station != no_name && group.station >= profile.station_count))
       return false;
-    for (std::size_t j = 0; j < group.function_count; ++j)
-      if (group.functions[j] >= profile.function_count)
+    if (group.function_count == 0 &&
+        (group.station == no_name || profile.stations[group.station].function_count == 0))
+      return false;
+  }
+  if (profile.by_reference) {
+    for (std::size_t i = 0; i < profile.name_count; ++i) {
+      const auto id = profile.by_reference[i];
+      if (id >= profile.name_count ||
+          (i && profile.names[profile.by_reference[i - 1]].reference_index >=
+                    profile.names[id].reference_index))
         return false;
-    for (std::size_t j = 0; j < group.data_count; ++j)
-      if (group.data[j] >= profile.data_count)
-        return false;
+    }
+  }
+  if (profile.text_count && !profile.texts)
+    return false;
+  for (std::size_t i = 0; i < profile.text_count; ++i) {
+    const auto& text = profile.texts[i];
+    if (text.function >= profile.function_count ||
+        text.offset >= profile.functions[text.function].byte_length ||
+        (i && profile.texts[i - 1].reference_index >= text.reference_index))
+      return false;
   }
   return true;
 }
@@ -476,6 +543,28 @@ inline Issue check_function(const ReadOnlyMemory& memory, const rs::Layout& layo
   return Issue::none;
 }
 
+// First failing record of one share; the state keeps Issue::none otherwise.
+inline void first_failure(const Workspace& workspace, const std::uint32_t* functions,
+                          std::size_t function_count, const std::uint32_t* data,
+                          std::size_t data_count, RecipeState& state) noexcept {
+  for (std::size_t j = 0; j < function_count && state.reason == Issue::none; ++j) {
+    const auto issue = workspace.functions[functions[j]].issue;
+    if (issue != Issue::none) {
+      state.reason = issue;
+      state.kind = RecordKind::function;
+      state.record = functions[j];
+    }
+  }
+  for (std::size_t j = 0; j < data_count && state.reason == Issue::none; ++j) {
+    const auto issue = workspace.data[data[j]].issue;
+    if (issue != Issue::none) {
+      state.reason = issue;
+      state.kind = RecordKind::data;
+      state.record = data[j];
+    }
+  }
+}
+
 inline void evaluate_groups(const ReferenceProfile& profile, const Workspace& workspace,
                             Relocation& result) noexcept {
   for (std::size_t i = 0; i < profile.group_count; ++i) {
@@ -484,22 +573,14 @@ inline void evaluate_groups(const ReferenceProfile& profile, const Workspace& wo
     state = {};
     state.recipe = group.recipe;
     state.reason = Issue::none;
-    for (std::size_t j = 0; j < group.function_count && state.reason == Issue::none; ++j) {
-      const auto issue = workspace.functions[group.functions[j]].issue;
-      if (issue != Issue::none) {
-        state.reason = issue;
-        state.kind = RecordKind::function;
-        state.record = group.functions[j];
-      }
+    if (group.station != no_name) {
+      const auto& share = profile.stations[group.station];
+      first_failure(workspace, share.functions, share.function_count, share.data, share.data_count,
+                    state);
+      state.station = state.reason != Issue::none;
     }
-    for (std::size_t j = 0; j < group.data_count && state.reason == Issue::none; ++j) {
-      const auto issue = workspace.data[group.data[j]].issue;
-      if (issue != Issue::none) {
-        state.reason = issue;
-        state.kind = RecordKind::data;
-        state.record = group.data[j];
-      }
-    }
+    first_failure(workspace, group.functions, group.function_count, group.data, group.data_count,
+                  state);
     state.active = state.reason == Issue::none;
     if (state.active)
       ++result.active;
@@ -642,10 +723,22 @@ inline Relocation relocate(const ReadOnlyMemory& memory, std::uint32_t parser,
 }
 
 // Live index of a reference symbol index, or false when it was not
-// resolved uniquely. Linear in the name count; the generated profile may
-// add an index-sorted permutation when a hot path needs it.
+// resolved uniquely. Binary search with by_reference, linear without.
 inline bool live_symbol(const ReferenceProfile& profile, const Workspace& workspace,
                         std::uint32_t reference_index, std::uint32_t& live_index) noexcept {
+  if (profile.by_reference) {
+    const auto* begin = profile.by_reference;
+    const auto* end = begin + profile.name_count;
+    const auto* found = std::lower_bound(begin, end, reference_index,
+                                         [&profile](std::uint32_t id, std::uint32_t value) {
+                                           return profile.names[id].reference_index < value;
+                                         });
+    if (found == end || profile.names[*found].reference_index != reference_index ||
+        workspace.names[*found].state != NameState::found)
+      return false;
+    live_index = workspace.names[*found].live_index;
+    return true;
+  }
   for (std::size_t i = 0; i < profile.name_count; ++i) {
     if (profile.names[i].reference_index != reference_index)
       continue;
@@ -655,6 +748,49 @@ inline bool live_symbol(const ReferenceProfile& profile, const Workspace& worksp
     return true;
   }
   return false;
+}
+
+// Live index of an anonymous text by its position in a confirmed function.
+// The fingerprint of that function already compared the text content
+// unless the record ignores text.
+inline bool live_text(const ReadOnlyMemory& memory, const Relocation& relocation,
+                      const ReferenceProfile& profile, const Workspace& workspace,
+                      std::uint32_t reference_index, std::uint32_t& live_index) noexcept {
+  if (!relocation.valid)
+    return false;
+  const auto* begin = profile.texts;
+  const auto* end = begin + profile.text_count;
+  const auto* found = std::lower_bound(
+      begin, end, reference_index,
+      [](const AnonymousText& text, std::uint32_t value) { return text.reference_index < value; });
+  if (found == end || found->reference_index != reference_index)
+    return false;
+  const auto& match = workspace.functions[found->function];
+  if (match.issue != Issue::none)
+    return false;
+  std::array<std::uint8_t, 5> instruction{};
+  const auto address =
+      static_cast<std::uint64_t>(relocation.code_base) + match.live_start + found->offset;
+  if (address + instruction.size() > 0xffffffffu ||
+      !memory.copy(static_cast<std::uint32_t>(address), instruction.data(), instruction.size()))
+    return false;
+  switch (instruction[0]) {
+  case 62:
+  case 65:
+  case 66:
+  case 67:
+  case 68:
+  case 80:
+  case 245:
+    break;
+  default:
+    return false;
+  }
+  const auto index = runtime_script::detail::u32(instruction.data() + 1);
+  if (index >= relocation.symbol_count)
+    return false;
+  live_index = index;
+  return true;
 }
 
 } // namespace ubc::script_relocation
