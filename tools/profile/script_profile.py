@@ -6,17 +6,28 @@ include/ubc/engine/script_relocation.hpp: sorted names, function records
 with UBCF1 digests, data records and one group per recipe.
 
 Group of a recipe ("medium" width):
-  * every function the plugin verifier hashes for the recipe; for block
-    profiles (DNdR alchemy and anvil, tobacco) minus functions owned by
-    other recipes of the block;
+  * every function whose code the plugin verifier reads for the recipe,
+    wholly or in part; for block profiles (DNdR alchemy and anvil, tobacco)
+    minus the owner and choice functions of the other recipes of the same
+    block (route and station), which their own groups check;
   * the CALL hull of those functions, stopped at externals, NPC
     constructors and a curated presentation-only list;
   * the station share: functions and data every recipe of the station
     uses, catalog literals that no verifier reads (navigation, categories,
     adapters) and functions that hold texts an adapter reads;
-  * data records for every named operand, parent, item and catalog binding.
+  * data records for every named operand, parent, item and catalog binding;
+    a named string constant whose text a verifier reads also gets a text
+    record with the length and SHA-256 of that text.
+Every code byte a verifier reads must lie in a function of the group, of
+the station share or of that block exemption; otherwise the build fails.
 PUSH_INT operands count as symbol indices only in slots whose values are
 symbol indices throughout the script (stack consumer analysis).
+
+Catalog literals belong to one campaign: sources whose file name starts with
+dndr_ describe Night of the Raven, all others Marcello. A literal of the
+other campaign can match an index or name by chance and is ignored. A
+literal or text of the campaign that reaches no station with recipes is an
+error.
 """
 
 from __future__ import annotations
@@ -72,6 +83,10 @@ ROUTES = (
     "dndr",
 )
 BLOCK_ROUTES = {"tobacco", "dndr"}
+# Roles in a block that only their own recipe checks.
+BLOCK_ROLES = {"owner", "choice"}
+# script_fingerprint::max_text_length
+MAX_TEXT_LENGTH = 64 * 1024
 # Callees reached only for presentation (screen text, voice) or generic
 # memory library code: no inventory, attribute or talent effect.
 STOP_NAMES = {
@@ -216,6 +231,28 @@ def consumers(dat: DatFile, start: int, end: int) -> tuple[list, dict[int, tuple
     return code, slot_of
 
 
+def merged(ranges) -> list[tuple[int, int]]:
+    """Joins overlapping and adjacent [begin, end) reads; verifiers hash long
+    functions in several blocks."""
+    out: list[list[int]] = []
+    for begin, end in sorted(ranges):
+        if out and begin <= out[-1][1]:
+            out[-1][1] = max(out[-1][1], end)
+        else:
+            out.append([begin, end])
+    return [(begin, end) for begin, end in out]
+
+
+def campaign_source(campaign: str, source: str) -> bool:
+    return source.rsplit("/", 1)[-1].startswith("dndr_") == (campaign == "dndr")
+
+
+def block_key(recipe: dict) -> tuple[int, int] | None:
+    if ROUTES[recipe["route"]] not in BLOCK_ROUTES:
+        return None
+    return recipe["route"], recipe["station"]
+
+
 def code_symbols(dat: DatFile) -> list[Symbol]:
     return [dat.entries[start][0] for start in dat.starts]
 
@@ -258,6 +295,8 @@ class Group:
     station: int
     functions: set[int] = field(default_factory=set)
     data: set[int] = field(default_factory=set)
+    # Named string constants whose text the verifier reads (text records).
+    texts: set[int] = field(default_factory=set)
 
 
 @dataclass
@@ -296,6 +335,11 @@ class Builder:
         if extent is None or dat.entry(extent[0]) is not symbol:
             raise ProfileError(f"{symbol.name}: no unique code entry")
         start, end = extent
+        if end - start > fp.MAX_FUNCTION_LENGTH:
+            raise ProfileError(
+                f"{symbol.name}: {end - start} bytes exceed the UBCF1 limit "
+                f"of {fp.MAX_FUNCTION_LENGTH} bytes"
+            )
         code, slot_of = consumers(dat, start, end)
         symbolic, operands, callees, anonymous = [], set(), [], defaultdict(list)
         for k, instruction in enumerate(code):
@@ -356,6 +400,8 @@ class Builder:
         dat = self.dat
         functions = []
         for literal in self.function_literals:
+            if not campaign_source(self.campaign, literal.source):
+                continue
             if (
                 literal.symbol >= len(dat.symbols)
                 or dat.symbols[literal.symbol].name != literal.name
@@ -366,7 +412,9 @@ class Builder:
                 functions.append(literal)
         bindings = []
         for literal in self.binding_literals:
-            if literal.symbol >= len(dat.symbols):
+            if not campaign_source(
+                self.campaign, literal.source
+            ) or literal.symbol >= len(dat.symbols):
                 continue
             symbol = dat.symbols[literal.symbol]
             same_name = symbol.name == literal.name or (
@@ -381,10 +429,12 @@ class Builder:
         return functions, bindings
 
     def source_stations(self, source: str) -> set[int]:
+        """Stations with recipes of this campaign that a catalog source serves."""
         parts = source.split("/")
         by_route: dict[str, set[int]] = defaultdict(set)
         for recipe in self.recipes:
             by_route[ROUTES[recipe["route"]]].add(recipe["station"])
+        present = {recipe["station"] for recipe in self.recipes}
         if (
             len(parts) > 3
             and parts[1] == "ubc"
@@ -395,7 +445,7 @@ class Builder:
             stem = parts[-1]
             if directory == "alchemy" and "alchemy_extra" in stem:
                 return by_route["alchemy_extra"]
-            return {STATIONS.index(directory)}
+            return {STATIONS.index(directory)} & present
         if len(parts) > 3 and parts[2] == "stations" and parts[3] in ROUTES:
             return by_route[parts[3]]
         stem = parts[-1]
@@ -411,46 +461,58 @@ class Builder:
         recipes = self.recipes
         if not recipes or not all(recipe["matches"] for recipe in recipes):
             raise ProfileError("the plugin verifiers do not match the reference script")
-        own_users = Counter()
+        block_owned: dict[tuple[int, int], set[int]] = defaultdict(set)
         for recipe in recipes:
-            for index in {entry[1] for entry in recipe["own"]}:
-                own_users[index] += 1
+            key = block_key(recipe)
+            if key is not None:
+                block_owned[key] |= {
+                    index for role, index in recipe["own"] if role in BLOCK_ROLES
+                }
         groups: list[Group] = []
         roots_by_group: list[set[int]] = []
         stops_by_group: list[set[int]] = []
         seen_functions: set[int] = set()
         seen_data: set[int] = set()
         recorded_texts: dict[int, set[int]] = {}
+        exempt_by_group: list[set[int]] = []
         for recipe in recipes:
             hashed = set()
             bound = set()
+            read_texts = set()
+            reads = merged(recipe["code"])
             for slot in recipe["slots"]:
                 if slot >= len(dat.symbols):
                     raise ProfileError(
                         f"recipe {recipe['id']:#x}: slot {slot} outside the script"
                     )
                 extent = dat.extent(dat.symbols[slot])
-                if extent and any(
-                    a <= extent[0] and extent[1] <= b for a, b in recipe["code"]
-                ):
+                if extent and any(a < extent[1] and extent[0] < b for a, b in reads):
                     hashed.add(slot)
                 else:
                     bound.add(slot)
+            for index in recipe.get("strings", ()):
+                if not 0 <= index < len(dat.symbols):
+                    raise ProfileError(
+                        f"recipe {recipe['id']:#x}: text {index} outside the script"
+                    )
+                bound.add(index)
+                if not dat.symbols[index].anonymous:
+                    self.text_record(index)
+                    read_texts.add(index)
             texts = {slot for slot in bound if dat.symbols[slot].anonymous}
             bound -= texts
             for text in texts:
                 recorded_texts.setdefault(text, set()).add(recipe["station"])
             own = {entry[1] for entry in recipe["own"]}
-            if ROUTES[recipe["route"]] in BLOCK_ROUTES:
-                others = {index for index in own_users if index not in own}
-                roots = {index for index in hashed if index not in others} | (
-                    own & hashed
-                )
-                bound -= others
-            else:
-                roots = hashed
+            key = block_key(recipe)
+            others = block_owned[key] - own if key is not None else set()
+            roots = hashed - others
+            bound -= others
+            exempt_by_group.append(others)
             functions, stops = self.closure(roots)
-            group = Group(recipe["id"], recipe["station"], functions, set(bound))
+            group = Group(
+                recipe["id"], recipe["station"], functions, set(bound), read_texts
+            )
             items = (
                 set(recipe["targets"]) | set(recipe["costs"]) | set(recipe["outputs"])
             )
@@ -474,13 +536,13 @@ class Builder:
         station_data: dict[int, set[int]] = defaultdict(set)
         anonymous_refs: list[tuple[int, int, int]] = []  # text, function, offset
         text_functions: set[int] = set()
-        unplaced: list[str] = []
+        unplaced: set[str] = set()
         for literal in literal_functions:
             if literal.symbol in seen_functions:
                 continue
             stations = self.source_stations(literal.source)
-            if not stations and literal.source not in unplaced:
-                unplaced.append(literal.source)
+            if not stations:
+                unplaced.add(f"{literal.source}: {literal.name}")
             for station in stations:
                 station_functions[station].add(literal.symbol)
         anonymous_bindings = sorted(
@@ -493,8 +555,8 @@ class Builder:
             if dat.symbols[literal.symbol].anonymous or literal.symbol in seen_data:
                 continue
             stations = self.source_stations(literal.source)
-            if not stations and literal.source not in unplaced:
-                unplaced.append(literal.source)
+            if not stations:
+                unplaced.add(f"{literal.source}: {literal.name}")
             for station in stations:
                 station_data[station].add(literal.symbol)
         text_stations: dict[int, set[int]] = {
@@ -503,6 +565,13 @@ class Builder:
         for literal in anonymous_bindings:
             text_stations.setdefault(literal.symbol, set()).update(
                 self.source_stations(literal.source)
+            )
+        for text, stations in sorted(text_stations.items()):
+            if not stations:
+                unplaced.add(f"anonymous text {text}")
+        if unplaced:
+            raise ProfileError(
+                f"catalog literals outside every station: {sorted(unplaced)[:5]}"
             )
         users = self.text_users(set(text_stations))
         for text in sorted(text_stations):
@@ -518,7 +587,13 @@ class Builder:
         for group in groups:
             by_station[group.station].append(group)
         shares: dict[int, tuple[set[int], set[int]]] = {}
+        share_texts: dict[int, set[int]] = {}
         for station, members in sorted(by_station.items()):
+            share_texts[station] = (
+                set.intersection(*(g.texts for g in members))
+                if len(members) > 1
+                else set()
+            )
             common_f = (
                 set.intersection(*(g.functions for g in members))
                 if len(members) > 1
@@ -563,11 +638,13 @@ class Builder:
                 functions,
                 self.with_parents(data | self.named_by(functions)),
             )
+        self.check_code_reads(groups, shares, exempt_by_group)
         # A group keeps only its recipe share; relocate() adds the station share.
         for group in groups:
             share_functions, share_data = shares[group.station]
             group.functions -= share_functions
             group.data -= share_data
+            group.texts -= share_texts[group.station]
         record_data = set()
         for group in groups:
             record_data |= group.data
@@ -586,7 +663,7 @@ class Builder:
         names |= self.with_parents(names) - names
         return self.assemble(
             groups,
-            shares,
+            {s: (f, d, share_texts[s]) for s, (f, d) in shares.items()},
             record_functions,
             record_data,
             names,
@@ -594,8 +671,38 @@ class Builder:
             literal_bindings,
             anonymous_refs,
             text_functions,
-            unplaced,
         )
+
+    def check_code_reads(self, groups, shares, exempt_by_group) -> None:
+        """Every code byte a verifier read lies in a recorded function."""
+        gaps = []
+        for group, recipe, exempt in zip(groups, self.recipes, exempt_by_group):
+            covered = merged(
+                self.dat.extent(self.dat.symbols[index])
+                for index in group.functions | shares[group.station][0] | exempt
+            )
+            for begin, end in merged(recipe["code"]):
+                if not any(a <= begin and end <= b for a, b in covered):
+                    gaps.append(f"{recipe['id']:#x}: {begin}..{end}")
+        if gaps:
+            raise ProfileError(f"verifier code reads outside every group: {gaps[:5]}")
+
+    def text_record(self, index: int) -> tuple[int, str]:
+        """Length and SHA-256 of a named string constant a verifier reads."""
+        symbol = self.dat.symbols[index]
+        if (
+            symbol.type != STRING
+            or symbol.flags != 1
+            or symbol.elements != 1
+            or symbol.parent >= 0
+            or not isinstance(symbol.content, list)
+            or len(symbol.content) != 1
+        ):
+            raise ProfileError(f"{symbol.name}: read text is no plain string constant")
+        text = symbol.content[0]
+        if b"\xff" in text or len(text) > MAX_TEXT_LENGTH:
+            raise ProfileError(f"{symbol.name}: read text cannot be bound")
+        return len(text), hashlib.sha256(text).hexdigest()
 
     def named_by(self, functions: set[int]) -> set[int]:
         out = set()
@@ -652,7 +759,6 @@ class Builder:
         literal_bindings,
         anonymous_refs,
         text_functions,
-        unplaced,
     ) -> Profile:
         dat = self.dat
         for index in names:
@@ -728,8 +834,16 @@ class Builder:
                 entry["value"] = literal.value
             if literal.check_offset:
                 entry["offset"] = literal.offset
+        # A read text gets its own record next to the plain one, so that only
+        # the recipes whose verifier reads the text depend on it.
+        text_checks = set().union(*(g.texts for g in groups))
+        text_checks |= set().union(*(texts for _, _, texts in shares.values()))
+        keys = [(index, False) for index in record_data]
+        keys += [(index, True) for index in text_checks]
         data = []
-        for index in sorted(record_data, key=lambda i: dat.symbols[i].name):
+        for index, read_text in sorted(
+            keys, key=lambda k: (dat.symbols[k[0]].name, k[1])
+        ):
             symbol = dat.symbols[index]
             checks = binding_checks.get(index, {})
             check_offset = bool(symbol.flags & CLASSVAR) or "offset" in checks
@@ -741,6 +855,7 @@ class Builder:
             )
             check_value = scalar or "value" in checks
             value = symbol.content[0] if scalar else checks.get("value", 0)
+            text = self.text_record(index) if read_text else None
             if "value" in checks and checks["value"] != value:
                 raise ProfileError(
                     f"{symbol.name}: catalog value differs from the script"
@@ -757,16 +872,24 @@ class Builder:
                     "offset": symbol.offset if check_offset else 0,
                     "check_value": check_value,
                     "value": value,
+                    "text": text,
                 }
             )
-        data_id = {record["index"]: k for k, record in enumerate(data)}
+        data_id = {
+            record["index"]: k for k, record in enumerate(data) if not record["text"]
+        }
+        text_id = {
+            record["index"]: k for k, record in enumerate(data) if record["text"]
+        }
         station_out = []
-        for station, (functions_, data_) in sorted(shares.items()):
+        for station, (functions_, data_, texts_) in sorted(shares.items()):
             station_out.append(
                 {
                     "station": station,
                     "functions": sorted(function_id[i] for i in functions_),
-                    "data": sorted(data_id[i] for i in data_),
+                    "data": sorted(
+                        [data_id[i] for i in data_] + [text_id[i] for i in texts_]
+                    ),
                 }
             )
         share_id = {entry["station"]: k for k, entry in enumerate(station_out)}
@@ -777,7 +900,10 @@ class Builder:
                     "recipe": group.recipe,
                     "station": share_id[group.station],
                     "functions": sorted(function_id[i] for i in group.functions),
-                    "data": sorted(data_id[i] for i in group.data),
+                    "data": sorted(
+                        [data_id[i] for i in group.data]
+                        + [text_id[i] for i in group.texts]
+                    ),
                 }
             )
         texts_out = [
@@ -815,7 +941,7 @@ class Builder:
             "function_bytes": sum(r["length"] for r in functions),
             "catalog_functions": len({f.symbol for f in literal_functions}),
             "catalog_bindings": len({b.symbol for b in literal_bindings}),
-            "unplaced_sources": unplaced,
+            "text_checks": sum(1 for r in data if r["text"]),
         }
         return Profile(
             self.campaign,
@@ -954,15 +1080,16 @@ def render(profile: Profile, config: dict) -> str:
             f"{pointer}, {len(record['symbolic'])}, {flag(record['ignore_text'])}}}"
         )
     array("sr::FunctionRecord", "functions", items)
-    array(
-        "sr::DataRecord",
-        "data",
-        [
+
+    def data_item(r: dict) -> str:
+        text = f', true, {r["text"][0]}, h("{r["text"][1]}")' if r["text"] else ""
+        return (
             f"{{{r['name']}, {r['type']}, {r['flags']}, {r['elements']}, {name(r['parent'])}, "
-            f"{flag(r['check_offset'])}, {r['offset']}, {flag(r['check_value'])}, {r['value']}}}"
-            for r in profile.data
-        ],
-    )
+            f"{flag(r['check_offset'])}, {r['offset']}, {flag(r['check_value'])}, {r['value']}"
+            f"{text}}}"
+        )
+
+    array("sr::DataRecord", "data", [data_item(r) for r in profile.data])
     function_lists: list[int] = []
     data_lists: list[int] = []
 

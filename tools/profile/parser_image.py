@@ -6,12 +6,19 @@ objects (+8 name, +0xc name length, +0x18 data, +0x1c offset, +0x20
 elements | type << 12 | flags << 16, +0x38 parent), zSTRING objects and
 the code. The image file is "UBCI", u32 region count, then per region u32
 address, u32 length and the bytes. It holds game data and must stay local.
+
+record() runs tools/profile/record_catalog_reads.cpp on such an image and
+maps its heap reads back to the symbols whose zSTRING objects, texts or
+arrays were read ("strings" per recipe).
 """
 
 from __future__ import annotations
 
+import bisect
+import json
 import re
 import struct
+import subprocess
 from pathlib import Path
 
 from datfile import CLASS, CLASSVAR, FLOAT, INT, STRING, DatFile
@@ -40,19 +47,25 @@ def runtime_anonymous_names(dat: DatFile, include: Path) -> dict[int, bytes]:
 
 
 def build(
-    dat: DatFile, names: dict[int, bytes] | None = None
+    dat: DatFile,
+    names: dict[int, bytes] | None = None,
+    spans: list[tuple[int, int, int]] | None = None,
 ) -> list[tuple[int, bytes]]:
+    """Image regions; spans, when given, receives (begin, end, symbol) of
+    every heap allocation (zSTRING objects, texts and arrays)."""
     names = names or {}
+    spans = [] if spans is None else spans
     count = len(dat.symbols)
     table = bytearray(4 * count)
     symbols = bytearray(STRIDE * count)
     text = bytearray()
     heap = bytearray()
 
-    def allocate(data: bytes) -> int:
+    def allocate(data: bytes, owner: int) -> int:
         heap.extend(b"\0" * (-len(heap) % 4))
         address = HEAP + len(heap)
         heap.extend(data)
+        spans.append((address, address + len(data), owner))
         return address
 
     for symbol in dat.symbols:
@@ -71,14 +84,16 @@ def build(
             if symbol.type == INT:
                 packed = struct.pack(f"<{len(content)}i", *content)
                 data = (
-                    content[0] & 0xFFFFFFFF if len(content) == 1 else allocate(packed)
+                    content[0] & 0xFFFFFFFF
+                    if len(content) == 1
+                    else allocate(packed, symbol.index)
                 )
             elif symbol.type == FLOAT:
                 packed = struct.pack(f"<{len(content)}f", *content)
                 data = (
                     struct.unpack("<I", packed[:4])[0]
                     if len(content) == 1
-                    else allocate(packed)
+                    else allocate(packed, symbol.index)
                 )
             elif symbol.type == STRING:
                 headers = bytearray()
@@ -88,11 +103,11 @@ def build(
                         "<IIIII",
                         0,
                         0,
-                        allocate(value + b"\0"),
+                        allocate(value + b"\0", symbol.index),
                         len(value),
                         len(value) + 1,
                     )
-                data = allocate(bytes(headers))
+                data = allocate(bytes(headers), symbol.index)
         packed = (
             (symbol.elements & 0xFFF)
             | (symbol.type << 12)
@@ -127,3 +142,42 @@ def write(path: Path, regions: list[tuple[int, bytes]]) -> None:
         for address, data in regions:
             output.write(struct.pack("<II", address, len(data)))
             output.write(data)
+
+
+def heap_symbols(spans: list[tuple[int, int, int]], reads: list) -> set[int]:
+    """Symbols whose heap allocation overlaps one of the [begin, end) reads."""
+    ordered = sorted(spans)
+    starts = [span[0] for span in ordered]
+    found: set[int] = set()
+    for begin, end in reads:
+        k = max(bisect.bisect_right(starts, begin) - 1, 0)
+        while k < len(ordered) and ordered[k][0] < end:
+            if ordered[k][1] > begin:
+                found.add(ordered[k][2])
+            k += 1
+    return found
+
+
+def record(
+    recorder: Path,
+    campaign: str,
+    dat: DatFile,
+    image: Path,
+    names: dict[int, bytes] | None = None,
+) -> list[dict]:
+    """Per-recipe verifier reads; the temporary image is removed again."""
+    spans: list[tuple[int, int, int]] = []
+    write(image, build(dat, names, spans))
+    try:
+        output = subprocess.run(
+            [str(recorder), campaign, str(image)],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+    finally:
+        image.unlink()
+    recipes = json.loads(output)["recipes"]
+    for recipe in recipes:
+        recipe["strings"] = sorted(heap_symbols(spans, recipe.pop("heap", [])))
+    return recipes

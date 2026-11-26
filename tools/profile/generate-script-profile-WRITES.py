@@ -93,15 +93,8 @@ def record(arguments, dat: DatFile, campaign: str, work: Path) -> list[dict]:
         if CAMPAIGNS[campaign]["runtime_names"]
         else {}
     )
-    image = work / f"{campaign}.img"
-    parser_image.write(image, parser_image.build(dat, names))
-    output = subprocess.run(
-        [str(recorder(arguments, work)), campaign, str(image)],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
-    return json.loads(output)["recipes"]
+    binary = recorder(arguments, work)
+    return parser_image.record(binary, campaign, dat, work / f"{campaign}.img", names)
 
 
 def main(argv: list[str] | None = None) -> int:
