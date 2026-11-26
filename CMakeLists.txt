@@ -117,6 +117,7 @@ foreach(
     engine/player_campaign
     engine/script_fingerprint
     engine/script_relocation
+    catalogs/script_profiles
     stations/alchemy/dndr_alchemy
     stations/anvil/dndr_anvil
     stations/forge/dndr_forge
