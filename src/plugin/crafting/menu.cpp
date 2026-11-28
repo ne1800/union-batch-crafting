@@ -160,7 +160,7 @@ Capture capture_opening(const Context& c, ubc::BowMenuTrace* trace) noexcept {
   const auto serial = grind_preview_input_serial;
   PreviewRecording recording(preview_cache, inputs);
   GrindPreviewLease opening(c, false);
-  report_grind_preview_failure(opening);
+  const bool report = report_grind_preview(opening);
   auto result = capture(c, &opening);
   const auto portions = verified_units(c, opening, result.snapshot);
   if (!recording.dialog_change && serial == grind_preview_input_serial && opening.ready)
@@ -170,7 +170,8 @@ Capture capture_opening(const Context& c, ubc::BowMenuTrace* trace) noexcept {
   else
     preview_cache.invalidate(
         {"capture", recording.dialog_change ? recording.dialog_change : "publication"});
-  report_grind_recompute(started, 1, opening.ready, {"key", "opening"});
+  if (report)
+    report_grind_recompute(started, 1, opening.ready, {"key", "opening"});
   return result;
 }
 
@@ -196,6 +197,7 @@ void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept 
   const auto recapture = [&](const PreviewMiss& miss) {
     ubc::CraftingPreviewCache::GrindUnits units{};
     bool grind_sealed = false;
+    bool report = false;
     std::optional<PreviewRecording> recording;
     if (!gate)
       recording.emplace(preview_cache, before);
@@ -203,7 +205,7 @@ void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept 
       std::optional<GrindPreviewLease> shared_grind;
       if (session.phase() != Phase::original && c.kind == cat::Station::grind) {
         shared_grind.emplace(c);
-        report_grind_preview_failure(*shared_grind);
+        report = report_grind_preview(*shared_grind);
         grind_sealed = shared_grind->ready;
       }
       const auto* shared = shared_grind ? &*shared_grind : nullptr;
@@ -226,7 +228,7 @@ void refresh_menu_preview(const Context& c, uidiag::Frame& diagnostic) noexcept 
       preview_cache.finish(before, session.can_confirm(), units);
     else if (dialog_change)
       preview_cache.invalidate({"capture", dialog_change});
-    if (c.kind == cat::Station::grind && session.phase() != Phase::original)
+    if (report && session.phase() != Phase::original)
       report_grind_recompute(started, session.quantity(), grind_sealed, miss);
   };
   if (preview_cache.reuse_or_capture(session.phase(), before, live_memory, gate, still_current,

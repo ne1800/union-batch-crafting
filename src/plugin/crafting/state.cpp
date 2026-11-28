@@ -121,7 +121,7 @@ shpreview::Publication grind_preview_publication;
 std::uint64_t grind_preview_serial = 0, grind_preview_input_serial = 0;
 unsigned grind_preview_input_depth = 0;
 bool grind_preview_overflow = false;
-GrindPreviewFailureDiagnostic grind_preview_failure;
+ubc::GrindPreviewFailure grind_preview_failure;
 CraftingModule grind_renderer_module;
 CraftingModule grind_locator_module;
 bool grind_locator_bound = false;

@@ -173,6 +173,11 @@ int main() {
     different.field = "stamp.key_frame";
     check(!different.same(check_frame),
           "different field with the same phase and values is retained");
+    ubc::GrindPreviewFailure failures;
+    check(failures.first(50, 3, 3, check_frame) && !failures.first(51, 3, 3, check_frame) &&
+              !failures.first(52, 3, 3, check_frame) && failures.first(53, 3, 3, different) &&
+              failures.first(55, 3, 3, different),
+          "consecutive identical opening failures log once, a change or frame gap logs again");
 
     ubc::CraftingResultObservation value;
     std::array<ubc::RecipeResultItem, 3> actual{};

@@ -353,10 +353,10 @@ void changed_copies() {
       pack + static_cast<std::uint32_t>(std::strlen("ITFOMUTTONRAW:2,OTHER:1")) - 1;
   changed(sample(image), "same header and target totals do not hide changed foreign pack bytes");
   populate(image, std::string(5000, 'A') + ":1");
-  image.mutations.push_back({pack + 4096, pack + 4096, 'B', 1, 1});
+  image.mutations.push_back({pack + 4096, pack + 4096, 'B', 2, 1});
   changed(sample(image), "later verification chunk compared rather than only first block");
   populate(image, std::string(8190, 'A') + ":1");
-  image.mutations.push_back({pack + 8192, pack + 8192, 'X', 1, 1});
+  image.mutations.push_back({pack + 8192, pack + 8192, 'X', 2, 1});
   changed(sample(image), "final single-byte NUL chunk compared too");
   populate(image, "", 2);
   image.mutations.push_back({node(0), node(0), 7});

@@ -302,12 +302,7 @@ extern shpreview::Publication grind_preview_publication;
 extern std::uint64_t grind_preview_serial, grind_preview_input_serial;
 extern unsigned grind_preview_input_depth;
 extern bool grind_preview_overflow;
-struct GrindPreviewFailureDiagnostic {
-  std::uint64_t generation = 0;
-  int stage = 0, issue = -1;
-  ubc::GrindCheck check{};
-};
-extern GrindPreviewFailureDiagnostic grind_preview_failure;
+extern ubc::GrindPreviewFailure grind_preview_failure;
 extern CraftingModule grind_renderer_module;
 extern CraftingModule grind_locator_module;
 extern bool grind_locator_bound;
