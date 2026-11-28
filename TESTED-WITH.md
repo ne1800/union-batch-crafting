@@ -6,13 +6,13 @@ Gothic II: Night of the Raven / Die Nacht des Raben, Windows x86, 2.6 fix, Union
 
 ## Campaign compatibility · Kampagnenverträglichkeit
 
-**0.0.69 candidate · Grindstone acceptance pending.** In Marcello L’Hiver DE 2.0.4, the quantity menu opened after loading a save with 13 packed rough swords. It initially offered quantity zero. Opening and closing the inventory preserved all 418 inventory counts. On returning to the grindstone, the menu offered all 13 swords. The test stopped before submitting an order. The second save was not reached.
+**0.0.69** ran in Marcello L’Hiver DE 2.0.4. At the first grindstone visit after loading each save, the menu offered 13 rough swords in slot 17 and 11 in slot 14. The inventory screen stayed closed. Each order sharpened two swords. The complete inventory matched in each save (418 item types in slot 17 and 418 in slot 14), including unchanged blade counts. Grinding skill rose by two points in each save. The game exited without saving.
 
-**Kandidat 0.0.69 · Abnahme am Schleifstein offen.** In Marcello L’Hiver DE 2.0.4 öffnete sich das Mengenmenü nach dem Laden eines Spielstands mit 13 gepackten groben Schwertern. Zunächst war Menge null freigegeben. Beim Öffnen und Schließen des Inventars blieben alle 418 Bestände gleich. Beim erneuten Betreten des Schleifsteins bot das Menü alle 13 Schwerter an. Der Test endete vor dem Auftrag. Der Gegenlauf im zweiten Spielstand steht aus.
+**0.0.69** lief in Marcello L’Hiver DE 2.0.4. Beim ersten Besuch am Schleifstein nach dem Laden bot das Menü in Slot 17 insgesamt 13 grobe Schwerter an, in Slot 14 waren es 11. Das Inventarfenster blieb geschlossen. Jeder Auftrag schärfte zwei Schwerter. Die vollständige Inventarbilanz stimmte in beiden Spielständen (418 Gegenstandsarten in Slot 17 und 418 in Slot 14), einschließlich der unveränderten Anzahl Schwertklingen. Der Schleifwert stieg jeweils um zwei Punkte. Das Spiel wurde ohne Speichern beendet.
 
-| Candidate loaded in game / Im Spiel geladener Kandidat | SHA-256 |
+| File / Datei | SHA-256 |
 | --- | --- |
-| 0.0.69 | `c16f53fe5fcd5202c474a2b864393ad0a437b2eff6a82c1e3a63e5be856fb725` |
+| Player DLL / Spieler-DLL (0.0.69) | `839de9e5a58132227494a0b502d72152198f175f1ee0d51259d58fb8de915159` |
 
 **0.0.68** used the player DLL below in both campaigns. A new German Night of the Raven 2.6 game used the loose `_work/Data/Scripts/_compiled/GOTHIC.DAT` from Gothic II: Gold Classic on Steam (Workshop branch, build 9820952). One alchemy order made two essences of healing from four healing plants, two meadow knotweeds and two flasks. One order at the frying pan turned two pieces of raw meat into two pieces of roast meat. In Marcello L’Hiver DE 2.0.4, slot 14, one order made two swamp tobaccos from two apple tobaccos and two flasks. The full inventory matched after each order, including all 418 item counts in Marcello. Both games exited without saving. Physical controller testing is pending.
 
