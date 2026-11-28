@@ -230,6 +230,20 @@ def main(argv=None) -> int:
                         args.timeout_seconds,
                     )
                 )
+                engine, _, zbug, union, *_ = cool_files
+                steps.append(
+                    run_step(
+                        "grind-entry-local-contracts",
+                        [
+                            str(build_dir / "ubc_zbug_end_compat_tests"),
+                            zbug,
+                            union,
+                            engine,
+                        ],
+                        run_dir,
+                        args.timeout_seconds,
+                    )
+                )
             if args.local_facts:
                 steps.append(
                     run_step(
