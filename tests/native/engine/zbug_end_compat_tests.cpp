@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "ubc/engine/zbug_end_compat.hpp"
+#include "ubc/stations/grind/grind_inventory_entry.hpp"
 #include "ubc/stations/cool/cool_set_interact_path.hpp"
 #include "ubc/stations/cool/cool_native_path.hpp"
 #include "ubc/stations/station_end_contract.hpp"
@@ -560,6 +561,35 @@ void set_interact_native_path_tests(Memory& m, const z::Binding& b) {
   m.before = {};
   check(capture(nullptr).valid, "restored original complete path remains available");
 }
+void grind_entry_tests(Memory& memory, const z::Binding& binding) {
+  namespace entry = ubc::grind_inventory_entry;
+  const auto operand = entry::put_call + 1u;
+  const auto after_call = entry::put_call + 5u;
+  const auto forward = binding.zbug.base + z::wrapper_rva;
+  check(entry::verify(memory.reader(), binding), "original grind inventory entry");
+  memory.word(operand, forward - after_call);
+  check(entry::verify(memory.reader(), binding),
+        "saved inventory with verified zBugFixes PutInInv");
+  check(!entry::verify(memory.reader(), {}), "forward requires the bound module pair");
+  *memory.at(binding.zbug.base + z::wrapper_rva) ^= 1;
+  check(!entry::verify(memory.reader(), binding), "changed forwarding routine");
+  *memory.at(binding.zbug.base + z::wrapper_rva) ^= 1;
+  *memory.at(entry::unpack.address + entry::unpack.length - 1) ^= 1;
+  check(!entry::verify(memory.reader(), binding), "change outside the inventory call operand");
+  *memory.at(entry::unpack.address + entry::unpack.length - 1) ^= 1;
+  memory.word(operand, forward + 1u - after_call);
+  check(!entry::verify(memory.reader(), binding), "different inventory call target");
+  memory.word(operand, forward - after_call);
+  memory.before = [&](Memory& current, std::uint32_t address) {
+    if (address == forward)
+      current.word(operand, z::original_put_in_inv - after_call);
+  };
+  check(!entry::verify(memory.reader(), binding),
+        "entry route changed during dispatch verification");
+  memory.before = {};
+  memory.word(operand, z::original_put_in_inv - after_call);
+}
+
 void file_tests(const char* zbug_path, const char* union_path, const char* exe_path) {
   auto b = binding();
   Memory m;
@@ -750,6 +780,7 @@ void file_tests(const char* zbug_path, const char* union_path, const char* exe_p
   *m.at(b.zbug.base + z::wrapper_rva + 427) ^= 1;
   check(z::verify(m.reader(), b).valid,
         "independent subsequent capture passes after synthetic fixture restoration");
+  grind_entry_tests(m, b);
   end_integration_tests(m, b);
   set_interact_tests(m, b);
   set_interact_native_path_tests(m, b);

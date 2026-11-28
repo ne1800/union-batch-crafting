@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "runtime.hpp"
+#include "ubc/stations/grind/grind_inventory_entry.hpp"
 
 namespace ubc_native {
 GrindPreviewScope grind_preview_scope;
@@ -57,11 +58,9 @@ bool grind_modules_current() noexcept {
 }
 bool unpack_grind_inventory(const Context& c) noexcept {
   namespace inventory = ubc::grind_zbug_unpack;
+  namespace entry = ubc::grind_inventory_entry;
   // Gothic II Addon oCNpcInventory::UnpackItemsInCategory(), as used by the inventory screen.
   // This is an engine operation on station entry. Never invoke it from a snapshot or writer.
-  constexpr std::uint32_t method = 0x00710a20;
-  constexpr auto digest = ubc::lhiver::digest_literal(
-      "cd313570e6834dfedb613224c15a31f528235f844d7b2dda8518a5aa3e2d5784");
   if (!execution_enabled || dndr_active || !c.valid || c.kind != cat::Station::grind ||
       !grind_frame_capture_quiet() || PreviewRecording::active || grind_preview_scope.active ||
       grind_capture_leased || !grind_modules_current())
@@ -71,13 +70,15 @@ bool unpack_grind_inventory(const Context& c) noexcept {
       !field(c.hero, ubc::packed_detail::header_offset + 32, length) || !length ||
       !grind_catalogue_reader.needs_inventory_unpack(live_memory, c.hero))
     return false;
-  std::array<std::uint8_t, 0x553> code{};
-  if (!w::readable(reinterpret_cast<const void*>(method), code.size(), true, true) ||
-      !live_memory.copy(method, code.data(), code.size()) ||
-      ubc::zbug_end_compat::detail::digest(code.data(), code.size()) != digest)
+  const auto* binding = end_compatibility();
+  if (!binding ||
+      !w::readable(reinterpret_cast<const void*>(entry::unpack.address), entry::unpack.length, true,
+                   true) ||
+      !entry::verify(live_memory, *binding))
     return false;
   using Unpack = void(__thiscall*)(void*);
-  reinterpret_cast<Unpack>(method)(reinterpret_cast<void*>(c.hero + inventory::inventory_offset));
+  reinterpret_cast<Unpack>(entry::unpack.address)(
+      reinterpret_cast<void*>(c.hero + inventory::inventory_offset));
   return true;
 }
 shitem::Input grind_read_input(const ubc::GrindRecipeKey& k, bool boundary) noexcept {
