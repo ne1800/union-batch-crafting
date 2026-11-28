@@ -55,4 +55,18 @@ struct GrindCheck {
                     field, static_cast<long long>(expected), static_cast<long long>(actual));
   }
 };
+
+struct GrindPreviewFailure {
+  std::uint64_t frame = 0;
+  int stage = -1, issue = -1;
+  GrindCheck check{};
+
+  bool first(std::uint64_t current_frame, int current_stage, int current_issue,
+             const GrindCheck& current_check) noexcept {
+    const bool repeat = current_frame - frame <= 1 && stage == current_stage &&
+                        issue == current_issue && check.same(current_check);
+    *this = {current_frame, current_stage, current_issue, current_check};
+    return !repeat;
+  }
+};
 }

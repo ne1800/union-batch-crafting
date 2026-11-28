@@ -201,6 +201,40 @@ void measured_capacity() {
       }
     }
 }
+void large_packed_inventory() {
+  constexpr std::uint32_t pack = 0x40000;
+  constexpr ubc::PackedInventoryTarget weapon{"ITMW_TEST", 42};
+  std::string contents;
+  while (contents.size() < batch::max_span_bytes)
+    contents += "OTHER:1,";
+  contents += "ITMW_TEST:13";
+  for (bool change_terminator : {false, true}) {
+    Image image;
+    const auto header = hero + ubc::packed_detail::header_offset;
+    image.block(header, sizeof(ubc::packed_detail::Header));
+    image.put(header, hero);
+    image.put(header + 4, 1);
+    image.put(header + 28, pack);
+    image.put(header + 32, static_cast<std::uint32_t>(contents.size()));
+    text(image, pack, contents);
+    Frames frame;
+    auto ledger = std::make_unique<Ledger>();
+    auto workspace = std::make_unique<ubc::PackedInventoryWorkspace>();
+    check(ledger->begin(image.memory(), frame.source(), frame.value, 7), "open inventory preview");
+    const auto capture = [&] {
+      const auto stock =
+          ubc::read_packed_inventory<1>(ledger->memory(), hero, &weapon, 1, true, *workspace);
+      return stock.storage_totals_known && stock.total[0] == 13;
+    };
+    check(capture() && ledger->freeze() && capture(),
+          "a weapon in the second span survives inventory recording and replay");
+    if (change_terminator)
+      *image.at(pack + static_cast<std::uint32_t>(contents.size()), 1) = 'X';
+    check(ledger->seal() == !change_terminator &&
+              ledger->issue() == (change_terminator ? batch::Issue::changed : batch::Issue::none),
+          "sealing checks the entire packed inventory including its terminator");
+  }
+}
 void low_level() {
   using batch::Issue;
   {
@@ -1196,6 +1230,7 @@ void files(char** argv) {
 int main(int argc, char** argv) {
   using namespace preview_test;
   low_level();
+  large_packed_inventory();
   measurement();
   measured_capacity();
   static_assert(sizeof(batch::Reader) <= 768u * 1024u,

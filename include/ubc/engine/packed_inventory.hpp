@@ -179,6 +179,7 @@ using station_detail::little_i32;
 using station_detail::little_u32;
 inline constexpr auto max_amount = std::numeric_limits<std::int32_t>::max();
 inline constexpr std::uint32_t header_offset = 0x708;
+inline constexpr std::size_t pack_chunk_bytes = 4096;
 using Header = std::array<std::uint8_t, 40>;
 
 inline bool first_name_char(std::uint8_t ch) noexcept {
@@ -301,9 +302,21 @@ inline Part<Capacity> read_pack(const ReadOnlyMemory& memory, std::uint32_t poin
   }
   auto& bytes = work.packed_bytes;
   if (pointer) {
-    if (!memory.copy(pointer, bytes.data(), static_cast<std::size_t>(length) + 1)) {
+    // The terminator must also lie in the 32-bit address space. Record the
+    // same bounded spans that compare_pack will verify, including that byte.
+    if (length > UINT32_MAX - pointer) {
       result.issue = Issue::string_unreadable;
       return result;
+    }
+    const auto size = static_cast<std::size_t>(length) + 1;
+    for (std::size_t offset = 0; offset < size; offset += pack_chunk_bytes) {
+      const auto remaining = size - offset;
+      const auto count = remaining < pack_chunk_bytes ? remaining : pack_chunk_bytes;
+      if (!memory.copy(pointer + static_cast<std::uint32_t>(offset), bytes.data() + offset,
+                       count)) {
+        result.issue = Issue::string_unreadable;
+        return result;
+      }
     }
   } else
     bytes[0] = 0;
@@ -396,7 +409,7 @@ inline Issue compare_pack(const ReadOnlyMemory& memory, const PackedInventoryWor
                           std::uint32_t pointer, std::uint32_t length) noexcept {
   if (!pointer)
     return Issue::none; // Only the previously validated empty null string.
-  std::array<std::uint8_t, 4096> bytes{};
+  std::array<std::uint8_t, pack_chunk_bytes> bytes{};
   const auto size = static_cast<std::size_t>(length) + 1;
   for (std::size_t offset = 0; offset < size;) {
     const auto remaining = size - offset;

@@ -259,17 +259,19 @@ const shpreview::Publication* GrindPreviewLease::view(const ubc::GrindRecipeKey&
              ? &grind_preview_publication
              : nullptr;
 }
-void report_grind_preview_failure(const GrindPreviewLease& value) noexcept {
-  if (value.ready || (grind_preview_failure.generation == generation &&
-                      grind_preview_failure.stage == value.failure_stage &&
-                      grind_preview_failure.issue == value.read_issue &&
-                      grind_preview_failure.check.same(value.check)))
-    return;
-  grind_preview_failure = {generation, value.failure_stage, value.read_issue, value.check};
+bool report_grind_preview(const GrindPreviewLease& value) noexcept {
+  // An unsuccessful menu opening receives a new generation on every frame.
+  if (value.ready) {
+    grind_preview_failure = {};
+    return true;
+  }
+  if (!grind_preview_failure.first(frame, value.failure_stage, value.read_issue, value.check))
+    return false;
   log_grind_check(value.check, value.failure_stage);
   event("grind_preview_batch_rejected", value.failure_stage, value.read_issue);
   event("grind_preview_batch_bounds", static_cast<int>(value.statistics.spans),
         static_cast<int>(value.statistics.stored_bytes));
+  return true;
 }
 // Dedicated one-shot measurement mode. No session refresh, menu order or
 // handoff. Take five fresh, fully sealed snapshots. Snapshot 5 observes
