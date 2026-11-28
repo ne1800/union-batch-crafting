@@ -115,6 +115,27 @@ public:
   GrindRecipeCatalogueReader(GrindRecipeCatalogueReader&&) = delete;
   GrindRecipeCatalogueReader& operator=(GrindRecipeCatalogueReader&&) = delete;
 
+  // Called on entry to the original grind dialogue, before any preview starts.
+  // An exclusively packed stack has no native weapon object to inspect yet.
+  bool needs_inventory_unpack(const ReadOnlyMemory& memory, std::uint32_t hero) noexcept {
+    if (!valid_ || capturing_ || !hero)
+      return false;
+    const auto state = grind_recipe_runtime::state(memory, lhiver::game_parser, profiles_[0]);
+    if (!state.learned() || !state.station_postcondition())
+      return false;
+    const auto inventory = read_packed_inventory(memory, hero, targets_, true, inventory_);
+    if (!inventory.storage_totals_known || inventory.any_active_marker ||
+        inventory.packed_entries > max_packed_inventory_nodes - inventory.listed_nodes)
+      return false;
+    for (const auto& recipe : grind_recipe::recipes) {
+      const auto i = target_index(recipe.input);
+      if (i < targets_.size() && inventory.listed_occurrences[i] == 0 &&
+          inventory.packed_occurrences[i] == 1 && inventory.packed[i] > 0)
+        return true;
+    }
+    return false;
+  }
+
   GrindRecipeCatalogueCapture capture(const ReadOnlyMemory& memory, std::uint32_t parser,
                                       const GrindRecipeKey& key,
                                       bool stable_boundary_verified) noexcept {

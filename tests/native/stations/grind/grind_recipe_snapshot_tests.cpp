@@ -188,12 +188,31 @@ int main() {
   {
     CaptureFixture f;
     const auto* input = facts::item_for(static_cast<std::uint32_t>(g::recipes[0].input));
-    f.stock({}, std::string(input->function->name) + ":5");
+    const std::string name = input->function->name;
+    f.stock({}, name + ":5");
+    const auto needs_unpack = [&] { return reader.needs_inventory_unpack(f.image.memory(), hero); };
+    check(needs_unpack(), "a learned recipe with an exclusively packed weapon needs native items");
     const auto c = capture(f);
     check(c.diagnostic.inventory_unchanged && c.recipes[0].material.rows[0].stored == 5 &&
               !c.recipes[0].binding_request.input.fields_known &&
               !c.recipes[0].binding_request.input.exact_item_type && !c.recipes[0].material.maximum,
           "Packbestand erzeugt keinen fiktiven nativen Waffenbeleg");
+    f.stock({{g::recipes[0].input, 5}}, "");
+    check(!needs_unpack(), "a listed weapon does not trigger unpacking");
+    f.stock({{g::recipes[0].input, 5}}, name + ":2");
+    check(!needs_unpack(), "a mixed weapon stack does not trigger unpacking");
+    f.stock({}, name + ":5," + name + ":1");
+    check(!needs_unpack(), "duplicate weapon stacks do not trigger unpacking");
+    f.stock({}, name + ":5,OTHER:1E");
+    check(!needs_unpack(), "an equipped packed item stays untouched");
+    f.stock({}, "OTHER:5");
+    check(!needs_unpack(), "unrelated stock does not trigger unpacking");
+    f.stock({}, name + ":5");
+    f.image.put(hero + 0x724, 0);
+    check(!needs_unpack(), "a null pointer with a nonempty pack stays rejected");
+    f.stock({}, name + ":5");
+    f.image.put(symbol(10501) + 0x18, 0);
+    check(!needs_unpack(), "an unlearned recipe does not trigger unpacking");
   }
   {
     CaptureFixture f;
