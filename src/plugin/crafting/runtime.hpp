@@ -147,6 +147,7 @@ bool grind_frame_capture_quiet() noexcept;
 std::uint64_t next_grind_serial() noexcept;
 bool grind_modules_current() noexcept;
 void initialize_grind(const Context& c) noexcept;
+bool unpack_grind_inventory(const Context& c) noexcept;
 bool report_grind_preview(const GrindPreviewLease& value) noexcept;
 void measure_grind_preview(const Context& c) noexcept;
 ubc::CraftingSnapshot capture_grind(const Context& c, bool boundary,

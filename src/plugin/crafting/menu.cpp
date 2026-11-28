@@ -486,6 +486,10 @@ void __fastcall after_frame(void* game, void* manager) {
     else
       disabled = true;
     const auto c = context();
+    static std::uint32_t checked_grind_station = 0;
+    if (!c.station_known || c.station != checked_grind_station || c.world != observed_world ||
+        c.hero != observed_hero)
+      checked_grind_station = 0;
     if (c.world != observed_world || c.hero != observed_hero) {
       observed_world = c.world;
       observed_hero = c.hero;
@@ -698,6 +702,15 @@ void __fastcall after_frame(void* game, void* manager) {
       } else if (!failure) {
         const auto current_page = page(c, bow_trace);
         if (ubc::valid_crafting_page(current_page)) {
+          if (c.kind == cat::Station::grind && checked_grind_station != c.station) {
+            checked_grind_station = c.station;
+            if (unpack_grind_inventory(c)) {
+              // Native inventory callbacks have run. Read the dialogue and every item afresh.
+              --frame_depth;
+              SetLastError(error);
+              return;
+            }
+          }
           if (generation != UINT64_MAX)
             ++generation;
           else {

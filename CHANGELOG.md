@@ -4,7 +4,7 @@
 
 ## English
 
-- **0.0.69** In Marcello L’Hiver, a long packed inventory could prevent the quantity menu from opening at the grindstone after loading a save. The preview now reads the entire inventory in smaller pieces. A repeated rejection is logged once while it persists.
+- **0.0.69** In Marcello L’Hiver, a long packed inventory could prevent the quantity menu from opening at the grindstone after loading a save. The preview now reads large inventories in smaller pieces. If the weapons are still packed, the grindstone uses the game's inventory routine to make them available for sharpening. A repeated rejection is logged once while it persists.
 
 - **0.0.68** The player DLL now supports German Gothic II: Night of the Raven 2.6 from Steam alongside Marcello L’Hiver DE 2.0.4. Choose quantities for 23 alchemy recipes, 13 anvil weapons, heating steel and roasting meat at the pan or stove. Each piece at the forge, pan and stove uses its original animation. A hard interruption after reservation can cost one raw meat at the stove, and Marvin F8 can cost one cold steel at the forge, as in the original game. Selecting Marcello L’Hiver with an unsupported script version still shows the compatibility notice. With other campaigns, unknown script files leave the plugin idle. The Workshop addon requires Union. Marcello is optional.
 
@@ -42,7 +42,7 @@
 
 ## Deutsch
 
-- **0.0.69** In Marcello L’Hiver konnte ein großes gepacktes Inventar nach dem Laden eines Spielstands das Mengenmenü am Schleifstein blockieren. Die Vorschau liest das gesamte Inventar jetzt in kleineren Abschnitten. Solange dieselbe Ablehnung anhält, erscheint sie nur einmal im Log.
+- **0.0.69** In Marcello L’Hiver konnte ein großes gepacktes Inventar nach dem Laden eines Spielstands das Mengenmenü am Schleifstein blockieren. Die Vorschau liest große Inventare jetzt in kleineren Abschnitten. Sind die Waffen noch gepackt, macht der Schleifstein sie über die Inventarfunktion des Spiels zum Schärfen verfügbar. Solange dieselbe Ablehnung anhält, erscheint sie nur einmal im Log.
 
 - **0.0.68** Die Spieler-DLL unterstützt neben Marcello L’Hiver DE 2.0.4 jetzt die deutsche Steam-Fassung von Gothic II: Die Nacht des Raben 2.6. Die Mengenwahl gilt für 23 Alchemierezepte, 13 Ambosswaffen, Rohstahl an der Esse und Fleisch an Pfanne und Herd. Jedes Stück an Esse, Pfanne und Herd durchläuft seine Originalanimation. Wie im Original kann ein harter Abbruch nach der Reservierung am Herd ein Rohfleisch kosten, Marvin-F8 an der Esse einen kalten Rohstahl. Wer Marcello L’Hiver mit einem unbekannten Skriptstand wählt, sieht weiterhin den Kompatibilitätshinweis. In anderen Kampagnen bleibt das Plugin bei unbekannten Skripten untätig. Das Workshop-Addon benötigt Union. Marcello ist optional.
 
