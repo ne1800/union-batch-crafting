@@ -6,6 +6,14 @@ Gothic II: Night of the Raven / Die Nacht des Raben, Windows x86, 2.6 fix, Union
 
 ## Campaign compatibility · Kampagnenverträglichkeit
 
+**0.0.69 candidate · Grindstone acceptance pending.** In Marcello L’Hiver DE 2.0.4, the quantity menu opened after loading a save with 13 packed rough swords. It initially offered quantity zero. Opening and closing the inventory preserved all 418 inventory counts. On returning to the grindstone, the menu offered all 13 swords. The test stopped before submitting an order. The second save was not reached.
+
+**Kandidat 0.0.69 · Abnahme am Schleifstein offen.** In Marcello L’Hiver DE 2.0.4 öffnete sich das Mengenmenü nach dem Laden eines Spielstands mit 13 gepackten groben Schwertern. Zunächst war Menge null freigegeben. Beim Öffnen und Schließen des Inventars blieben alle 418 Bestände gleich. Beim erneuten Betreten des Schleifsteins bot das Menü alle 13 Schwerter an. Der Test endete vor dem Auftrag. Der Gegenlauf im zweiten Spielstand steht aus.
+
+| Candidate loaded in game / Im Spiel geladener Kandidat | SHA-256 |
+| --- | --- |
+| 0.0.69 | `c16f53fe5fcd5202c474a2b864393ad0a437b2eff6a82c1e3a63e5be856fb725` |
+
 **0.0.68** used the player DLL below in both campaigns. A new German Night of the Raven 2.6 game used the loose `_work/Data/Scripts/_compiled/GOTHIC.DAT` from Gothic II: Gold Classic on Steam (Workshop branch, build 9820952). One alchemy order made two essences of healing from four healing plants, two meadow knotweeds and two flasks. One order at the frying pan turned two pieces of raw meat into two pieces of roast meat. In Marcello L’Hiver DE 2.0.4, slot 14, one order made two swamp tobaccos from two apple tobaccos and two flasks. The full inventory matched after each order, including all 418 item counts in Marcello. Both games exited without saving. Physical controller testing is pending.
 
 **0.0.68** lief in beiden Kampagnen mit der unten aufgeführten Spieler-DLL. Ein neues Spiel der deutschen Version 2.6 von Die Nacht des Raben verwendete die lose `_work/Data/Scripts/_compiled/GOTHIC.DAT` aus Gothic II: Gold Classic auf Steam (Workshop-Zweig, Build 9820952). Am Alchemietisch entstanden aus vier Heilpflanzen, zwei Feldknöterichen und zwei Laborwasserflaschen zwei Heilessenzen. An der Pfanne verbrauchte ein Auftrag zwei Stücke Rohfleisch und ergab zwei gebratene Fleischstücke. In Marcello L’Hiver DE 2.0.4, Slot 14, ergab ein Auftrag zwei Sumpftabake aus zwei Apfeltabaken und zwei Laborwasserflaschen. Nach jedem Auftrag stimmte die vollständige Inventarbilanz, in Marcello für alle 418 Bestände. Beide Spiele endeten ohne Speichern. Die Prüfung mit einem physischen Controller steht aus.
